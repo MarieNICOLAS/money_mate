@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                xmlns:views="clr-namespace:MoneyMate.Views"
+                x:Class="MoneyMate.Views.Errors.NotFoundPage"
+                Title="Page introuvable">
+    <VerticalStackLayout Spacing="20" Padding="30" VerticalOptions="Center">
+        <Label 
+            Text="404"
+            FontSize="72"
+            FontAttributes="Bold"
+            TextColor="{StaticResource Primary}"
+            HorizontalOptions="Center" />
+
+        <Label 
+            Text="Page introuvable"
+            Style="{StaticResource PageTitle}"
+            HorizontalOptions="Center" />
+
+        <Label 
+            Text="La page que vous recherchez n existe pas."
+            Style="{StaticResource BodyText}"
+            HorizontalOptions="Center"
+            HorizontalTextAlignment="Center" />
+    </VerticalStackLayout>
+</views:BasePage>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                xmlns:views="clr-namespace:MoneyMate.Views"
+                x:Class="MoneyMate.Views.Expenses.AddExpensePage"
+                Title="Ajouter une Depense">
+    <VerticalStackLayout Spacing="20" Padding="30">
+        <Label 
+            Text="Ajouter une Depense"
+            Style="{StaticResource PageTitle}"
+            HorizontalOptions="Center" />
+    </VerticalStackLayout>
+</views:BasePage>

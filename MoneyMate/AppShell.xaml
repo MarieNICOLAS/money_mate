@@ -4,11 +4,98 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:local="clr-namespace:MoneyMate"
-    Title="MoneyMate">
+    xmlns:auth="clr-namespace:MoneyMate.Views.Auth"
+    xmlns:profile="clr-namespace:MoneyMate.Views.Profile"
+    xmlns:dashboard="clr-namespace:MoneyMate.Views.Dashboard"
+    xmlns:expenses="clr-namespace:MoneyMate.Views.Expenses"
+    xmlns:categories="clr-namespace:MoneyMate.Views.Categories"
+    xmlns:budgets="clr-namespace:MoneyMate.Views.Budgets"
+    xmlns:alerts="clr-namespace:MoneyMate.Views.Alerts"
+    xmlns:calendar="clr-namespace:MoneyMate.Views.Calendar"
+    xmlns:errors="clr-namespace:MoneyMate.Views.Errors"
+    Title="Money Mate"
+    FlyoutBackgroundColor="{StaticResource BackgroundColor}"
+    Shell.FlyoutBehavior="Flyout">
 
-    <ShellContent
-        Title="Home"
-        ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
+    <!-- Header du Flyout -->
+    <Shell.FlyoutHeader>
+        <Grid BackgroundColor="{StaticResource Primary}" HeightRequest="120" Padding="20">
+            <VerticalStackLayout VerticalOptions="Center">
+                <Label 
+                    Text="Money Mate"
+                    TextColor="White"
+                    FontSize="24"
+                    FontAttributes="Bold" />
+                <Label 
+                    Text="Gestion des depenses"
+                    TextColor="White"
+                    FontSize="14"
+                    Opacity="0.8" />
+            </VerticalStackLayout>
+        </Grid>
+    </Shell.FlyoutHeader>
+
+    <!-- ==================== ACCUEIL ==================== -->
+        <FlyoutItem Title="Accueil" FlyoutDisplayOptions="AsSingleItem">
+        <ShellContent Title="Accueil" ContentTemplate="{DataTemplate local:MainPage}" Route="MainPage" />
+    </FlyoutItem>
+
+    <!-- ==================== DASHBOARD ==================== -->
+    <FlyoutItem Title="Tableau de Bord" FlyoutDisplayOptions="AsSingleItem">
+        <ShellContent Title="Dashboard" ContentTemplate="{DataTemplate dashboard:DashboardPage}" Route="DashboardPage" />
+    </FlyoutItem>
+
+    <!-- ==================== AUTHENTIFICATION ==================== -->
+    <FlyoutItem Title="Authentification" FlyoutDisplayOptions="AsMultipleItems">
+        <ShellContent Title="Connexion" ContentTemplate="{DataTemplate auth:LoginPage}" Route="LoginPage" />
+        <ShellContent Title="Inscription" ContentTemplate="{DataTemplate auth:RegisterPage}" Route="RegisterPage" />
+    </FlyoutItem>
+
+    <!-- ==================== PROFIL ==================== -->
+    <FlyoutItem Title="Mon Compte" FlyoutDisplayOptions="AsMultipleItems">
+        <ShellContent Title="Mon Profil" ContentTemplate="{DataTemplate profile:ProfilePage}" Route="ProfilePage" />
+        <ShellContent Title="Changer mot de passe" ContentTemplate="{DataTemplate profile:ChangePasswordPage}" Route="ChangePasswordPage" />
+        <ShellContent Title="Supprimer compte" ContentTemplate="{DataTemplate profile:DeleteAccountPage}" Route="DeleteAccountPage" />
+    </FlyoutItem>
+
+    <!-- ==================== DEPENSES ==================== -->
+    <FlyoutItem Title="Depenses" FlyoutDisplayOptions="AsMultipleItems">
+        <ShellContent Title="Liste des Depenses" ContentTemplate="{DataTemplate expenses:ExpensesListPage}" Route="ExpensesListPage" />
+        <ShellContent Title="Ajouter Depense" ContentTemplate="{DataTemplate expenses:AddExpensePage}" Route="AddExpensePage" />
+        <ShellContent Title="Modifier Depense" ContentTemplate="{DataTemplate expenses:EditExpensePage}" Route="EditExpensePage" />
+        <ShellContent Title="Details Depense" ContentTemplate="{DataTemplate expenses:ExpenseDetailsPage}" Route="ExpenseDetailsPage" />
+        <ShellContent Title="Ajout Rapide" ContentTemplate="{DataTemplate expenses:QuickAddExpensePage}" Route="QuickAddExpensePage" />
+    </FlyoutItem>
+
+    <!-- ==================== CATEGORIES ==================== -->
+    <FlyoutItem Title="Categories" FlyoutDisplayOptions="AsMultipleItems">
+        <ShellContent Title="Liste Categories" ContentTemplate="{DataTemplate categories:CategoriesListPage}" Route="CategoriesListPage" />
+        <ShellContent Title="Ajouter Categorie" ContentTemplate="{DataTemplate categories:AddCategoryPage}" Route="AddCategoryPage" />
+        <ShellContent Title="Modifier Categorie" ContentTemplate="{DataTemplate categories:EditCategoryPage}" Route="EditCategoryPage" />
+    </FlyoutItem>
+
+    <!-- ==================== BUDGETS ==================== -->
+    <FlyoutItem Title="Budgets" FlyoutDisplayOptions="AsMultipleItems">
+        <ShellContent Title="Vue d'ensemble" ContentTemplate="{DataTemplate budgets:BudgetsOverviewPage}" Route="BudgetsOverviewPage" />
+        <ShellContent Title="Ajouter Budget" ContentTemplate="{DataTemplate budgets:AddBudgetPage}" Route="AddBudgetPage" />
+        <ShellContent Title="Modifier Budget" ContentTemplate="{DataTemplate budgets:EditBudgetPage}" Route="EditBudgetPage" />
+    </FlyoutItem>
+
+    <!-- ==================== ALERTES ==================== -->
+    <FlyoutItem Title="Alertes" FlyoutDisplayOptions="AsSingleItem">
+        <ShellContent Title="Seuils d'Alerte" ContentTemplate="{DataTemplate alerts:AlertThresholdPage}" Route="AlertThresholdPage" />
+    </FlyoutItem>
+
+    <!-- ==================== CALENDRIER ==================== -->
+    <FlyoutItem Title="Calendrier" FlyoutDisplayOptions="AsSingleItem">
+        <ShellContent Title="Calendrier" ContentTemplate="{DataTemplate calendar:CalendarPage}" Route="CalendarPage" />
+    </FlyoutItem>
+
+    <!-- ==================== ERREURS (Cachees) ==================== -->
+    <FlyoutItem FlyoutItemIsVisible="False">
+        <ShellContent Title="Erreur" ContentTemplate="{DataTemplate errors:ErrorPage}" Route="ErrorPage" />
+        <ShellContent Title="Page introuvable" ContentTemplate="{DataTemplate errors:NotFoundPage}" Route="NotFoundPage" />
+        <ShellContent Title="Pas de connexion" ContentTemplate="{DataTemplate errors:NoConnectionPage}" Route="NoConnectionPage" />
+    </FlyoutItem>
 
 </Shell>

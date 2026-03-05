@@ -22,15 +22,14 @@ namespace MoneyMate
         {
             try
             {
-                // Test simple de la base de données
                 bool dbOk = DatabaseTestHelper.TestDatabaseConfiguration();
-                CounterBtn.Text = dbOk ? "✅ DB OK" : "❌ Erreur DB";
+                CounterBtn.Text = dbOk ? "[OK] DB OK" : "[X] Erreur DB";
 
-                System.Diagnostics.Debug.WriteLine(dbOk ? "🎉 Base de données initialisée avec succès" : "❌ Erreur lors de l'initialisation de la DB");
+                System.Diagnostics.Debug.WriteLine(dbOk ? "Base de donnees initialisee avec succes" : "Erreur lors de l'initialisation de la DB");
             }
             catch (Exception ex)
             {
-                CounterBtn.Text = "❌ Erreur DB";
+                CounterBtn.Text = "[X] Erreur DB";
                 System.Diagnostics.Debug.WriteLine($"Erreur: {ex.Message}");
             }
         }

@@ -1,12 +1,21 @@
-﻿using MoneyMate.Views.Dashboard;
+﻿using MoneyMate.ViewModels.Dashboard;
 
 namespace MoneyMate.Views.Dashboard
 {
     public partial class DashboardPage : BasePage
     {
-        public DashboardPage()
+        private DashboardViewModel ViewModel => (DashboardViewModel)BindingContext;
+
+        public DashboardPage(DashboardViewModel viewModel)
         {
+            SetViewModel(viewModel);
             InitializeComponent();
+        }
+
+        protected override void OnAppearing()
+        {
+            base.OnAppearing();
+            ViewModel.LoadUser();
         }
     }
 }

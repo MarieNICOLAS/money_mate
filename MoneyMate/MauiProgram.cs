@@ -3,7 +3,9 @@ using Microsoft.Extensions.Logging;
 using MoneyMate.Services.Implementations;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.ViewModels.Auth;
+using MoneyMate.ViewModels.Dashboard;
 using MoneyMate.Views.Auth;
+using MoneyMate.Views.Dashboard;
 
 namespace MoneyMate
 {
@@ -31,10 +33,12 @@ namespace MoneyMate
             // ── ViewModels ────────────────────────────────────────────────
             builder.Services.AddTransient<LoginViewModel>();
             builder.Services.AddTransient<RegisterViewModel>();
+            builder.Services.AddTransient<DashboardViewModel>();
 
             // ── Pages ─────────────────────────────────────────────────────
             builder.Services.AddTransient<LoginPage>();
             builder.Services.AddTransient<RegisterPage>();
+            builder.Services.AddTransient<DashboardPage>();
 
 #if DEBUG
             builder.Logging.AddDebug();

@@ -1,12 +1,16 @@
-﻿namespace MoneyMate.Helpers
+﻿using System.Text.RegularExpressions;
+
+namespace MoneyMate.Helpers
 {
     /// <summary>
     /// Utilitaires de validation purs, sans dépendances externes.
     /// </summary>
-    public static class ValidationHelper
+    public static partial class ValidationHelper
     {
-        private const int MIN_PASSWORD_LENGTH = 12;
-        private const int MIN_USERNAME_LENGTH = 3;
+        private const int MIN_PASSWORD_LENGTH = 8;
+
+        [GeneratedRegex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase)]
+        private static partial Regex EmailRegex();
 
         /// <summary>
         /// Valide le format d'une adresse email.
@@ -16,24 +20,7 @@
             if (string.IsNullOrWhiteSpace(email))
                 return false;
 
-            try
-            {
-                var addr = new System.Net.Mail.MailAddress(email.Trim());
-                return addr.Address == email.Trim();
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Valide la longueur minimale d'un pseudo.
-        /// </summary>
-        public static bool IsValidUsername(string username)
-        {
-            return !string.IsNullOrWhiteSpace(username)
-                && username.Trim().Length >= MIN_USERNAME_LENGTH;
+            return EmailRegex().IsMatch(email.Trim());
         }
 
         /// <summary>

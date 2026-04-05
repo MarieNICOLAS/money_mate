@@ -2,6 +2,7 @@
 <views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
+                xmlns:behaviors="clr-namespace:MoneyMate.Behaviors"
                 x:Class="MoneyMate.Views.Auth.RegisterPage"
                 Title="Inscription">
 
@@ -28,21 +29,14 @@
                        TextColor="{StaticResource Primary}"
                        HorizontalOptions="Center" />
 
-                <!-- NOM -->
-                <Label Text="Nom complet" Style="{StaticResource FormLabel}" />
+                <!-- PSEUDO (optionnel) -->
+                <Label Text="Pseudo" Style="{StaticResource FormLabel}" />
                 <Border x:Name="UsernameBorder"
                         Style="{StaticResource InputContainer}">
                     <Entry x:Name="UsernameEntry"
                            Placeholder="Pseudo"
-                           Style="{StaticResource EntryForm}"
-                           TextChanged="OnUsernameTextChanged" />
+                           Style="{StaticResource EntryForm}" />
                 </Border>
-                <Label x:Name="UsernameErrorLabel"
-                       Text="Le pseudo doit contenir au moins 3 caracteres"
-                       TextColor="{StaticResource Error}"
-                       FontSize="12"
-                       Margin="4,-8,0,0"
-                       IsVisible="False" />
 
                 <!-- EMAIL -->
                 <Label Text="Email" Style="{StaticResource FormLabel}" />
@@ -51,8 +45,13 @@
                     <Entry x:Name="EmailEntry"
                            Placeholder="Adresse e-mail"
                            Keyboard="Email"
-                           Style="{StaticResource EntryForm}"
-                           TextChanged="OnEmailTextChanged" />
+                           Style="{StaticResource EntryForm}">
+                        <Entry.Behaviors>
+                            <behaviors:EmailValidationBehavior
+                                Border="{x:Reference EmailBorder}"
+                                ErrorLabel="{x:Reference EmailErrorLabel}" />
+                        </Entry.Behaviors>
+                    </Entry>
                 </Border>
                 <Label x:Name="EmailErrorLabel"
                        Text="Format d'email invalide"
@@ -76,8 +75,23 @@
                         <Entry x:Name="PasswordEntry"
                                Placeholder="Mot de passe"
                                IsPassword="True"
-                               Style="{StaticResource EntryForm}"
-                               TextChanged="OnPasswordTextChanged" />
+                               Style="{StaticResource EntryForm}">
+                            <Entry.Behaviors>
+                                <behaviors:PasswordStrengthBehavior
+                                    Border="{x:Reference PasswordBorder}"
+                                    StrengthBarGrid="{x:Reference StrengthBarGrid}"
+                                    StrengthLabel="{x:Reference StrengthLabel}"
+                                    CriteriaPanel="{x:Reference CriteriaPanel}"
+                                    Bar1="{x:Reference Bar1}"
+                                    Bar2="{x:Reference Bar2}"
+                                    Bar3="{x:Reference Bar3}"
+                                    Bar4="{x:Reference Bar4}"
+                                    CritLength="{x:Reference CritLength}"
+                                    CritUpper="{x:Reference CritUpper}"
+                                    CritDigit="{x:Reference CritDigit}"
+                                    CritSpecial="{x:Reference CritSpecial}" />
+                            </Entry.Behaviors>
+                        </Entry>
                         <Label x:Name="EyeIcon"
                                Grid.Column="1"
                                Text="{StaticResource IconEyeOpen}"
@@ -103,14 +117,10 @@
                     <BoxView x:Name="Bar3" CornerRadius="4" HeightRequest="5" BackgroundColor="#EEEEEE" Grid.Column="2" />
                     <BoxView x:Name="Bar4" CornerRadius="4" HeightRequest="5" BackgroundColor="#EEEEEE" Grid.Column="3" />
                 </Grid>
-
-                <!-- Label force -->
                 <Label x:Name="StrengthLabel"
                        FontSize="12"
                        HorizontalOptions="End"
                        IsVisible="False" />
-
-                <!-- Criteres -->
                 <VerticalStackLayout x:Name="CriteriaPanel"
                                      Spacing="4"
                                      IsVisible="False">
@@ -120,6 +130,29 @@
                     <Label x:Name="CritSpecial" FontSize="12" />
                 </VerticalStackLayout>
 
+                <!-- CONFIRMATION MOT DE PASSE -->
+                <Label Text="Confirmer le mot de passe" Style="{StaticResource FormLabel}" />
+                <Border x:Name="ConfirmPasswordBorder"
+                        Style="{StaticResource InputContainer}">
+                    <Entry x:Name="ConfirmPasswordEntry"
+                           Placeholder="Confirmer le mot de passe"
+                           IsPassword="True"
+                           Style="{StaticResource EntryForm}">
+                        <Entry.Behaviors>
+                            <behaviors:PasswordConfirmBehavior
+                                PasswordEntry="{x:Reference PasswordEntry}"
+                                Border="{x:Reference ConfirmPasswordBorder}"
+                                ErrorLabel="{x:Reference ConfirmPasswordErrorLabel}" />
+                        </Entry.Behaviors>
+                    </Entry>
+                </Border>
+                <Label x:Name="ConfirmPasswordErrorLabel"
+                       Text="Les mots de passe ne correspondent pas"
+                       TextColor="{StaticResource Error}"
+                       FontSize="12"
+                       Margin="4,-8,0,0"
+                       IsVisible="False" />
+
                 <Button Text="S'inscrire"
                         Style="{StaticResource PrimaryButton}" />
 
@@ -127,7 +160,6 @@
                         Style="{StaticResource OutlineButton}"
                         Clicked="OnBackClicked" />
 
-                <!-- Lien connexion -->
                 <HorizontalStackLayout HorizontalOptions="Center">
                     <Label Text="Deja un compte ? " />
                     <Label Text="Se connecter"

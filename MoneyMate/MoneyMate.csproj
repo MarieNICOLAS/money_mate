@@ -73,7 +73,6 @@
 
 	<ItemGroup>
 	  <Folder Include="Data\Repositories\" />
-	  <Folder Include="Converters\" />
 	  <Folder Include="Views\FixedCharges\" />
 	  <Folder Include="Views\Support\" />
 	  <Folder Include="Views\Settings\" />
@@ -161,5 +160,9 @@
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	</ItemGroup>
+
+	<PropertyGroup>
+	<MauiEnableXamlCBindingWithSourceCompilation>true</MauiEnableXamlCBindingWithSourceCompilation>
+	</PropertyGroup>
 
 </Project>

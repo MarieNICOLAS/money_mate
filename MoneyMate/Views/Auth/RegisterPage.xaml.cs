@@ -26,23 +26,6 @@ namespace MoneyMate.Views.Auth
             ResetValidationUI();
         }
 
-        // ── Validation pseudo ──────────────────────────────────────────────────
-        private void OnUsernameTextChanged(object sender, TextChangedEventArgs e)
-        {
-            var username = e.NewTextValue ?? string.Empty;
-
-            if (username.Length == 0)
-            {
-                UsernameBorder.Stroke        = Colors.Transparent;
-                UsernameErrorLabel.IsVisible = false;
-                return;
-            }
-
-            bool isValid = username.Length >= 3;
-            UsernameBorder.Stroke        = isValid ? ColorOk : ColorFail;
-            UsernameErrorLabel.IsVisible = !isValid;
-        }
-
         // ── Validation email ───────────────────────────────────────────────────
         private void OnEmailTextChanged(object sender, TextChangedEventArgs e)
         {
@@ -174,7 +157,6 @@ namespace MoneyMate.Views.Auth
             UsernameBorder.Stroke        = Colors.Transparent;
             EmailBorder.Stroke           = Colors.Transparent;
             PasswordBorder.Stroke        = Colors.Transparent;
-            UsernameErrorLabel.IsVisible = false;
             EmailErrorLabel.IsVisible    = false;
             EmailTakenLabel.IsVisible    = false;
             ResetStrengthUI();

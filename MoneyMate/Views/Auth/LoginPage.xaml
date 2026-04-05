@@ -37,6 +37,7 @@
                     <Entry x:Name="EmailEntry"
                            Placeholder="Adresse e-mail"
                            Keyboard="Email"
+                           Text="{Binding Email}"
                            Style="{StaticResource EntryForm}">
                         <Entry.Behaviors>
                             <behaviors:EmailValidationBehavior
@@ -61,6 +62,7 @@
                         <Entry x:Name="PasswordEntry"
                                Placeholder="Mot de passe"
                                IsPassword="True"
+                               Text="{Binding Password}"
                                Style="{StaticResource EntryForm}">
                             <Entry.Behaviors>
                                 <behaviors:PasswordMinLengthBehavior
@@ -94,20 +96,22 @@
                                        Spacing="4"
                                        Margin="0,10,0,10">
                     <CheckBox x:Name="RememberMeCheckBox"
+                              IsChecked="{Binding RememberMe}"
                               Color="{StaticResource Primary}" />
                     <Label Text="Se souvenir de moi"
                            TextColor="{StaticResource TextDark}" />
                 </HorizontalStackLayout>
 
                 <Button Text="Se connecter"
+                        Command="{Binding LoginCommand}"
                         Style="{StaticResource PrimaryButton}" />
 
                 <Label x:Name="LoginErrorLabel"
-                       Text="Email ou mot de passe incorrect"
+                       Text="{Binding LoginErrorMessage}"
                        TextColor="{StaticResource Error}"
                        FontSize="13"
                        HorizontalOptions="Center"
-                       IsVisible="False" />
+                       IsVisible="{Binding IsLoginErrorVisible}" />
 
                 <!-- Lien inscription -->
                 <HorizontalStackLayout HorizontalOptions="Center">

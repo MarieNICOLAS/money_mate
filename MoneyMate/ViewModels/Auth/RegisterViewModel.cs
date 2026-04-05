@@ -178,6 +178,11 @@ namespace MoneyMate.ViewModels.Auth
 
                 if (user != null)
                 {
+                    await Application.Current!.MainPage!.DisplayAlert(
+                        "Inscription réussie",
+                        "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter.",
+                        "OK");
+
                     await Shell.Current.GoToAsync("//LoginPage");
                 }
                 else

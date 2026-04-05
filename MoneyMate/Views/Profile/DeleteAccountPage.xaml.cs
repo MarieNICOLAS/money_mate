@@ -1,12 +1,21 @@
-﻿using MoneyMate.Views.Profile;
+﻿using MoneyMate.ViewModels.Profile;
 
 namespace MoneyMate.Views.Profile
 {
     public partial class DeleteAccountPage : BasePage
     {
-        public DeleteAccountPage()
+        private DeleteAccountViewModel ViewModel => (DeleteAccountViewModel)BindingContext;
+
+        public DeleteAccountPage(DeleteAccountViewModel viewModel)
         {
+            SetViewModel(viewModel);
             InitializeComponent();
+        }
+
+        protected override void OnAppearing()
+        {
+            base.OnAppearing();
+            ViewModel.LoadUser();
         }
     }
 }

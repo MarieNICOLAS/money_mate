@@ -1,12 +1,21 @@
-﻿using MoneyMate.Views;
+﻿using MoneyMate.ViewModels.Profile;
 
 namespace MoneyMate.Views.Profile
 {
     public partial class ProfilePage : BasePage
     {
-        public ProfilePage()
+        private ProfileViewModel ViewModel => (ProfileViewModel)BindingContext;
+
+        public ProfilePage(ProfileViewModel viewModel)
         {
+            SetViewModel(viewModel);
             InitializeComponent();
+        }
+
+        protected override void OnAppearing()
+        {
+            base.OnAppearing();
+            ViewModel.LoadUser();
         }
     }
 }

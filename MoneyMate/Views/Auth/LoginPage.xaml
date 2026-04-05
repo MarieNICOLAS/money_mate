@@ -1,13 +1,121 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
                 x:Class="MoneyMate.Views.Auth.LoginPage"
                 Title="Connexion">
-    <VerticalStackLayout Spacing="20" Padding="30">
-        <Label 
-            Text="Page de Connexion"
-            Style="{StaticResource PageTitle}"
-            HorizontalOptions="Center" />
-    </VerticalStackLayout>
+
+    <views:BasePage.PageContent>
+        <ScrollView>
+            <VerticalStackLayout Padding="30"
+                                 Spacing="15"
+                                 VerticalOptions="Center">
+                <VerticalStackLayout.MaximumWidthRequest>
+                    <OnIdiom x:TypeArguments="x:Double"
+                             Phone="10000"
+                             Tablet="500"
+                             Desktop="500" />
+                </VerticalStackLayout.MaximumWidthRequest>
+                <VerticalStackLayout.HorizontalOptions>
+                    <OnIdiom x:TypeArguments="LayoutOptions"
+                             Phone="Fill"
+                             Tablet="Center"
+                             Desktop="Center" />
+                </VerticalStackLayout.HorizontalOptions>
+
+                <Label Text="Connexion"
+                       FontSize="24"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource Primary}"
+                       HorizontalOptions="Center" />
+
+                <!-- EMAIL -->
+                <Label Text="Email" Style="{StaticResource FormLabel}" />
+                <Border x:Name="EmailBorder"
+                        Style="{StaticResource InputContainer}">
+                    <Entry x:Name="EmailEntry"
+                           Placeholder="Adresse e-mail"
+                           Keyboard="Email"
+                           Style="{StaticResource EntryForm}"
+                           TextChanged="OnEmailTextChanged" />
+                </Border>
+                <Label x:Name="EmailErrorLabel"
+                       Text="Format d'email invalide"
+                       TextColor="{StaticResource Error}"
+                       FontSize="12"
+                       Margin="4,-8,0,0"
+                       IsVisible="False" />
+
+                <!-- MOT DE PASSE -->
+                <Label Text="Mot de passe" Style="{StaticResource FormLabel}" />
+                <Border x:Name="PasswordBorder"
+                        Style="{StaticResource InputContainer}">
+                    <Grid ColumnDefinitions="*,Auto"
+                          VerticalOptions="Center">
+                        <Entry x:Name="PasswordEntry"
+                               Placeholder="Mot de passe"
+                               IsPassword="True"
+                               Style="{StaticResource EntryForm}"
+                               TextChanged="OnPasswordTextChanged" />
+                        <Label x:Name="EyeIcon"
+                               Grid.Column="1"
+                               Text="{StaticResource IconEyeOpen}"
+                               FontFamily="MaterialIcons"
+                               FontSize="22"
+                               TextColor="{StaticResource Secondary}"
+                               VerticalOptions="Center"
+                               Margin="5,0">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnTogglePasswordVisibility" />
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </Grid>
+                </Border>
+                <Label x:Name="PasswordErrorLabel"
+                       Text="Minimum 12 caracteres requis"
+                       TextColor="{StaticResource Error}"
+                       FontSize="12"
+                       Margin="4,-8,0,0"
+                       IsVisible="False" />
+
+                <!-- Se souvenir de moi -->
+                <HorizontalStackLayout HorizontalOptions="Center"
+                                       Spacing="4"
+                                       Margin="0,10,0,10">
+                    <CheckBox x:Name="RememberMeCheckBox"
+                              Color="{StaticResource Primary}" />
+                    <Label Text="Se souvenir de moi"
+                           TextColor="{StaticResource TextDark}" />
+                </HorizontalStackLayout>
+
+                <Button Text="Se connecter"
+                        Style="{StaticResource PrimaryButton}" />
+
+                <Label x:Name="LoginErrorLabel"
+                       Text="Email ou mot de passe incorrect"
+                       TextColor="{StaticResource Error}"
+                       FontSize="13"
+                       HorizontalOptions="Center"
+                       IsVisible="False" />
+
+                <!-- Lien inscription -->
+                <HorizontalStackLayout HorizontalOptions="Center">
+                    <Label Text="Pas encore de compte ? " />
+                    <Label Text="S'inscrire"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource Primary}">
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnGoToRegisterTapped" />
+                        </Label.GestureRecognizers>
+                    </Label>
+                </HorizontalStackLayout>
+
+                <Button Text="Retour"
+                        Style="{StaticResource OutlineButton}"
+                        Clicked="OnBackClicked" />
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </views:BasePage.PageContent>
+
 </views:BasePage>

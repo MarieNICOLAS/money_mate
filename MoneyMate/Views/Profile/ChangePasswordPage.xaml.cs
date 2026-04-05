@@ -1,4 +1,4 @@
-using MoneyMate.Views.Profile;
+﻿using MoneyMate.Views.Profile;
 
 namespace MoneyMate.Views.Profile
 {

@@ -1,8 +1,8 @@
-namespace MoneyMate.Data.Context
+ï»¿namespace MoneyMate.Data.Context
 {
     /// <summary>
-    /// Service de configuration de la base de données
-    /// Gère l'initialisation et la configuration SQLite
+    /// Service de configuration de la base de donnï¿½es
+    /// Gï¿½re l'initialisation et la configuration SQLite
     /// </summary>
     public static class DatabaseService
     {
@@ -10,7 +10,7 @@ namespace MoneyMate.Data.Context
         private static readonly object _lock = new();
 
         /// <summary>
-        /// Obtient l'instance singleton du contexte de base de données
+        /// Obtient l'instance singleton du contexte de base de donnï¿½es
         /// </summary>
         public static MoneyMateDbContext Instance
         {
@@ -34,7 +34,7 @@ namespace MoneyMate.Data.Context
         }
 
         /// <summary>
-        /// Ferme la connexion à la base de données
+        /// Ferme la connexion ï¿½ la base de donnï¿½es
         /// </summary>
         public static void CloseConnection()
         {

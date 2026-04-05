@@ -1,11 +1,11 @@
-using SQLite;
+ï»¿using SQLite;
 using MoneyMate.Models;
 
 namespace MoneyMate.Data.Context
 {
     /// <summary>
-    /// Contexte de base de données SQLite pour Money Mate
-    /// Gère toutes les opérations de base de données selon les spécifications CONTRIBUTING.md
+    /// Contexte de base de donnï¿½es SQLite pour Money Mate
+    /// Gï¿½re toutes les opï¿½rations de base de donnï¿½es selon les spï¿½cifications CONTRIBUTING.md
     /// </summary>
     public class MoneyMateDbContext
     {
@@ -13,16 +13,16 @@ namespace MoneyMate.Data.Context
         private SQLiteConnection? _connection;
 
         /// <summary>
-        /// Constructeur du contexte de base de données
+        /// Constructeur du contexte de base de donnï¿½es
         /// </summary>
-        /// <param name="dbPath">Chemin vers le fichier de base de données SQLite</param>
+        /// <param name="dbPath">Chemin vers le fichier de base de donnï¿½es SQLite</param>
         public MoneyMateDbContext(string dbPath)
         {
             _dbPath = dbPath;
         }
 
         /// <summary>
-        /// Obtient une connexion à la base de données
+        /// Obtient une connexion ï¿½ la base de donnï¿½es
         /// </summary>
         private SQLiteConnection Database
         {
@@ -38,11 +38,11 @@ namespace MoneyMate.Data.Context
         }
 
         /// <summary>
-        /// Initialise la base de données avec toutes les tables
+        /// Initialise la base de donnï¿½es avec toutes les tables
         /// </summary>
         private void InitializeDatabase()
         {
-            // Création des tables selon l'ordre des dépendances
+            // Crï¿½ation des tables selon l'ordre des dï¿½pendances
             Database.CreateTable<User>();
             Database.CreateTable<Category>();
             Database.CreateTable<Budget>();
@@ -50,12 +50,12 @@ namespace MoneyMate.Data.Context
             Database.CreateTable<FixedCharge>();
             Database.CreateTable<AlertThreshold>();
 
-            // Insertion des catégories par défaut si nécessaire
+            // Insertion des catï¿½gories par dï¿½faut si nï¿½cessaire
             SeedDefaultCategories();
         }
 
         /// <summary>
-        /// Insertion des catégories par défaut
+        /// Insertion des catï¿½gories par dï¿½faut
         /// </summary>
         private void SeedDefaultCategories()
         {
@@ -66,10 +66,10 @@ namespace MoneyMate.Data.Context
                     new() { Name = "Alimentation", Color = "#4CAF50", Icon = "", DisplayOrder = 1 },
                     new() { Name = "Transport", Color = "#2196F3", Icon = "", DisplayOrder = 2 },
                     new() { Name = "Logement", Color = "#FF9800", Icon = "", DisplayOrder = 3 },
-                    new() { Name = "Santé", Color = "#F44336", Icon = "", DisplayOrder = 4 },
+                    new() { Name = "Santï¿½", Color = "#F44336", Icon = "", DisplayOrder = 4 },
                     new() { Name = "Loisirs", Color = "#9C27B0", Icon = "", DisplayOrder = 5 },
-                    new() { Name = "Vêtements", Color = "#E91E63", Icon = "", DisplayOrder = 6 },
-                    new() { Name = "Éducation", Color = "#3F51B5", Icon = "", DisplayOrder = 7 },
+                    new() { Name = "Vï¿½tements", Color = "#E91E63", Icon = "", DisplayOrder = 6 },
+                    new() { Name = "ï¿½ducation", Color = "#3F51B5", Icon = "", DisplayOrder = 7 },
                     new() { Name = "Autres", Color = "#607D8B", Icon = "", DisplayOrder = 8 }
                 };
 
@@ -128,7 +128,7 @@ namespace MoneyMate.Data.Context
         #endregion
 
         /// <summary>
-        /// Ferme la connexion à la base de données
+        /// Ferme la connexion ï¿½ la base de donnï¿½es
         /// </summary>
         public void Close()
         {
@@ -137,15 +137,15 @@ namespace MoneyMate.Data.Context
         }
 
         /// <summary>
-        /// Supprime toutes les données utilisateur (pour suppression de compte - RGPD)
-        /// Suppression en cascade selon les spécifications
+        /// Supprime toutes les donnï¿½es utilisateur (pour suppression de compte - RGPD)
+        /// Suppression en cascade selon les spï¿½cifications
         /// </summary>
-        /// <param name="userId">ID de l'utilisateur à supprimer</param>
+        /// <param name="userId">ID de l'utilisateur ï¿½ supprimer</param>
         public void DeleteAllUserData(int userId)
         {
             Database.RunInTransaction(() =>
             {
-                // Supprimer dans l'ordre des dépendances
+                // Supprimer dans l'ordre des dï¿½pendances
                 Database.Execute("DELETE FROM AlertThresholds WHERE UserId = ?", userId);
                 Database.Execute("DELETE FROM Expenses WHERE UserId = ?", userId);
                 Database.Execute("DELETE FROM FixedCharges WHERE UserId = ?", userId);

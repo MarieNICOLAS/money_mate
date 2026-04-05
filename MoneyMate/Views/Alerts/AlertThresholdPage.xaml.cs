@@ -1,4 +1,4 @@
-using MoneyMate.Views.Alerts;
+﻿using MoneyMate.Views.Alerts;
 
 namespace MoneyMate.Views.Alerts
 {

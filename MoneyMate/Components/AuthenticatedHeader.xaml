@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MoneyMate.Components.AuthenticatedHeader"
+             x:Name="this">
+
+    <Border BackgroundColor="{StaticResource BackgroundDark}"
+            Padding="16,12">
+        <Grid ColumnDefinitions="*,Auto">
+
+            <!-- Nom utilisateur -->
+            <HorizontalStackLayout Spacing="10"
+                                   VerticalOptions="Center">
+                <Image Source="money_mate_icon.png"
+                       WidthRequest="28"
+                       HeightRequest="28"
+                       VerticalOptions="Center" />
+                <Label Text="{Binding Source={x:Reference this}, Path=UserName}"
+                       FontSize="16"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextLight}"
+                       VerticalOptions="Center" />
+            </HorizontalStackLayout>
+
+            <!-- Bouton deconnexion -->
+            <Button Grid.Column="1"
+                    Text="D&#233;connexion"
+                    Command="{Binding Source={x:Reference this}, Path=LogoutCommand}"
+                    BackgroundColor="Transparent"
+                    TextColor="{StaticResource PrimaryLight}"
+                    FontSize="13"
+                    BorderColor="{StaticResource PrimaryLight}"
+                    BorderWidth="1"
+                    CornerRadius="6"
+                    Padding="10,5" />
+
+        </Grid>
+    </Border>
+
+</ContentView>

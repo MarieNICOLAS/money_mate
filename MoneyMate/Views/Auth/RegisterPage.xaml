@@ -1,13 +1,146 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
                 x:Class="MoneyMate.Views.Auth.RegisterPage"
                 Title="Inscription">
-    <VerticalStackLayout Spacing="20" Padding="30">
-        <Label 
-            Text="Page d'Inscription"
-            Style="{StaticResource PageTitle}"
-            HorizontalOptions="Center" />
-    </VerticalStackLayout>
+
+    <views:BasePage.PageContent>
+        <ScrollView>
+            <VerticalStackLayout Padding="30"
+                                 Spacing="15">
+                <VerticalStackLayout.MaximumWidthRequest>
+                    <OnIdiom x:TypeArguments="x:Double"
+                             Phone="10000"
+                             Tablet="500"
+                             Desktop="500" />
+                </VerticalStackLayout.MaximumWidthRequest>
+                <VerticalStackLayout.HorizontalOptions>
+                    <OnIdiom x:TypeArguments="LayoutOptions"
+                             Phone="Fill"
+                             Tablet="Center"
+                             Desktop="Center" />
+                </VerticalStackLayout.HorizontalOptions>
+
+                <Label Text="Inscription"
+                       FontSize="24"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource Primary}"
+                       HorizontalOptions="Center" />
+
+                <!-- NOM -->
+                <Label Text="Nom complet" Style="{StaticResource FormLabel}" />
+                <Border x:Name="UsernameBorder"
+                        Style="{StaticResource InputContainer}">
+                    <Entry x:Name="UsernameEntry"
+                           Placeholder="Pseudo"
+                           Style="{StaticResource EntryForm}"
+                           TextChanged="OnUsernameTextChanged" />
+                </Border>
+                <Label x:Name="UsernameErrorLabel"
+                       Text="Le pseudo doit contenir au moins 3 caracteres"
+                       TextColor="{StaticResource Error}"
+                       FontSize="12"
+                       Margin="4,-8,0,0"
+                       IsVisible="False" />
+
+                <!-- EMAIL -->
+                <Label Text="Email" Style="{StaticResource FormLabel}" />
+                <Border x:Name="EmailBorder"
+                        Style="{StaticResource InputContainer}">
+                    <Entry x:Name="EmailEntry"
+                           Placeholder="Adresse e-mail"
+                           Keyboard="Email"
+                           Style="{StaticResource EntryForm}"
+                           TextChanged="OnEmailTextChanged" />
+                </Border>
+                <Label x:Name="EmailErrorLabel"
+                       Text="Format d'email invalide"
+                       TextColor="{StaticResource Error}"
+                       FontSize="12"
+                       Margin="4,-8,0,0"
+                       IsVisible="False" />
+                <Label x:Name="EmailTakenLabel"
+                       Text="Cet email est deja utilise"
+                       TextColor="{StaticResource Error}"
+                       FontSize="12"
+                       Margin="4,-8,0,0"
+                       IsVisible="False" />
+
+                <!-- MOT DE PASSE -->
+                <Label Text="Mot de passe" Style="{StaticResource FormLabel}" />
+                <Border x:Name="PasswordBorder"
+                        Style="{StaticResource InputContainer}">
+                    <Grid ColumnDefinitions="*,Auto"
+                          VerticalOptions="Center">
+                        <Entry x:Name="PasswordEntry"
+                               Placeholder="Mot de passe"
+                               IsPassword="True"
+                               Style="{StaticResource EntryForm}"
+                               TextChanged="OnPasswordTextChanged" />
+                        <Label x:Name="EyeIcon"
+                               Grid.Column="1"
+                               Text="{StaticResource IconEyeOpen}"
+                               FontFamily="MaterialIcons"
+                               FontSize="22"
+                               TextColor="{StaticResource Secondary}"
+                               VerticalOptions="Center"
+                               Margin="5,0">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnTogglePasswordVisibility" />
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </Grid>
+                </Border>
+
+                <!-- Barre de force -->
+                <Grid x:Name="StrengthBarGrid"
+                      ColumnDefinitions="*,*,*,*"
+                      ColumnSpacing="4"
+                      IsVisible="False">
+                    <BoxView x:Name="Bar1" CornerRadius="4" HeightRequest="5" BackgroundColor="#EEEEEE" />
+                    <BoxView x:Name="Bar2" CornerRadius="4" HeightRequest="5" BackgroundColor="#EEEEEE" Grid.Column="1" />
+                    <BoxView x:Name="Bar3" CornerRadius="4" HeightRequest="5" BackgroundColor="#EEEEEE" Grid.Column="2" />
+                    <BoxView x:Name="Bar4" CornerRadius="4" HeightRequest="5" BackgroundColor="#EEEEEE" Grid.Column="3" />
+                </Grid>
+
+                <!-- Label force -->
+                <Label x:Name="StrengthLabel"
+                       FontSize="12"
+                       HorizontalOptions="End"
+                       IsVisible="False" />
+
+                <!-- Criteres -->
+                <VerticalStackLayout x:Name="CriteriaPanel"
+                                     Spacing="4"
+                                     IsVisible="False">
+                    <Label x:Name="CritLength"  FontSize="12" />
+                    <Label x:Name="CritUpper"   FontSize="12" />
+                    <Label x:Name="CritDigit"   FontSize="12" />
+                    <Label x:Name="CritSpecial" FontSize="12" />
+                </VerticalStackLayout>
+
+                <Button Text="S'inscrire"
+                        Style="{StaticResource PrimaryButton}" />
+
+                <Button Text="Retour"
+                        Style="{StaticResource OutlineButton}"
+                        Clicked="OnBackClicked" />
+
+                <!-- Lien connexion -->
+                <HorizontalStackLayout HorizontalOptions="Center">
+                    <Label Text="Deja un compte ? " />
+                    <Label Text="Se connecter"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource Primary}">
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnGoToLoginTapped" />
+                        </Label.GestureRecognizers>
+                    </Label>
+                </HorizontalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </views:BasePage.PageContent>
+
 </views:BasePage>

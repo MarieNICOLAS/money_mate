@@ -1,49 +1,33 @@
-﻿using MoneyMate.Data.Context;
-using MoneyMate.Helpers;
+﻿using MoneyMate.Helpers;
+using MoneyMate.Views;
 
 namespace MoneyMate
 {
-    public partial class MainPage : ContentPage
+    /// <summary>
+    /// Page d'accueil de l'application.
+    /// Point d'entrée pour la connexion et l'inscription.
+    /// </summary>
+    public partial class MainPage : BasePage
     {
-        int count = 0;
-
         public MainPage()
         {
             InitializeComponent();
         }
 
-        protected override void OnAppearing()
+        /// <summary>
+        /// Redirige vers la page de connexion.
+        /// </summary>
+        private async void OnLoginClicked(object sender, EventArgs e)
         {
-            base.OnAppearing();
-            TestDatabase();
+            await Shell.Current.GoToAsync("//LoginPage");
         }
 
-        private void TestDatabase()
+        /// <summary>
+        /// Redirige vers la page d'inscription.
+        /// </summary>
+        private async void OnSignupClicked(object sender, EventArgs e)
         {
-            try
-            {
-                bool dbOk = DatabaseTestHelper.TestDatabaseConfiguration();
-                CounterBtn.Text = dbOk ? "[OK] DB OK" : "[X] Erreur DB";
-
-                System.Diagnostics.Debug.WriteLine(dbOk ? "Base de donnees initialisee avec succes" : "Erreur lors de l'initialisation de la DB");
-            }
-            catch (Exception ex)
-            {
-                CounterBtn.Text = "[X] Erreur DB";
-                System.Diagnostics.Debug.WriteLine($"Erreur: {ex.Message}");
-            }
-        }
-
-        private void OnCounterClicked(object sender, EventArgs e)
-        {
-            count++;
-
-            if (count == 1)
-                CounterBtn.Text = $"Clicked {count} time";
-            else
-                CounterBtn.Text = $"Clicked {count} times";
-
-            SemanticScreenReader.Announce(CounterBtn.Text);
+            await Shell.Current.GoToAsync("//RegisterPage");
         }
     }
 }

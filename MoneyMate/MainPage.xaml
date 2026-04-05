@@ -1,39 +1,59 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="MoneyMate.MainPage"
-             BackgroundColor="{StaticResource BackgroundColor}">
+<views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                xmlns:views="clr-namespace:MoneyMate.Views"
+                x:Class="MoneyMate.MainPage">
 
-    <ScrollView>
-        <VerticalStackLayout
-            Padding="30,0"
-            Spacing="25">
-            <Image
-                Source="dotnet_bot.png"
-                HeightRequest="185"
-                Aspect="AspectFit"
-                SemanticProperties.Description="dot net bot in a hovercraft number nine" />
+    <views:BasePage.PageContent>
+        <ScrollView>
+            <VerticalStackLayout VerticalOptions="Center"
+                                 Spacing="0"
+                                 Padding="30,40">
+                <VerticalStackLayout.MaximumWidthRequest>
+                    <OnIdiom x:TypeArguments="x:Double"
+                             Phone="10000"
+                             Tablet="500"
+                             Desktop="500" />
+                </VerticalStackLayout.MaximumWidthRequest>
+                <VerticalStackLayout.HorizontalOptions>
+                    <OnIdiom x:TypeArguments="LayoutOptions"
+                             Phone="Fill"
+                             Tablet="Center"
+                             Desktop="Center" />
+                </VerticalStackLayout.HorizontalOptions>
 
-            <Label
-                Text="Money Mate"
-                Style="{StaticResource PageTitle}"
-                HorizontalOptions="Center"
-                SemanticProperties.HeadingLevel="Level1" />
+                <Image Source="money_mate_icon.png"
+                       WidthRequest="90"
+                       HeightRequest="90"
+                       HorizontalOptions="Center"
+                       Margin="0,0,0,20" />
 
-            <Label
-                Text="Application de suivi des depenses"
-                Style="{StaticResource BodyText}"
-                HorizontalOptions="Center"
-                SemanticProperties.HeadingLevel="Level2" />
+                <Label Text="MoneyMate"
+                       FontSize="32"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextDark}"
+                       HorizontalOptions="Center"
+                       Margin="0,0,0,8" />
 
-            <Button
-                x:Name="CounterBtn"
-                Text="Click me" 
-                Style="{StaticResource PrimaryButton}"
-                SemanticProperties.Hint="Counts the number of times you click"
-                Clicked="OnCounterClicked"
-                HorizontalOptions="Fill" />
-        </VerticalStackLayout>
-    </ScrollView>
+                <Label Text="Reprends le controle&#10;de tes finances."
+                       FontSize="18"
+                       TextColor="{StaticResource Primary}"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center"
+                       LineHeight="1.4"
+                       Margin="0,0,0,48" />
 
-</ContentPage>
+                <VerticalStackLayout Spacing="12" HorizontalOptions="Fill">
+                    <Button Text="Se connecter"
+                            Clicked="OnLoginClicked"
+                            Style="{StaticResource PrimaryButton}" />
+                    <Button Text="S'inscrire"
+                            Clicked="OnSignupClicked"
+                            Style="{StaticResource OutlineButton}" />
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </views:BasePage.PageContent>
+
+</views:BasePage>

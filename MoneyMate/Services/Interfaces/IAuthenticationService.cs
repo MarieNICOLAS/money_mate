@@ -1,4 +1,4 @@
-namespace MoneyMate.Services.Interfaces
+ï»¿namespace MoneyMate.Services.Interfaces
 {
     /// <summary>
     /// Interface pour le service d authentification
@@ -51,7 +51,7 @@ namespace MoneyMate.Services.Interfaces
         /// <summary>
         /// Valide la force d un mot de passe
         /// </summary>
-        /// <param name="password">Mot de passe à valider</param>
+        /// <param name="password">Mot de passe ï¿½ valider</param>
         /// <returns>True si le mot de passe est valide</returns>
         bool ValidatePasswordStrength(string password);
     }

@@ -1,4 +1,4 @@
-using MoneyMate.Views.Dashboard;
+﻿using MoneyMate.Views.Dashboard;
 
 namespace MoneyMate.Views.Dashboard
 {

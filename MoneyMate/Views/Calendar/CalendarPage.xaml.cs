@@ -1,4 +1,4 @@
-using MoneyMate.Views;
+﻿using MoneyMate.Views;
 
 namespace MoneyMate.Views.Calendar
 {

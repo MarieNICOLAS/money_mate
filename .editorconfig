@@ -1,0 +1,13 @@
+root = true
+
+[*]
+charset = utf-8-bom
+end_of_line = crlf
+indent_style = space
+insert_final_newline = true
+
+[*.cs]
+indent_size = 4
+
+[*.xaml]
+indent_size = 4

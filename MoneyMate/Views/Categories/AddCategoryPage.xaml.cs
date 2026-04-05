@@ -1,4 +1,4 @@
-using MoneyMate.Views.Categories;
+﻿using MoneyMate.Views.Categories;
 
 namespace MoneyMate.Views.Categories
 {

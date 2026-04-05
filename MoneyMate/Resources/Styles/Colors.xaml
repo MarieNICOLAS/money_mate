@@ -1,38 +1,30 @@
 ﻿<?xml version="1.0" encoding="UTF-8" ?>
-<ResourceDictionary 
-    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+<ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
 
-    <!-- Charte Graphique Money Mate -->
-    
-    <!-- Couleur Primaire - Bleu-gris stabilité -->
-    <Color x:Key="Primary">#6B7A8F</Color>
-    <Color x:Key="PrimaryDark">#4A5568</Color>
-    <Color x:Key="PrimaryLight">#8B9AAF</Color>
-    
-    <!-- Couleur Secondaire - Peach chaleureux -->
-    <Color x:Key="Secondary">#F6B092</Color>
-    <Color x:Key="SecondaryDark">#E89F7A</Color>
-    <Color x:Key="SecondaryLight">#F9C8AD</Color>
-    
-    <!-- Couleur Tertiire - Rose doux alertes -->
-    <Color x:Key="Tertiary">#E58DA3</Color>
-    <Color x:Key="TertiaryDark">#D67589</Color>
-    <Color x:Key="TertiaryLight">#EFA5B7</Color>
-    
-    <!-- Couleurs de fond -->
-    <Color x:Key="BackgroundColor">#FFF7F0</Color>
-    <Color x:Key="CardBackground">#FFFFFF</Color>
-    
-    <!-- Couleurs texte -->
-    <Color x:Key="TextPrimary">#2D3748</Color>
-    <Color x:Key="TextSecondary">#718096</Color>
-    <Color x:Key="TextLight">#A0AEC0</Color>
-    
-    <!-- Couleurs système -->
-    <Color x:Key="Success">#48BB78</Color>
-    <Color x:Key="Warning">#ED8936</Color>
-    <Color x:Key="Error">#F56565</Color>
-    <Color x:Key="Info">#4299E1</Color>
-    
+    <!-- 🎨 PALETTE MONEY MATE -->
+    <Color x:Key="Primary">#6793AE</Color>
+    <Color x:Key="PrimaryLight">#B6DCE3</Color>
+    <Color x:Key="Accent">#26658C</Color>
+    <Color x:Key="Secondary">#4F7993</Color>
+    <Color x:Key="BackgroundDark">#011C40</Color>
+    <Color x:Key="BackgroundLight">#F6FDFD</Color>
+    <Color x:Key="TextLight">#FFFFFF</Color>
+    <Color x:Key="TextMuted">#EAEAEA</Color>
+    <Color x:Key="TextDark">#222222</Color>
+
+    <Color x:Key="White">#FFFFFF</Color>
+    <Color x:Key="Black">#000000</Color>
+    <Color x:Key="Success">#6CC57C</Color>
+    <Color x:Key="Error">#E57373</Color>
+
+    <!-- 🔤 Material Icons Unicode -->
+    <x:String x:Key="IconHome">&#xE88A;</x:String>
+    <x:String x:Key="IconExpense">&#xE870;</x:String>
+    <x:String x:Key="IconBudget">&#xE263;</x:String>
+    <x:String x:Key="IconProfile">&#xE853;</x:String>
+    <x:String x:Key="IconLogout">&#xE9BA;</x:String>
+    <x:String x:Key="IconEyeOpen">&#xE8F4;</x:String>
+    <x:String x:Key="IconEyeClosed">&#xE8F5;</x:String>
+
 </ResourceDictionary>

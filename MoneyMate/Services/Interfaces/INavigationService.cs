@@ -1,4 +1,4 @@
-namespace MoneyMate.Services.Interfaces
+ï»¿namespace MoneyMate.Services.Interfaces
 {
     /// <summary>
     /// Service de navigation pour l architecture MVVM
@@ -11,12 +11,12 @@ namespace MoneyMate.Services.Interfaces
         Task NavigateToAsync(string route);
 
         /// <summary>
-        /// Navigue vers une route avec des paramètres
+        /// Navigue vers une route avec des paramï¿½tres
         /// </summary>
         Task NavigateToAsync(string route, Dictionary<string, object> parameters);
 
         /// <summary>
-        /// Retour en arrière
+        /// Retour en arriï¿½re
         /// </summary>
         Task GoBackAsync();
 

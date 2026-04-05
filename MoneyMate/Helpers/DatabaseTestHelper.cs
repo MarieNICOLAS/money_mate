@@ -1,4 +1,4 @@
-using MoneyMate.Data.Context;
+﻿using MoneyMate.Data.Context;
 using MoneyMate.Models;
 
 namespace MoneyMate.Helpers

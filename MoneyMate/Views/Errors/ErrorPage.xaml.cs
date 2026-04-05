@@ -1,4 +1,4 @@
-using MoneyMate.Views.Errors;
+﻿using MoneyMate.Views.Errors;
 
 namespace MoneyMate.Views.Errors
 {

@@ -1,11 +1,15 @@
 ﻿using Microsoft.Maui.Controls;
+using MoneyMate.ViewModels.Auth;
 
 namespace MoneyMate.Views.Auth
 {
     public partial class LoginPage : BasePage
     {
-        public LoginPage()
+        private LoginViewModel ViewModel => (LoginViewModel)BindingContext;
+
+        public LoginPage(LoginViewModel viewModel)
         {
+            SetViewModel(viewModel);
             InitializeComponent();
         }
 
@@ -13,15 +17,15 @@ namespace MoneyMate.Views.Auth
         {
             base.OnAppearing();
 
-            if (!RememberMeCheckBox.IsChecked)
+            ViewModel.LoadRememberMe();
+
+            if (!ViewModel.RememberMe)
             {
-                EmailEntry.Text          = string.Empty;
-                PasswordEntry.Text       = string.Empty;
+                ViewModel.Email    = string.Empty;
+                ViewModel.Password = string.Empty;
                 PasswordEntry.IsPassword = true;
                 EyeIcon.Text = Application.Current!.Resources["IconEyeOpen"] as string;
             }
-
-            ResetValidationUI();
         }
 
         private void OnTogglePasswordVisibility(object sender, TappedEventArgs e)
@@ -30,15 +34,6 @@ namespace MoneyMate.Views.Auth
             EyeIcon.Text = PasswordEntry.IsPassword
                 ? Application.Current!.Resources["IconEyeOpen"]  as string
                 : Application.Current!.Resources["IconEyeClosed"] as string;
-        }
-
-        private void ResetValidationUI()
-        {
-            EmailBorder.Stroke           = Colors.Transparent;
-            PasswordBorder.Stroke        = Colors.Transparent;
-            EmailErrorLabel.IsVisible    = false;
-            PasswordErrorLabel.IsVisible = false;
-            LoginErrorLabel.IsVisible    = false;
         }
 
         private async void OnGoToRegisterTapped(object sender, TappedEventArgs e)

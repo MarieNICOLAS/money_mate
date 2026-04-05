@@ -2,6 +2,7 @@
 <Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:MoneyMate"
+             xmlns:converters="clr-namespace:MoneyMate.Converters"
              x:Class="MoneyMate.App">
     <Application.Resources>
         <ResourceDictionary>
@@ -9,6 +10,14 @@
                 <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
                 <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- Converters globaux -->
+            <converters:AmountToColorConverter          x:Key="AmountToColorConverter" />
+            <converters:HexToColorConverter             x:Key="HexToColorConverter" />
+            <converters:BoolToVisibilityConverter       x:Key="BoolToVisibilityConverter" />
+            <converters:BudgetPercentageToColorConverter x:Key="BudgetPercentageToColorConverter" />
+            <converters:DateToRelativeLabelConverter    x:Key="DateToRelativeLabelConverter" />
+            <converters:SelectedColorToBorderConverter  x:Key="SelectedColorToBorderConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

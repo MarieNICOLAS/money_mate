@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:components="clr-namespace:MoneyMate.Components"
+             x:Class="MoneyMate.Components.ExpenseCard"
+             x:Name="this">
+
+    <Border BackgroundColor="{StaticResource BackgroundLight}"
+            Stroke="{StaticResource PrimaryLight}"
+            StrokeThickness="1"
+            Padding="14,12"
+            Margin="0,4">
+        <Border.StrokeShape>
+            <RoundRectangle CornerRadius="12" />
+        </Border.StrokeShape>
+
+        <Grid ColumnDefinitions="Auto,*,Auto"
+              RowDefinitions="Auto,Auto"
+              ColumnSpacing="12"
+              RowSpacing="4">
+
+            <!-- Icône catégorie -->
+            <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
+                    WidthRequest="42" HeightRequest="42"
+                    StrokeThickness="0"
+                    VerticalOptions="Center">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="21" />
+                </Border.StrokeShape>
+                <Border.Background>
+                    <SolidColorBrush Color="{Binding Source={x:Reference this}, Path=CategoryColor}" />
+                </Border.Background>
+                <Label Text="{Binding Source={x:Reference this}, Path=CategoryIcon}"
+                       FontSize="20"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+            </Border>
+
+            <!-- Nom catégorie -->
+            <Label Grid.Row="0" Grid.Column="1"
+                   Text="{Binding Source={x:Reference this}, Path=CategoryName}"
+                   FontSize="15"
+                   FontFamily="OpenSans"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource TextDark}"
+                   VerticalOptions="End"
+                   LineBreakMode="TailTruncation" />
+
+            <!-- Note -->
+            <Label Grid.Row="1" Grid.Column="1"
+                   Text="{Binding Source={x:Reference this}, Path=Note}"
+                   FontSize="12"
+                   FontFamily="OpenSans"
+                   TextColor="{StaticResource Secondary}"
+                   VerticalOptions="Start"
+                   LineBreakMode="TailTruncation" />
+
+            <!-- Montant -->
+            <components:AmountDisplay Grid.Row="0" Grid.Column="2"
+                                      Amount="{Binding Source={x:Reference this}, Path=Amount}"
+                                      Devise="{Binding Source={x:Reference this}, Path=Devise}"
+                                      FontSize="16"
+                                      TextColor="{StaticResource Accent}"
+                                      HorizontalOptions="End"
+                                      VerticalOptions="End" />
+
+            <!-- Date -->
+            <Label Grid.Row="1" Grid.Column="2"
+                   Text="{Binding Source={x:Reference this}, Path=ExpenseDate, StringFormat='{0:dd/MM/yyyy}'}"
+                   FontSize="11"
+                   FontFamily="OpenSans"
+                   TextColor="{StaticResource Secondary}"
+                   HorizontalOptions="End"
+                   VerticalOptions="Start" />
+
+        </Grid>
+
+        <Border.GestureRecognizers>
+            <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=TapCommand}" />
+        </Border.GestureRecognizers>
+
+    </Border>
+
+</ContentView>

@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MoneyMate.Components.EmptyStateView"
+             x:Name="this">
+
+    <VerticalStackLayout Spacing="16"
+                         Padding="30"
+                         VerticalOptions="Center"
+                         HorizontalOptions="Center">
+
+        <!-- Icône -->
+        <Label Text="{Binding Source={x:Reference this}, Path=Icon}"
+               FontSize="56"
+               HorizontalOptions="Center" />
+
+        <!-- Message -->
+        <Label Text="{Binding Source={x:Reference this}, Path=Message}"
+               FontSize="16"
+               FontFamily="OpenSans"
+               TextColor="{StaticResource Secondary}"
+               HorizontalTextAlignment="Center"
+               HorizontalOptions="Center" />
+
+        <!-- Bouton d'action (optionnel) -->
+        <Button Text="{Binding Source={x:Reference this}, Path=ActionText}"
+                Command="{Binding Source={x:Reference this}, Path=ActionCommand}"
+                IsVisible="{Binding Source={x:Reference this}, Path=HasAction}"
+                BackgroundColor="{StaticResource Primary}"
+                TextColor="{StaticResource TextLight}"
+                FontFamily="OpenSans"
+                FontSize="14"
+                CornerRadius="20"
+                Padding="24,10"
+                HorizontalOptions="Center" />
+
+    </VerticalStackLayout>
+
+</ContentView>

@@ -4,7 +4,7 @@
              x:Class="MoneyMate.Components.AuthenticatedFooter"
              x:Name="this">
 
-    <Border BackgroundColor="{StaticResource BackgroundDark}"
+    <Border BackgroundColor="{StaticResource Secondary}"
             Padding="8,10">
         <Grid ColumnDefinitions="*,*,*,*"
               HorizontalOptions="Fill">
@@ -14,11 +14,11 @@
                 <Label Text="{StaticResource IconHome}"
                        FontFamily="MaterialIcons"
                        FontSize="26"
-                       TextColor="{StaticResource TextMuted}"
+                       TextColor="{StaticResource TextLight}"
                        HorizontalOptions="Center" />
                 <Label Text="Accueil"
                        FontSize="11"
-                       TextColor="{StaticResource TextMuted}"
+                       TextColor="{StaticResource TextLight}"
                        HorizontalOptions="Center" />
                 <VerticalStackLayout.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoHomeCommand}" />
@@ -30,11 +30,11 @@
                 <Label Text="{StaticResource IconExpense}"
                        FontFamily="MaterialIcons"
                        FontSize="26"
-                       TextColor="{StaticResource TextMuted}"
+                       TextColor="{StaticResource TextLight}"
                        HorizontalOptions="Center" />
-                <Label Text="D�penses"
+                <Label Text="Dépenses"
                        FontSize="11"
-                       TextColor="{StaticResource TextMuted}"
+                       TextColor="{StaticResource TextLight}"
                        HorizontalOptions="Center" />
                 <VerticalStackLayout.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoExpensesCommand}" />
@@ -46,11 +46,11 @@
                 <Label Text="{StaticResource IconBudget}"
                        FontFamily="MaterialIcons"
                        FontSize="26"
-                       TextColor="{StaticResource TextMuted}"
+                       TextColor="{StaticResource TextLight}"
                        HorizontalOptions="Center" />
                 <Label Text="Budget"
                        FontSize="11"
-                       TextColor="{StaticResource TextMuted}"
+                       TextColor="{StaticResource TextLight}"
                        HorizontalOptions="Center" />
                 <VerticalStackLayout.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoBudgetCommand}" />
@@ -62,11 +62,11 @@
                 <Label Text="{StaticResource IconProfile}"
                        FontFamily="MaterialIcons"
                        FontSize="26"
-                       TextColor="{StaticResource TextMuted}"
+                       TextColor="{StaticResource TextLight}"
                        HorizontalOptions="Center" />
                 <Label Text="Profil"
                        FontSize="11"
-                       TextColor="{StaticResource TextMuted}"
+                       TextColor="{StaticResource TextLight}"
                        HorizontalOptions="Center" />
                 <VerticalStackLayout.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoProfileCommand}" />

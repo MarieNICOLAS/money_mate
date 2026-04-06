@@ -4,16 +4,16 @@
              x:Class="MoneyMate.Components.AuthenticatedHeader"
              x:Name="this">
 
-    <Border BackgroundColor="{StaticResource BackgroundDark}"
+    <Border BackgroundColor="{StaticResource PrimaryLight}"
             Padding="16,12">
         <Grid ColumnDefinitions="*,Auto">
 
-            <!-- Nom utilisateur -->
+            <!-- Logo + nom utilisateur -->
             <HorizontalStackLayout Spacing="10"
                                    VerticalOptions="Center">
                 <Image Source="money_mate_icon.png"
-                       WidthRequest="28"
-                       HeightRequest="28"
+                       WidthRequest="32"
+                       HeightRequest="32"
                        VerticalOptions="Center" />
                 <Label Text="{Binding Source={x:Reference this}, Path=UserName}"
                        FontSize="16"
@@ -27,9 +27,9 @@
                     Text="D&#233;connexion"
                     Command="{Binding Source={x:Reference this}, Path=LogoutCommand}"
                     BackgroundColor="Transparent"
-                    TextColor="{StaticResource PrimaryLight}"
+                    TextColor="{StaticResource TextLight}"
                     FontSize="13"
-                    BorderColor="{StaticResource PrimaryLight}"
+                    BorderColor="{StaticResource TextLight}"
                     BorderWidth="1"
                     CornerRadius="6"
                     Padding="10,5" />

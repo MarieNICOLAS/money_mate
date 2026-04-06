@@ -16,6 +16,9 @@ namespace MoneyMate.Views
             HorizontalOptions = LayoutOptions.Fill
         };
 
+        private readonly Header _header = new();
+        private readonly Footer _footer = new();
+
         /// <summary>
         /// Contenu central de la page (entre le header et le footer).
         /// Utilisé par les pages filles via XAML ou code-behind.
@@ -28,10 +31,44 @@ namespace MoneyMate.Views
                 null,
                 propertyChanged: OnPageContentChanged);
 
+        /// <summary>
+        /// Affiche ou masque le header public.
+        /// </summary>
+        public static readonly BindableProperty ShowHeaderProperty =
+            BindableProperty.Create(
+                nameof(ShowHeader),
+                typeof(bool),
+                typeof(BasePage),
+                true,
+                propertyChanged: (b, _, n) => ((BasePage)b)._header.IsVisible = (bool)n);
+
+        /// <summary>
+        /// Affiche ou masque le footer public.
+        /// </summary>
+        public static readonly BindableProperty ShowFooterProperty =
+            BindableProperty.Create(
+                nameof(ShowFooter),
+                typeof(bool),
+                typeof(BasePage),
+                true,
+                propertyChanged: (b, _, n) => ((BasePage)b)._footer.IsVisible = (bool)n);
+
         public View? PageContent
         {
             get => (View?)GetValue(PageContentProperty);
             set => SetValue(PageContentProperty, value);
+        }
+
+        public bool ShowHeader
+        {
+            get => (bool)GetValue(ShowHeaderProperty);
+            set => SetValue(ShowHeaderProperty, value);
+        }
+
+        public bool ShowFooter
+        {
+            get => (bool)GetValue(ShowFooterProperty);
+            set => SetValue(ShowFooterProperty, value);
         }
 
         private static void OnPageContentChanged(BindableObject bindable, object oldValue, object newValue)
@@ -42,9 +79,6 @@ namespace MoneyMate.Views
 
         protected BasePage()
         {
-            var header = new Header();
-            var footer = new Footer();
-
             var grid = new Grid
             {
                 RowDefinitions =
@@ -55,13 +89,13 @@ namespace MoneyMate.Views
                 }
             };
 
-            Grid.SetRow(header, 0);
+            Grid.SetRow(_header, 0);
             Grid.SetRow(_contentSlot, 1);
-            Grid.SetRow(footer, 2);
+            Grid.SetRow(_footer, 2);
 
-            grid.Children.Add(header);
+            grid.Children.Add(_header);
             grid.Children.Add(_contentSlot);
-            grid.Children.Add(footer);
+            grid.Children.Add(_footer);
 
             Content = grid;
         }

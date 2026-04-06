@@ -1,15 +1,19 @@
 ﻿using Microsoft.Maui.Controls;
-
+using MoneyMate.ViewModels.Auth;
+   
 namespace MoneyMate.Views.Auth
 {
     public partial class RegisterPage : BasePage
     {
-        private static readonly Color ColorOk   = Color.FromArgb("#6CC57C");
-        private static readonly Color ColorFail = Color.FromArgb("#E57373");
-        private static readonly Color ColorGrey = Color.FromArgb("#EEEEEE");
+        private RegisterViewModel ViewModel => (RegisterViewModel)BindingContext;
 
-        public RegisterPage()
+        private static readonly Color ColorOk   = Color.FromArgb("#4CAF50");
+        private static readonly Color ColorFail = Color.FromArgb("#F44336");
+        private static readonly Color ColorGrey = Color.FromArgb("#9E9E9E");
+
+        public RegisterPage(RegisterViewModel viewModel)
         {
+            SetViewModel(viewModel);
             InitializeComponent();
         }
 
@@ -17,13 +21,12 @@ namespace MoneyMate.Views.Auth
         {
             base.OnAppearing();
 
-            UsernameEntry.Text       = string.Empty;
-            EmailEntry.Text          = string.Empty;
-            PasswordEntry.Text       = string.Empty;
-            PasswordEntry.IsPassword = true;
+            ViewModel.Username        = string.Empty;
+            ViewModel.Email           = string.Empty;
+            ViewModel.Password        = string.Empty;
+            ViewModel.ConfirmPassword = string.Empty;
+            PasswordEntry.IsPassword  = true;
             EyeIcon.Text = Application.Current!.Resources["IconEyeOpen"] as string;
-
-            ResetValidationUI();
         }
 
         // ── Validation email ───────────────────────────────────────────────────

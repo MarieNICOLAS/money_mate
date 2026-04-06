@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MoneyMate.Components.StatCard"
+             x:Name="this">
+
+    <Border Padding="16,14"
+            StrokeThickness="0"
+            Margin="0,4">
+        <Border.StrokeShape>
+            <RoundRectangle CornerRadius="14" />
+        </Border.StrokeShape>
+        <Border.Background>
+            <SolidColorBrush Color="{Binding Source={x:Reference this}, Path=CardColor}" />
+        </Border.Background>
+
+        <VerticalStackLayout Spacing="6">
+
+            <!-- Icône -->
+            <Label Text="{Binding Source={x:Reference this}, Path=Icon}"
+                   FontSize="28"
+                   HorizontalOptions="Start" />
+
+            <!-- Titre -->
+            <Label Text="{Binding Source={x:Reference this}, Path=Title}"
+                   FontSize="12"
+                   FontFamily="OpenSans"
+                   TextColor="{StaticResource TextLight}"
+                   Opacity="0.85"
+                   HorizontalOptions="Start" />
+
+            <!-- Valeur -->
+            <Label Text="{Binding Source={x:Reference this}, Path=Value}"
+                   FontSize="22"
+                   FontFamily="Lora"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource TextLight}"
+                   HorizontalOptions="Start" />
+
+        </VerticalStackLayout>
+
+    </Border>
+
+</ContentView>

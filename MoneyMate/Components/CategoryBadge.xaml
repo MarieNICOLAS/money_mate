@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MoneyMate.Components.CategoryBadge"
+             x:Name="this">
+
+    <Border StrokeThickness="0"
+            Padding="10,6"
+            HorizontalOptions="Start">
+        <Border.StrokeShape>
+            <RoundRectangle CornerRadius="16" />
+        </Border.StrokeShape>
+        <Border.Background>
+            <SolidColorBrush Color="{Binding Source={x:Reference this}, Path=CategoryColor}" />
+        </Border.Background>
+
+        <HorizontalStackLayout Spacing="6"
+                               VerticalOptions="Center">
+            <Label Text="{Binding Source={x:Reference this}, Path=CategoryIcon}"
+                   FontSize="16"
+                   TextColor="{StaticResource TextLight}"
+                   VerticalOptions="Center" />
+            <Label Text="{Binding Source={x:Reference this}, Path=CategoryName}"
+                   FontSize="13"
+                   FontFamily="OpenSans"
+                   TextColor="{StaticResource TextLight}"
+                   VerticalOptions="Center" />
+        </HorizontalStackLayout>
+    </Border>
+
+</ContentView>

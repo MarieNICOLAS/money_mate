@@ -1,0 +1,80 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:components="clr-namespace:MoneyMate.Components"
+             x:Class="MoneyMate.Components.BudgetProgressBar"
+             x:Name="this">
+
+    <Border BackgroundColor="{StaticResource BackgroundLight}"
+            Stroke="{StaticResource PrimaryLight}"
+            StrokeThickness="1"
+            Padding="14,12"
+            Margin="0,4">
+        <Border.StrokeShape>
+            <RoundRectangle CornerRadius="12" />
+        </Border.StrokeShape>
+
+        <VerticalStackLayout Spacing="8">
+
+            <!-- Ligne 1 : Catégorie + pourcentage -->
+            <Grid ColumnDefinitions="*,Auto">
+                <Label Grid.Column="0"
+                       Text="{Binding Source={x:Reference this}, Path=CategoryName}"
+                       FontSize="15"
+                       FontFamily="OpenSans"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextDark}"
+                       VerticalOptions="Center" />
+                <Label Grid.Column="1"
+                       Text="{Binding Source={x:Reference this}, Path=PercentageText}"
+                       FontSize="13"
+                       FontFamily="OpenSans"
+                       FontAttributes="Bold"
+                       TextColor="{Binding Source={x:Reference this}, Path=ProgressColor}"
+                       VerticalOptions="Center" />
+            </Grid>
+
+            <!-- Barre de progression -->
+            <Grid HeightRequest="10">
+                <!-- Fond -->
+                <Border BackgroundColor="#E8E8E8"
+                        StrokeThickness="0"
+                        HorizontalOptions="Fill">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="5" />
+                    </Border.StrokeShape>
+                </Border>
+                <!-- Progression -->
+                <Border x:Name="ProgressFill"
+                        StrokeThickness="0"
+                        HorizontalOptions="Start">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="5" />
+                    </Border.StrokeShape>
+                    <Border.Background>
+                        <SolidColorBrush Color="{Binding Source={x:Reference this}, Path=ProgressColor}" />
+                    </Border.Background>
+                </Border>
+            </Grid>
+
+            <!-- Ligne 2 : Dépensé / Budget -->
+            <Grid ColumnDefinitions="*,Auto">
+                <components:AmountDisplay Grid.Column="0"
+                                          Amount="{Binding Source={x:Reference this}, Path=SpentAmount}"
+                                          Devise="{Binding Source={x:Reference this}, Path=Devise}"
+                                          FontSize="13"
+                                          TextColor="{StaticResource Secondary}"
+                                          HorizontalOptions="Start" />
+                <components:AmountDisplay Grid.Column="1"
+                                          Amount="{Binding Source={x:Reference this}, Path=BudgetAmount}"
+                                          Devise="{Binding Source={x:Reference this}, Path=Devise}"
+                                          FontSize="13"
+                                          TextColor="{StaticResource TextDark}"
+                                          HorizontalOptions="End" />
+            </Grid>
+
+        </VerticalStackLayout>
+
+    </Border>
+
+</ContentView>

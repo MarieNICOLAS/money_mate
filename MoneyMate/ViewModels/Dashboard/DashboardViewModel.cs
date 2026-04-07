@@ -10,6 +10,8 @@ namespace MoneyMate.ViewModels.Dashboard
     public class DashboardViewModel : BaseViewModel
     {
         private readonly IAuthenticationService _authService;
+        private readonly IDialogService _dialogService;
+        private readonly INavigationService _navigationService;
         private string _userName = string.Empty;
 
         /// <summary>
@@ -34,16 +36,18 @@ namespace MoneyMate.ViewModels.Dashboard
         public ICommand GoBudgetCommand { get; }
         public ICommand GoProfileCommand { get; }
 
-        public DashboardViewModel(IAuthenticationService authService)
+        public DashboardViewModel(IAuthenticationService authService, IDialogService dialogService, INavigationService navigationService)
         {
             _authService = authService;
+            _dialogService = dialogService;
+            _navigationService = navigationService;
             Title = "Tableau de Bord";
 
             LogoutCommand     = new Command(async () => await LogoutAsync());
-            GoHomeCommand     = new Command(async () => await Shell.Current.GoToAsync("//DashboardPage"));
-            GoExpensesCommand = new Command(async () => await Shell.Current.GoToAsync("//ExpensesPage"));
-            GoBudgetCommand   = new Command(async () => await Shell.Current.GoToAsync("//BudgetPage"));
-            GoProfileCommand  = new Command(async () => await Shell.Current.GoToAsync("//ProfilePage"));
+            GoHomeCommand     = new Command(async () => await _navigationService.NavigateToAsync("//DashboardPage"));
+            GoExpensesCommand = new Command(async () => await _navigationService.NavigateToAsync("//ExpensesPage"));
+            GoBudgetCommand   = new Command(async () => await _navigationService.NavigateToAsync("//BudgetPage"));
+            GoProfileCommand  = new Command(async () => await _navigationService.NavigateToAsync("//ProfilePage"));
         }
 
         /// <summary>
@@ -60,7 +64,7 @@ namespace MoneyMate.ViewModels.Dashboard
         /// </summary>
         private async Task LogoutAsync()
         {
-            bool confirm = await Application.Current!.MainPage!.DisplayAlert(
+            bool confirm = await _dialogService.ShowConfirmationAsync(
                 "Déconnexion",
                 "Voulez-vous vraiment vous déconnecter ?",
                 "Oui", "Non");
@@ -70,10 +74,7 @@ namespace MoneyMate.ViewModels.Dashboard
 
             await _authService.LogoutAsync();
 
-            Preferences.Remove("remember_email");
-            Preferences.Set("remember_me", false);
-
-            await Shell.Current.GoToAsync("//MainPage");
+            await _navigationService.NavigateToAsync("//MainPage");
         }
     }
 }

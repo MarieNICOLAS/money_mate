@@ -9,6 +9,8 @@ namespace MoneyMate.ViewModels.Profile
     public class ChangePasswordViewModel : BaseViewModel
     {
         private readonly IAuthenticationService _authService;
+        private readonly IDialogService _dialogService;
+        private readonly INavigationService _navigationService;
 
         private string _userName = string.Empty;
         private string _oldPassword = string.Empty;
@@ -82,17 +84,19 @@ namespace MoneyMate.ViewModels.Profile
         public ICommand GoBudgetCommand { get; }
         public ICommand GoProfileCommand { get; }
 
-        public ChangePasswordViewModel(IAuthenticationService authService)
+        public ChangePasswordViewModel(IAuthenticationService authService, IDialogService dialogService, INavigationService navigationService)
         {
             _authService = authService;
+            _dialogService = dialogService;
+            _navigationService = navigationService;
             Title = "Changer le mot de passe";
 
             ChangePasswordCommand = new Command(async () => await ChangePasswordAsync(), CanChangePassword);
             LogoutCommand         = new Command(async () => await LogoutAsync());
-            GoHomeCommand         = new Command(async () => await Shell.Current.GoToAsync("//DashboardPage"));
-            GoExpensesCommand     = new Command(async () => await Shell.Current.GoToAsync("//ExpensesListPage"));
-            GoBudgetCommand       = new Command(async () => await Shell.Current.GoToAsync("//BudgetsOverviewPage"));
-            GoProfileCommand      = new Command(async () => await Shell.Current.GoToAsync("//ProfilePage"));
+            GoHomeCommand         = new Command(async () => await _navigationService.NavigateToAsync("//DashboardPage"));
+            GoExpensesCommand     = new Command(async () => await _navigationService.NavigateToAsync("//ExpensesListPage"));
+            GoBudgetCommand       = new Command(async () => await _navigationService.NavigateToAsync("//BudgetsOverviewPage"));
+            GoProfileCommand      = new Command(async () => await _navigationService.NavigateToAsync("//ProfilePage"));
         }
 
         public void LoadUser()
@@ -133,22 +137,31 @@ namespace MoneyMate.ViewModels.Profile
 
                 var user = _authService.GetCurrentUser();
                 if (user == null)
-                    return;
-
-                bool success = await _authService.ChangePasswordAsync(user.Id, OldPassword, NewPassword);
-
-                if (success)
                 {
-                    await Application.Current!.MainPage!.DisplayAlert(
+                    ErrorMessage   = "Aucun utilisateur connecté.";
+                    IsErrorVisible = true;
+                    return;
+                }
+
+                var result = await _authService.ChangePasswordAsync(user.Id, OldPassword, NewPassword);
+
+                if (result.IsSuccess)
+                {
+                    await _dialogService.ShowAlertAsync(
                         "Succès",
-                        "Votre mot de passe a été modifié avec succès.",
+                        string.IsNullOrWhiteSpace(result.Message)
+                            ? "Votre mot de passe a été modifié avec succès."
+                            : result.Message,
                         "OK");
 
-                    await Shell.Current.GoToAsync("//ProfilePage");
+                    await _navigationService.NavigateToAsync("//ProfilePage");
                 }
                 else
                 {
-                    ErrorMessage   = "L'ancien mot de passe est incorrect";
+                    ErrorMessage = string.IsNullOrWhiteSpace(result.Message)
+                        ? "Le changement de mot de passe a échoué."
+                        : result.Message;
+
                     IsErrorVisible = true;
                 }
             }
@@ -167,15 +180,14 @@ namespace MoneyMate.ViewModels.Profile
 
         private async Task LogoutAsync()
         {
-            bool confirm = await Application.Current!.MainPage!.DisplayAlert(
+            bool confirm = await _dialogService.ShowConfirmationAsync(
                 "Déconnexion", "Voulez-vous vraiment vous déconnecter ?", "Oui", "Non");
 
-            if (!confirm) return;
+            if (!confirm)
+                return;
 
             await _authService.LogoutAsync();
-            Preferences.Remove("remember_email");
-            Preferences.Set("remember_me", false);
-            await Shell.Current.GoToAsync("//MainPage");
+            await _navigationService.NavigateToAsync("//MainPage");
         }
     }
 }

@@ -19,6 +19,11 @@ namespace MoneyMate.Services.Interfaces
         Task<ServiceResult<List<Category>>> GetCustomCategoriesAsync(int userId);
 
         /// <summary>
+        /// Retourne les catégories inactives d'un utilisateur.
+        /// </summary>
+        Task<ServiceResult<List<Category>>> GetInactiveCategoriesAsync(int userId);
+
+        /// <summary>
         /// Retourne une catégorie accessible à un utilisateur.
         /// </summary>
         Task<ServiceResult<Category>> GetCategoryByIdAsync(int categoryId, int userId);
@@ -37,5 +42,25 @@ namespace MoneyMate.Services.Interfaces
         /// Supprime une catégorie personnalisée.
         /// </summary>
         Task<ServiceResult> DeleteCategoryAsync(int categoryId, int userId);
+
+        /// <summary>
+        /// Indique si une catégorie est utilisée par des données métier.
+        /// </summary>
+        Task<ServiceResult<bool>> IsCategoryInUseAsync(int categoryId, int userId);
+
+        /// <summary>
+        /// Indique si un nom de catégorie existe déjà pour l'utilisateur.
+        /// </summary>
+        Task<ServiceResult<bool>> CategoryNameExistsAsync(int userId, string categoryName, int? excludedCategoryId = null);
+
+        /// <summary>
+        /// Active ou désactive une catégorie personnalisée.
+        /// </summary>
+        Task<ServiceResult<Category>> SetCategoryActiveStateAsync(int categoryId, int userId, bool isActive);
+
+        /// <summary>
+        /// Met à jour l'ordre d'affichage des catégories personnalisées.
+        /// </summary>
+        Task<ServiceResult> ReorderCategoriesAsync(int userId, IReadOnlyList<int> orderedCategoryIds);
     }
 }

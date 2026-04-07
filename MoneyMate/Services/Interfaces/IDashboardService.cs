@@ -12,5 +12,10 @@ namespace MoneyMate.Services.Interfaces
         /// Retourne le résumé principal du tableau de bord.
         /// </summary>
         Task<ServiceResult<DashboardSummary>> GetDashboardSummaryAsync(int userId);
+
+        /// <summary>
+        /// Retourne les catégories les plus dépensières du mois courant.
+        /// </summary>
+        Task<ServiceResult<List<DashboardCategorySpending>>> GetTopSpendingCategoriesAsync(int userId, int topCount = 5);
     }
 }

@@ -2,6 +2,7 @@
 using MoneyMate.Helpers;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
+using MoneyMate.Services.Models;
 using MoneyMate.Services.Results;
 
 namespace MoneyMate.Services.Implementations
@@ -27,7 +28,7 @@ namespace MoneyMate.Services.Implementations
 
         public async Task<ServiceResult<List<Budget>>> GetBudgetsAsync(int userId)
         {
-            return await Task.Run(() =>
+            return await Task.Run(async () =>
             {
                 try
                 {
@@ -47,7 +48,7 @@ namespace MoneyMate.Services.Implementations
 
         public async Task<ServiceResult<Budget>> GetBudgetByIdAsync(int budgetId, int userId)
         {
-            return await Task.Run(() =>
+            return await Task.Run(async () =>
             {
                 try
                 {
@@ -79,6 +80,13 @@ namespace MoneyMate.Services.Implementations
                     ServiceResult validationResult = ValidateBudget(budget);
                     if (!validationResult.IsSuccess)
                         return ServiceResult<Budget>.Failure(validationResult.ErrorCode, validationResult.Message);
+
+                    ServiceResult<bool> conflictResult = HasActiveBudgetConflictInternal(budget);
+                    if (!conflictResult.IsSuccess)
+                        return ServiceResult<Budget>.Failure(conflictResult.ErrorCode, conflictResult.Message);
+
+                    if (conflictResult.Data)
+                        return ServiceResult<Budget>.Failure("BUDGET_CONFLICT", "Un budget actif existe déjà pour cette catégorie sur une période qui se chevauche.");
 
                     budget.PeriodType = budget.PeriodType.Trim();
                     budget.CreatedAt = DateTime.UtcNow;
@@ -113,6 +121,13 @@ namespace MoneyMate.Services.Implementations
                     ServiceResult validationResult = ValidateBudget(budget);
                     if (!validationResult.IsSuccess)
                         return ServiceResult<Budget>.Failure(validationResult.ErrorCode, validationResult.Message);
+
+                    ServiceResult<bool> conflictResult = HasActiveBudgetConflictInternal(budget, budget.Id);
+                    if (!conflictResult.IsSuccess)
+                        return ServiceResult<Budget>.Failure(conflictResult.ErrorCode, conflictResult.Message);
+
+                    if (conflictResult.Data)
+                        return ServiceResult<Budget>.Failure("BUDGET_CONFLICT", "Un budget actif existe déjà pour cette catégorie sur une période qui se chevauche.");
 
                     int updatedRows = _dbContext.UpdateBudget(budget);
                     if (updatedRows != 1)
@@ -194,6 +209,60 @@ namespace MoneyMate.Services.Implementations
             return ServiceResult<decimal>.Success(percentage);
         }
 
+        public async Task<ServiceResult<BudgetConsumptionSummary>> GetBudgetConsumptionSummaryAsync(int budgetId, int userId)
+        {
+            ServiceResult<decimal> consumedAmountResult = await GetConsumedAmountAsync(budgetId, userId);
+            if (!consumedAmountResult.IsSuccess)
+                return ServiceResult<BudgetConsumptionSummary>.Failure(consumedAmountResult.ErrorCode, consumedAmountResult.Message);
+
+            Budget? budget = _dbContext.GetBudgetById(budgetId, userId);
+            if (budget == null)
+                return ServiceResult<BudgetConsumptionSummary>.Failure("BUDGET_NOT_FOUND", "Budget introuvable.");
+
+            decimal consumedAmount = consumedAmountResult.Data;
+            decimal consumedPercentage = budget.CalculateBudgetPercentage(consumedAmount);
+            decimal remainingAmount = budget.Amount - consumedAmount;
+
+            BudgetConsumptionSummary summary = new()
+            {
+                Budget = budget,
+                ConsumedAmount = consumedAmount,
+                ConsumedPercentage = consumedPercentage,
+                RemainingAmount = remainingAmount,
+                IsExceeded = consumedAmount > budget.Amount
+            };
+
+            return ServiceResult<BudgetConsumptionSummary>.Success(summary);
+        }
+
+        public async Task<ServiceResult<List<Budget>>> GetBudgetsByCategoryAsync(int userId, int categoryId)
+        {
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    if (userId <= 0 || categoryId <= 0)
+                        return ServiceResult<List<Budget>>.Failure("BUDGET_INVALID_INPUT", "Les informations demandées sont invalides.");
+
+                    List<Budget> budgets = _dbContext.GetBudgetsByUserId(userId)
+                        .Where(budget => budget.CategoryId == categoryId)
+                        .OrderByDescending(budget => budget.StartDate)
+                        .ThenByDescending(budget => budget.CreatedAt)
+                        .ToList();
+
+                    return ServiceResult<List<Budget>>.Success(budgets);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Erreur GetBudgetsByCategoryAsync : {ex.Message}");
+                    return ServiceResult<List<Budget>>.Failure("BUDGET_UNEXPECTED_ERROR", "Une erreur est survenue lors du chargement des budgets.");
+                }
+            });
+        }
+
+        public async Task<ServiceResult<bool>> HasActiveBudgetConflictAsync(Budget budget, int? excludedBudgetId = null)
+            => await Task.Run(() => HasActiveBudgetConflictInternal(budget, excludedBudgetId));
+
         /// <summary>
         /// Valide les données métier d'un budget.
         /// </summary>
@@ -215,6 +284,45 @@ namespace MoneyMate.Services.Implementations
                 return ServiceResult.Failure("BUDGET_INVALID_PERIOD", "La période du budget est invalide.");
 
             return ServiceResult.Success();
+        }
+
+        /// <summary>
+        /// Indique si deux périodes se chevauchent.
+        /// </summary>
+        private static bool PeriodsOverlap(DateTime start1, DateTime end1, DateTime start2, DateTime end2)
+            => start1 <= end2 && start2 <= end1;
+
+        /// <summary>
+        /// Vérifie si un budget actif entre en conflit avec un autre budget existant.
+        /// </summary>
+        private ServiceResult<bool> HasActiveBudgetConflictInternal(Budget budget, int? excludedBudgetId = null)
+        {
+            try
+            {
+                ArgumentNullException.ThrowIfNull(budget);
+
+                if (budget.UserId <= 0 || budget.CategoryId <= 0)
+                    return ServiceResult<bool>.Failure("BUDGET_INVALID_INPUT", "Les informations du budget sont invalides.");
+
+                DateTime startDate = budget.StartDate;
+                DateTime endDate = budget.EndDate ?? DateTime.MaxValue;
+
+                bool hasConflict = _dbContext.GetBudgetsByUserId(budget.UserId)
+                    .Where(existingBudget => existingBudget.CategoryId == budget.CategoryId)
+                    .Where(existingBudget => !excludedBudgetId.HasValue || existingBudget.Id != excludedBudgetId.Value)
+                    .Any(existingBudget => PeriodsOverlap(
+                        startDate,
+                        endDate,
+                        existingBudget.StartDate,
+                        existingBudget.EndDate ?? DateTime.MaxValue));
+
+                return ServiceResult<bool>.Success(hasConflict);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erreur HasActiveBudgetConflictInternal : {ex.Message}");
+                return ServiceResult<bool>.Failure("BUDGET_UNEXPECTED_ERROR", "Une erreur est survenue lors de la vérification des conflits de budget.");
+            }
         }
     }
 }

@@ -29,5 +29,30 @@
         /// Nombre d'alertes actives.
         /// </summary>
         public int ActiveAlertsCount { get; set; }
+
+        /// <summary>
+        /// Nombre d'alertes actuellement déclenchées.
+        /// </summary>
+        public int TriggeredAlertsCount { get; set; }
+
+        /// <summary>
+        /// Total des dépenses du mois précédent.
+        /// </summary>
+        public decimal PreviousMonthExpenses { get; set; }
+
+        /// <summary>
+        /// Différence de dépenses entre le mois courant et le mois précédent.
+        /// </summary>
+        public decimal ExpensesDeltaFromPreviousMonth { get; set; }
+
+        /// <summary>
+        /// Nombre de budgets à risque ou dépassés.
+        /// </summary>
+        public int BudgetsAtRiskCount { get; set; }
+
+        /// <summary>
+        /// Top catégories du mois courant par dépense.
+        /// </summary>
+        public List<DashboardCategorySpending> TopCategories { get; set; } = [];
     }
 }

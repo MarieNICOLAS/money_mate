@@ -37,5 +37,15 @@ namespace MoneyMate.Services.Interfaces
         /// Supprime une charge fixe.
         /// </summary>
         Task<ServiceResult> DeleteFixedChargeAsync(int fixedChargeId, int userId);
+
+        /// <summary>
+        /// Active ou désactive une charge fixe.
+        /// </summary>
+        Task<ServiceResult<FixedCharge>> SetFixedChargeActiveStateAsync(int fixedChargeId, int userId, bool isActive);
+
+        /// <summary>
+        /// Génère les dépenses récurrentes attendues jusqu'à une date donnée.
+        /// </summary>
+        Task<ServiceResult<List<Expense>>> GenerateExpensesUntilAsync(int userId, DateTime untilDate);
     }
 }

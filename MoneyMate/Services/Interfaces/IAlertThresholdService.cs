@@ -1,4 +1,5 @@
 ﻿using MoneyMate.Models;
+using MoneyMate.Services.Models;
 using MoneyMate.Services.Results;
 
 namespace MoneyMate.Services.Interfaces
@@ -37,5 +38,20 @@ namespace MoneyMate.Services.Interfaces
         /// Retourne les alertes dont le seuil est atteint.
         /// </summary>
         Task<ServiceResult<List<AlertThreshold>>> GetTriggeredAlertsAsync(int userId);
+
+        /// <summary>
+        /// Évalue un seuil d'alerte et retourne son état détaillé.
+        /// </summary>
+        Task<ServiceResult<AlertTriggerInfo>> EvaluateAlertAsync(int alertThresholdId, int userId);
+
+        /// <summary>
+        /// Retourne les alertes d'un type donné.
+        /// </summary>
+        Task<ServiceResult<List<AlertThreshold>>> GetAlertThresholdsByTypeAsync(int userId, string alertType);
+
+        /// <summary>
+        /// Active ou désactive un seuil d'alerte.
+        /// </summary>
+        Task<ServiceResult<AlertThreshold>> SetAlertThresholdActiveStateAsync(int alertThresholdId, int userId, bool isActive);
     }
 }

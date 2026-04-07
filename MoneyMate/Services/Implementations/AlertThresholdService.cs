@@ -1,6 +1,7 @@
 ﻿using MoneyMate.Data.Context;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
+using MoneyMate.Services.Models;
 using MoneyMate.Services.Results;
 
 namespace MoneyMate.Services.Implementations
@@ -39,6 +40,91 @@ namespace MoneyMate.Services.Implementations
                 {
                     System.Diagnostics.Debug.WriteLine($"Erreur GetAlertThresholdsAsync : {ex.Message}");
                     return ServiceResult<List<AlertThreshold>>.Failure("ALERT_UNEXPECTED_ERROR", "Une erreur est survenue lors du chargement des alertes.");
+                }
+            });
+        }
+
+        public async Task<ServiceResult<AlertTriggerInfo>> EvaluateAlertAsync(int alertThresholdId, int userId)
+        {
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    if (alertThresholdId <= 0 || userId <= 0)
+                        return ServiceResult<AlertTriggerInfo>.Failure("ALERT_INVALID_INPUT", "Les informations demandées sont invalides.");
+
+                    AlertThreshold? alertThreshold = _dbContext.GetAlertThresholdById(alertThresholdId, userId);
+                    if (alertThreshold == null)
+                        return ServiceResult<AlertTriggerInfo>.Failure("ALERT_NOT_FOUND", "Seuil d'alerte introuvable.");
+
+                    return BuildAlertTriggerInfo(userId, alertThreshold);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Erreur EvaluateAlertAsync : {ex.Message}");
+                    return ServiceResult<AlertTriggerInfo>.Failure("ALERT_UNEXPECTED_ERROR", "Une erreur est survenue lors de l'évaluation de l'alerte.");
+                }
+            });
+        }
+
+        public async Task<ServiceResult<List<AlertThreshold>>> GetAlertThresholdsByTypeAsync(int userId, string alertType)
+        {
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    if (userId <= 0)
+                        return ServiceResult<List<AlertThreshold>>.Failure("ALERT_INVALID_USER", "Utilisateur invalide.");
+
+                    if (string.IsNullOrWhiteSpace(alertType) || !AllowedAlertTypes.Contains(alertType.Trim()))
+                        return ServiceResult<List<AlertThreshold>>.Failure("ALERT_INVALID_TYPE", "Le type d'alerte est invalide.");
+
+                    string normalizedAlertType = alertType.Trim();
+
+                    List<AlertThreshold> alertThresholds = _dbContext.GetAlertThresholdsByUserId(userId)
+                        .Where(alert => string.Equals(alert.AlertType, normalizedAlertType, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+
+                    return ServiceResult<List<AlertThreshold>>.Success(alertThresholds);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Erreur GetAlertThresholdsByTypeAsync : {ex.Message}");
+                    return ServiceResult<List<AlertThreshold>>.Failure("ALERT_UNEXPECTED_ERROR", "Une erreur est survenue lors du chargement des alertes.");
+                }
+            });
+        }
+
+        public async Task<ServiceResult<AlertThreshold>> SetAlertThresholdActiveStateAsync(int alertThresholdId, int userId, bool isActive)
+        {
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    if (alertThresholdId <= 0 || userId <= 0)
+                        return ServiceResult<AlertThreshold>.Failure("ALERT_INVALID_INPUT", "Les informations demandées sont invalides.");
+
+                    AlertThreshold? alertThreshold = _dbContext.GetAlertThresholdById(alertThresholdId, userId);
+                    if (alertThreshold == null)
+                        return ServiceResult<AlertThreshold>.Failure("ALERT_NOT_FOUND", "Seuil d'alerte introuvable.");
+
+                    if (alertThreshold.IsActive == isActive)
+                        return ServiceResult<AlertThreshold>.Success(alertThreshold);
+
+                    alertThreshold.IsActive = isActive;
+
+                    int updatedRows = _dbContext.UpdateAlertThreshold(alertThreshold);
+                    if (updatedRows != 1)
+                        return ServiceResult<AlertThreshold>.Failure("ALERT_UPDATE_FAILED", "La mise à jour du seuil d'alerte a échoué.");
+
+                    return ServiceResult<AlertThreshold>.Success(alertThreshold, isActive
+                        ? "Seuil d'alerte activé avec succès."
+                        : "Seuil d'alerte désactivé avec succès.");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Erreur SetAlertThresholdActiveStateAsync : {ex.Message}");
+                    return ServiceResult<AlertThreshold>.Failure("ALERT_UNEXPECTED_ERROR", "Une erreur est survenue lors de la mise à jour du seuil d'alerte.");
                 }
             });
         }
@@ -202,19 +288,8 @@ namespace MoneyMate.Services.Implementations
         /// </summary>
         private bool IsTriggered(int userId, AlertThreshold alertThreshold)
         {
-            Budget? budget = ResolveBudget(userId, alertThreshold);
-            if (budget == null || budget.Amount <= 0)
-                return false;
-
-            int categoryId = alertThreshold.CategoryId ?? budget.CategoryId;
-            DateTime endDate = budget.EndDate ?? DateTime.MaxValue;
-
-            decimal totalExpenses = _dbContext.GetExpensesByCategory(userId, categoryId)
-                .Where(expense => expense.DateOperation >= budget.StartDate && expense.DateOperation <= endDate)
-                .Sum(expense => expense.Amount);
-
-            decimal percentage = budget.CalculateBudgetPercentage(totalExpenses);
-            return percentage >= alertThreshold.ThresholdPercentage;
+            ServiceResult<AlertTriggerInfo> result = BuildAlertTriggerInfo(userId, alertThreshold);
+            return result.IsSuccess && result.Data != null && result.Data.IsTriggered;
         }
 
         /// <summary>
@@ -237,6 +312,37 @@ namespace MoneyMate.Services.Implementations
                 .OrderByDescending(budget => budget.StartDate)
                 .ThenByDescending(budget => budget.CreatedAt)
                 .FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Construit l'état détaillé d'un seuil d'alerte.
+        /// </summary>
+        private ServiceResult<AlertTriggerInfo> BuildAlertTriggerInfo(int userId, AlertThreshold alertThreshold)
+        {
+            Budget? budget = ResolveBudget(userId, alertThreshold);
+            if (budget == null || budget.Amount <= 0)
+                return ServiceResult<AlertTriggerInfo>.Failure("ALERT_BUDGET_NOT_FOUND", "Aucun budget compatible n'a été trouvé pour ce seuil d'alerte.");
+
+            int categoryId = alertThreshold.CategoryId ?? budget.CategoryId;
+            DateTime endDate = budget.EndDate ?? DateTime.MaxValue;
+
+            decimal totalExpenses = _dbContext.GetExpensesByCategory(userId, categoryId)
+                .Where(expense => expense.DateOperation >= budget.StartDate && expense.DateOperation <= endDate)
+                .Sum(expense => expense.Amount);
+
+            decimal percentage = budget.CalculateBudgetPercentage(totalExpenses);
+
+            AlertTriggerInfo triggerInfo = new()
+            {
+                AlertThreshold = alertThreshold,
+                Budget = budget,
+                BudgetAmount = budget.Amount,
+                ConsumedAmount = totalExpenses,
+                ConsumedPercentage = percentage,
+                IsTriggered = percentage >= alertThreshold.ThresholdPercentage
+            };
+
+            return ServiceResult<AlertTriggerInfo>.Success(triggerInfo);
         }
     }
 }

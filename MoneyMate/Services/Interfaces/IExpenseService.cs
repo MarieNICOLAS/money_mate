@@ -1,4 +1,5 @@
 ﻿using MoneyMate.Models;
+using MoneyMate.Services.Models;
 using MoneyMate.Services.Results;
 
 namespace MoneyMate.Services.Interfaces
@@ -24,6 +25,11 @@ namespace MoneyMate.Services.Interfaces
         Task<ServiceResult<List<Expense>>> GetExpensesByPeriodAsync(int userId, DateTime startDate, DateTime endDate);
 
         /// <summary>
+        /// Retourne les dépenses d'un utilisateur selon des critères de filtre avancés.
+        /// </summary>
+        Task<ServiceResult<List<Expense>>> SearchExpensesAsync(ExpenseFilter filter);
+
+        /// <summary>
         /// Retourne une dépense appartenant à un utilisateur.
         /// </summary>
         Task<ServiceResult<Expense>> GetExpenseByIdAsync(int expenseId, int userId);
@@ -47,5 +53,15 @@ namespace MoneyMate.Services.Interfaces
         /// Calcule le total des dépenses d'un utilisateur.
         /// </summary>
         Task<ServiceResult<decimal>> GetTotalExpensesAsync(int userId, DateTime? startDate = null, DateTime? endDate = null, int? categoryId = null);
+
+        /// <summary>
+        /// Retourne le nombre de dépenses d'un utilisateur selon un filtre optionnel.
+        /// </summary>
+        Task<ServiceResult<int>> GetExpensesCountAsync(int userId, DateTime? startDate = null, DateTime? endDate = null, int? categoryId = null, bool? isFixedCharge = null);
+
+        /// <summary>
+        /// Duplique une dépense existante pour le même utilisateur.
+        /// </summary>
+        Task<ServiceResult<Expense>> DuplicateExpenseAsync(int expenseId, int userId, DateTime? newDate = null);
     }
 }

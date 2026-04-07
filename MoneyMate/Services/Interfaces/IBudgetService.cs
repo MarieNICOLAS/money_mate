@@ -1,4 +1,5 @@
 ﻿using MoneyMate.Models;
+using MoneyMate.Services.Models;
 using MoneyMate.Services.Results;
 
 namespace MoneyMate.Services.Interfaces
@@ -42,5 +43,20 @@ namespace MoneyMate.Services.Interfaces
         /// Calcule le pourcentage consommé pour un budget.
         /// </summary>
         Task<ServiceResult<decimal>> GetConsumedPercentageAsync(int budgetId, int userId);
+
+        /// <summary>
+        /// Retourne une synthèse complète de consommation pour un budget.
+        /// </summary>
+        Task<ServiceResult<BudgetConsumptionSummary>> GetBudgetConsumptionSummaryAsync(int budgetId, int userId);
+
+        /// <summary>
+        /// Retourne les budgets actifs d'une catégorie pour un utilisateur.
+        /// </summary>
+        Task<ServiceResult<List<Budget>>> GetBudgetsByCategoryAsync(int userId, int categoryId);
+
+        /// <summary>
+        /// Indique si un budget actif chevauche déjà la même catégorie et la même période.
+        /// </summary>
+        Task<ServiceResult<bool>> HasActiveBudgetConflictAsync(Budget budget, int? excludedBudgetId = null);
     }
 }

@@ -2,6 +2,7 @@
 using MoneyMate.Helpers;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
+using MoneyMate.Services.Models;
 using MoneyMate.Services.Results;
 
 namespace MoneyMate.Services.Implementations
@@ -34,6 +35,41 @@ namespace MoneyMate.Services.Implementations
                 {
                     System.Diagnostics.Debug.WriteLine($"Erreur GetExpensesAsync : {ex.Message}");
                     return ServiceResult<List<Expense>>.Failure("EXPENSE_UNEXPECTED_ERROR", "Une erreur est survenue lors du chargement des dépenses.");
+                }
+            });
+        }
+
+        public async Task<ServiceResult<List<Expense>>> SearchExpensesAsync(ExpenseFilter filter)
+        {
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    ArgumentNullException.ThrowIfNull(filter);
+
+                    if (filter.UserId <= 0)
+                        return ServiceResult<List<Expense>>.Failure("EXPENSE_INVALID_USER", "Utilisateur invalide.");
+
+                    if (filter.StartDate.HasValue && filter.EndDate.HasValue && filter.StartDate.Value > filter.EndDate.Value)
+                        return ServiceResult<List<Expense>>.Failure("EXPENSE_INVALID_PERIOD", "La période demandée est invalide.");
+
+                    if (filter.MinAmount.HasValue && filter.MaxAmount.HasValue && filter.MinAmount.Value > filter.MaxAmount.Value)
+                        return ServiceResult<List<Expense>>.Failure("EXPENSE_INVALID_AMOUNT_RANGE", "La plage de montants demandée est invalide.");
+
+                    IEnumerable<Expense> expenses = ApplyExpenseFilter(_dbContext.GetExpensesByUserId(filter.UserId), filter);
+
+                    if (filter.Skip > 0)
+                        expenses = expenses.Skip(filter.Skip);
+
+                    if (filter.Take > 0)
+                        expenses = expenses.Take(filter.Take);
+
+                    return ServiceResult<List<Expense>>.Success(expenses.ToList());
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Erreur SearchExpensesAsync : {ex.Message}");
+                    return ServiceResult<List<Expense>>.Failure("EXPENSE_UNEXPECTED_ERROR", "Une erreur est survenue lors de la recherche des dépenses.");
                 }
             });
         }
@@ -201,16 +237,15 @@ namespace MoneyMate.Services.Implementations
                     if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
                         return ServiceResult<decimal>.Failure("EXPENSE_INVALID_PERIOD", "La période demandée est invalide.");
 
-                    IEnumerable<Expense> expenses = _dbContext.GetExpensesByUserId(userId);
-
-                    if (categoryId.HasValue && categoryId.Value > 0)
-                        expenses = expenses.Where(expense => expense.CategoryId == categoryId.Value);
-
-                    if (startDate.HasValue)
-                        expenses = expenses.Where(expense => expense.DateOperation >= startDate.Value);
-
-                    if (endDate.HasValue)
-                        expenses = expenses.Where(expense => expense.DateOperation <= endDate.Value);
+                    IEnumerable<Expense> expenses = ApplyExpenseFilter(
+                        _dbContext.GetExpensesByUserId(userId),
+                        new ExpenseFilter
+                        {
+                            UserId = userId,
+                            StartDate = startDate,
+                            EndDate = endDate,
+                            CategoryId = categoryId
+                        });
 
                     decimal total = expenses.Sum(expense => expense.Amount);
                     return ServiceResult<decimal>.Success(total);
@@ -219,6 +254,73 @@ namespace MoneyMate.Services.Implementations
                 {
                     System.Diagnostics.Debug.WriteLine($"Erreur GetTotalExpensesAsync : {ex.Message}");
                     return ServiceResult<decimal>.Failure("EXPENSE_UNEXPECTED_ERROR", "Une erreur est survenue lors du calcul des dépenses.");
+                }
+            });
+        }
+
+        public async Task<ServiceResult<int>> GetExpensesCountAsync(int userId, DateTime? startDate = null, DateTime? endDate = null, int? categoryId = null, bool? isFixedCharge = null)
+        {
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    if (userId <= 0)
+                        return ServiceResult<int>.Failure("EXPENSE_INVALID_USER", "Utilisateur invalide.");
+
+                    if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
+                        return ServiceResult<int>.Failure("EXPENSE_INVALID_PERIOD", "La période demandée est invalide.");
+
+                    int count = ApplyExpenseFilter(
+                            _dbContext.GetExpensesByUserId(userId),
+                            new ExpenseFilter
+                            {
+                                UserId = userId,
+                                StartDate = startDate,
+                                EndDate = endDate,
+                                CategoryId = categoryId,
+                                IsFixedCharge = isFixedCharge
+                            })
+                        .Count();
+
+                    return ServiceResult<int>.Success(count);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Erreur GetExpensesCountAsync : {ex.Message}");
+                    return ServiceResult<int>.Failure("EXPENSE_UNEXPECTED_ERROR", "Une erreur est survenue lors du calcul du nombre de dépenses.");
+                }
+            });
+        }
+
+        public async Task<ServiceResult<Expense>> DuplicateExpenseAsync(int expenseId, int userId, DateTime? newDate = null)
+        {
+            return await Task.Run(async () =>
+            {
+                try
+                {
+                    if (expenseId <= 0 || userId <= 0)
+                        return ServiceResult<Expense>.Failure("EXPENSE_INVALID_INPUT", "Les informations demandées sont invalides.");
+
+                    Expense? existingExpense = _dbContext.GetExpenseById(expenseId, userId);
+                    if (existingExpense == null)
+                        return ServiceResult<Expense>.Failure("EXPENSE_NOT_FOUND", "Dépense introuvable.");
+
+                    var duplicatedExpense = new Expense
+                    {
+                        UserId = existingExpense.UserId,
+                        CategoryId = existingExpense.CategoryId,
+                        Amount = existingExpense.Amount,
+                        Note = existingExpense.Note,
+                        IsFixedCharge = existingExpense.IsFixedCharge,
+                        DateOperation = newDate ?? DateTime.Now
+                    };
+
+                    return await CreateExpenseAsync(duplicatedExpense);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Erreur DuplicateExpenseAsync : {ex.Message}");
+                    return ServiceResult<Expense>.Failure("EXPENSE_UNEXPECTED_ERROR", "Une erreur est survenue lors de la duplication de la dépense.");
                 }
             });
         }
@@ -241,6 +343,38 @@ namespace MoneyMate.Services.Implementations
                 return ServiceResult.Failure("EXPENSE_INVALID_DATE", "La date de la dépense ne peut pas être dans le futur.");
 
             return ServiceResult.Success();
+        }
+
+        /// <summary>
+        /// Applique les critères d'un filtre sur une collection de dépenses.
+        /// </summary>
+        private static IEnumerable<Expense> ApplyExpenseFilter(IEnumerable<Expense> expenses, ExpenseFilter filter)
+        {
+            if (filter.CategoryId.HasValue && filter.CategoryId.Value > 0)
+                expenses = expenses.Where(expense => expense.CategoryId == filter.CategoryId.Value);
+
+            if (filter.StartDate.HasValue)
+                expenses = expenses.Where(expense => expense.DateOperation >= filter.StartDate.Value);
+
+            if (filter.EndDate.HasValue)
+                expenses = expenses.Where(expense => expense.DateOperation <= filter.EndDate.Value);
+
+            if (filter.IsFixedCharge.HasValue)
+                expenses = expenses.Where(expense => expense.IsFixedCharge == filter.IsFixedCharge.Value);
+
+            if (filter.MinAmount.HasValue)
+                expenses = expenses.Where(expense => expense.Amount >= filter.MinAmount.Value);
+
+            if (filter.MaxAmount.HasValue)
+                expenses = expenses.Where(expense => expense.Amount <= filter.MaxAmount.Value);
+
+            if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
+            {
+                string searchTerm = filter.SearchTerm.Trim();
+                expenses = expenses.Where(expense => expense.Note.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return expenses;
         }
     }
 }

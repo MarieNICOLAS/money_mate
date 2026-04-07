@@ -11,6 +11,8 @@ namespace MoneyMate.ViewModels.Auth
     public class RegisterViewModel : BaseViewModel
     {
         private readonly IAuthenticationService _authService;
+        private readonly IDialogService _dialogService;
+        private readonly INavigationService _navigationService;
 
         private string _username = string.Empty;
         private string _email = string.Empty;
@@ -120,14 +122,16 @@ namespace MoneyMate.ViewModels.Auth
         /// </summary>
         public ICommand GoBackCommand { get; }
 
-        public RegisterViewModel(IAuthenticationService authService)
+        public RegisterViewModel(IAuthenticationService authService, IDialogService dialogService, INavigationService navigationService)
         {
             _authService = authService;
+            _dialogService = dialogService;
+            _navigationService = navigationService;
             Title = "Inscription";
 
             RegisterCommand  = new Command(async () => await RegisterAsync(), CanRegister);
-            GoToLoginCommand = new Command(async () => await Shell.Current.GoToAsync("//LoginPage"));
-            GoBackCommand    = new Command(async () => await Shell.Current.GoToAsync("//MainPage"));
+            GoToLoginCommand = new Command(async () => await _navigationService.NavigateToAsync("//LoginPage"));
+            GoBackCommand    = new Command(async () => await _navigationService.NavigateToAsync("//MainPage"));
         }
 
         /// <summary>
@@ -174,21 +178,27 @@ namespace MoneyMate.ViewModels.Auth
                     return;
                 }
 
-                var user = await _authService.RegisterAsync(Email.Trim(), Password);
+                var result = await _authService.RegisterAsync(Email.Trim(), Password);
 
-                if (user != null)
+                if (result.IsSuccess && result.Data != null)
                 {
-                    await Application.Current!.MainPage!.DisplayAlert(
+                    await _dialogService.ShowAlertAsync(
                         "Inscription réussie",
-                        "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter.",
+                        string.IsNullOrWhiteSpace(result.Message)
+                            ? "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter."
+                            : result.Message,
                         "OK");
 
-                    await Shell.Current.GoToAsync("//LoginPage");
+                    await _navigationService.NavigateToAsync("//LoginPage");
                 }
                 else
                 {
-                    IsEmailTaken           = true;
-                    RegisterErrorMessage   = "Cet email est déjà utilisé";
+                    IsEmailTaken = result.ErrorCode == "AUTH_EMAIL_ALREADY_EXISTS";
+
+                    RegisterErrorMessage = string.IsNullOrWhiteSpace(result.Message)
+                        ? "Une erreur est survenue lors de l'inscription."
+                        : result.Message;
+
                     IsRegisterErrorVisible = true;
                 }
             }

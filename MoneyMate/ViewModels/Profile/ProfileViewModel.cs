@@ -10,6 +10,8 @@ namespace MoneyMate.ViewModels.Profile
     public class ProfileViewModel : BaseViewModel
     {
         private readonly IAuthenticationService _authService;
+        private readonly IDialogService _dialogService;
+        private readonly INavigationService _navigationService;
 
         private string _userName = string.Empty;
         private string _email = string.Empty;
@@ -71,18 +73,20 @@ namespace MoneyMate.ViewModels.Profile
         public ICommand GoBudgetCommand { get; }
         public ICommand GoProfileCommand { get; }
 
-        public ProfileViewModel(IAuthenticationService authService)
+        public ProfileViewModel(IAuthenticationService authService, IDialogService dialogService, INavigationService navigationService)
         {
             _authService = authService;
+            _dialogService = dialogService;
+            _navigationService = navigationService;
             Title = "Mon Profil";
 
             LogoutCommand              = new Command(async () => await LogoutAsync());
-            GoToChangePasswordCommand  = new Command(async () => await Shell.Current.GoToAsync("//ChangePasswordPage"));
-            GoToDeleteAccountCommand   = new Command(async () => await Shell.Current.GoToAsync("//DeleteAccountPage"));
-            GoHomeCommand              = new Command(async () => await Shell.Current.GoToAsync("//DashboardPage"));
-            GoExpensesCommand          = new Command(async () => await Shell.Current.GoToAsync("//ExpensesListPage"));
-            GoBudgetCommand            = new Command(async () => await Shell.Current.GoToAsync("//BudgetsOverviewPage"));
-            GoProfileCommand           = new Command(async () => await Shell.Current.GoToAsync("//ProfilePage"));
+            GoToChangePasswordCommand  = new Command(async () => await _navigationService.NavigateToAsync("//ChangePasswordPage"));
+            GoToDeleteAccountCommand   = new Command(async () => await _navigationService.NavigateToAsync("//DeleteAccountPage"));
+            GoHomeCommand              = new Command(async () => await _navigationService.NavigateToAsync("//DashboardPage"));
+            GoExpensesCommand          = new Command(async () => await _navigationService.NavigateToAsync("//ExpensesListPage"));
+            GoBudgetCommand            = new Command(async () => await _navigationService.NavigateToAsync("//BudgetsOverviewPage"));
+            GoProfileCommand           = new Command(async () => await _navigationService.NavigateToAsync("//ProfilePage"));
         }
 
         /// <summary>
@@ -106,7 +110,7 @@ namespace MoneyMate.ViewModels.Profile
         /// </summary>
         private async Task LogoutAsync()
         {
-            bool confirm = await Application.Current!.MainPage!.DisplayAlert(
+            bool confirm = await _dialogService.ShowConfirmationAsync(
                 "Déconnexion",
                 "Voulez-vous vraiment vous déconnecter ?",
                 "Oui", "Non");
@@ -116,10 +120,7 @@ namespace MoneyMate.ViewModels.Profile
 
             await _authService.LogoutAsync();
 
-            Preferences.Remove("remember_email");
-            Preferences.Set("remember_me", false);
-
-            await Shell.Current.GoToAsync("//MainPage");
+            await _navigationService.NavigateToAsync("//MainPage");
         }
     }
 }

@@ -67,7 +67,7 @@ namespace MoneyMate.Helpers
                 ShowDatabasePath();
 
                 db = DatabaseService.Instance;
-                var authService = new AuthenticationService();
+                var authService = new AuthenticationService(new SessionManager());
 
                 string testEmail1 = $"test-db-1-{Guid.NewGuid():N}@moneymate.local";
                 string testEmail2 = $"test-db-2-{Guid.NewGuid():N}@moneymate.local";
@@ -77,14 +77,15 @@ namespace MoneyMate.Helpers
                 var createdUser1 = await authService.RegisterAsync(testEmail1, testPassword);
                 var createdUser2 = await authService.RegisterAsync(testEmail2, testPassword);
 
-                if (createdUser1 == null || createdUser2 == null)
+                if (!createdUser1.IsSuccess || !createdUser2.IsSuccess ||
+                    createdUser1.Data == null || createdUser2.Data == null)
                 {
                     WriteError("ECHEC : impossible de creer les utilisateurs de test.");
                     return false;
                 }
 
-                userId1 = createdUser1.Id;
-                userId2 = createdUser2.Id;
+                userId1 = createdUser1.Data.Id;
+                userId2 = createdUser2.Data.Id;
 
                 if (userId1 <= 0 || userId2 <= 0)
                 {

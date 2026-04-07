@@ -1,58 +1,93 @@
-﻿namespace MoneyMate.Services.Interfaces
+﻿using MoneyMate.Models;
+using MoneyMate.Services.Results;
+
+namespace MoneyMate.Services.Interfaces
 {
     /// <summary>
-    /// Interface pour le service d authentification
-    /// Gere l inscription, la connexion et la gestion des sessions utilisateur
+    /// Interface pour le service d'authentification.
+    /// Gère l'inscription, la connexion et la gestion des sessions utilisateur.
     /// </summary>
     public interface IAuthenticationService
     {
         /// <summary>
-        /// Authentifie un utilisateur avec email et mot de passe
+        /// Événement déclenché lors d'un changement d'état de session.
         /// </summary>
-        /// <param name="email">Email de l utilisateur</param>
-        /// <param name="password">Mot de passe en clair</param>
-        /// <returns>L utilisateur authentifie ou null si echec</returns>
-        Task<Models.User?> LoginAsync(string email, string password);
+        event EventHandler? AuthenticationStateChanged;
 
         /// <summary>
-        /// Enregistre un nouvel utilisateur
+        /// Authentifie un utilisateur avec email et mot de passe.
         /// </summary>
-        /// <param name="email">Email de l utilisateur</param>
-        /// <param name="password">Mot de passe en clair</param>
-        /// <param name="devise">Devise preferee (EUR par defaut)</param>
-        /// <returns>L utilisateur cree ou null si erreur</returns>
-        Task<Models.User?> RegisterAsync(string email, string password, string devise = "EUR");
+        /// <param name="email">Email de l'utilisateur.</param>
+        /// <param name="password">Mot de passe en clair.</param>
+        /// <param name="rememberSession">Indique si la session doit être restaurée au prochain lancement.</param>
+        /// <returns>Résultat contenant l'utilisateur authentifié si succès.</returns>
+        Task<ServiceResult<User>> LoginAsync(string email, string password, bool rememberSession = false);
 
         /// <summary>
-        /// Deconnecte l utilisateur actuel
+        /// Enregistre un nouvel utilisateur.
         /// </summary>
-        Task LogoutAsync();
+        /// <param name="email">Email de l'utilisateur.</param>
+        /// <param name="password">Mot de passe en clair.</param>
+        /// <param name="devise">Devise préférée.</param>
+        /// <returns>Résultat contenant l'utilisateur créé si succès.</returns>
+        Task<ServiceResult<User>> RegisterAsync(string email, string password, string devise = "EUR");
 
         /// <summary>
-        /// Recupere l utilisateur actuellement connecte
+        /// Déconnecte l'utilisateur actuel.
         /// </summary>
-        /// <returns>L utilisateur connecte ou null</returns>
-        Models.User? GetCurrentUser();
+        /// <param name="clearPersistentSession">True pour supprimer aussi la session persistée.</param>
+        Task LogoutAsync(bool clearPersistentSession = true);
 
         /// <summary>
-        /// Verifie si un utilisateur est connecte
+        /// Récupère l'utilisateur actuellement connecté.
+        /// </summary>
+        /// <returns>L'utilisateur connecté ou null.</returns>
+        User? GetCurrentUser();
+
+        /// <summary>
+        /// Vérifie si un utilisateur est connecté.
         /// </summary>
         bool IsAuthenticated { get; }
 
         /// <summary>
-        /// Change le mot de passe de l utilisateur
+        /// Restaure une session persistée si disponible.
         /// </summary>
-        /// <param name="userId">ID de l utilisateur</param>
-        /// <param name="oldPassword">Ancien mot de passe</param>
-        /// <param name="newPassword">Nouveau mot de passe</param>
-        /// <returns>True si succes, False sinon</returns>
-        Task<bool> ChangePasswordAsync(int userId, string oldPassword, string newPassword);
+        bool RestoreSession();
 
         /// <summary>
-        /// Valide la force d un mot de passe
+        /// Retourne l'email mémorisé pour pré-remplir la connexion.
         /// </summary>
-        /// <param name="password">Mot de passe � valider</param>
-        /// <returns>True si le mot de passe est valide</returns>
+        string GetRememberedEmail();
+
+        /// <summary>
+        /// Retourne l'état de l'option "Se souvenir de moi".
+        /// </summary>
+        bool GetRememberMePreference();
+
+        /// <summary>
+        /// Vérifie si l'utilisateur courant possède au moins un des rôles demandés.
+        /// </summary>
+        bool HasRole(params string[] roles);
+
+        /// <summary>
+        /// Vérifie si l'utilisateur courant peut accéder à une route de navigation.
+        /// </summary>
+        bool CanAccessRoute(string route);
+
+        /// <summary>
+        /// Change le mot de passe de l'utilisateur.
+        /// </summary>
+        /// <param name="userId">ID de l'utilisateur.</param>
+        /// <param name="oldPassword">Ancien mot de passe.</param>
+        /// <param name="newPassword">Nouveau mot de passe.</param>
+        /// <returns>Résultat de l'opération.</returns>
+        Task<ServiceResult> ChangePasswordAsync(int userId, string oldPassword, string newPassword);
+
+        /// <summary>
+        /// Valide la force d'un mot de passe.
+        /// </summary>
+        /// <param name="password">Mot de passe à valider.</param>
+        /// <returns>True si le mot de passe est valide.</returns>
         bool ValidatePasswordStrength(string password);
     }
 }

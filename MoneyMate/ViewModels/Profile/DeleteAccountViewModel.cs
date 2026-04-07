@@ -11,6 +11,8 @@ namespace MoneyMate.ViewModels.Profile
     public class DeleteAccountViewModel : BaseViewModel
     {
         private readonly IAuthenticationService _authService;
+        private readonly IDialogService _dialogService;
+        private readonly INavigationService _navigationService;
 
         private string _userName = string.Empty;
         private string _password = string.Empty;
@@ -57,18 +59,20 @@ namespace MoneyMate.ViewModels.Profile
         public ICommand GoBudgetCommand { get; }
         public ICommand GoProfileCommand { get; }
 
-        public DeleteAccountViewModel(IAuthenticationService authService)
+        public DeleteAccountViewModel(IAuthenticationService authService, IDialogService dialogService, INavigationService navigationService)
         {
             _authService = authService;
+            _dialogService = dialogService;
+            _navigationService = navigationService;
             Title = "Supprimer le compte";
 
             DeleteAccountCommand = new Command(async () => await DeleteAccountAsync(), CanDelete);
-            CancelCommand        = new Command(async () => await Shell.Current.GoToAsync("//ProfilePage"));
+            CancelCommand        = new Command(async () => await _navigationService.NavigateToAsync("//ProfilePage"));
             LogoutCommand        = new Command(async () => await LogoutAsync());
-            GoHomeCommand        = new Command(async () => await Shell.Current.GoToAsync("//DashboardPage"));
-            GoExpensesCommand    = new Command(async () => await Shell.Current.GoToAsync("//ExpensesListPage"));
-            GoBudgetCommand      = new Command(async () => await Shell.Current.GoToAsync("//BudgetsOverviewPage"));
-            GoProfileCommand     = new Command(async () => await Shell.Current.GoToAsync("//ProfilePage"));
+            GoHomeCommand        = new Command(async () => await _navigationService.NavigateToAsync("//DashboardPage"));
+            GoExpensesCommand    = new Command(async () => await _navigationService.NavigateToAsync("//ExpensesListPage"));
+            GoBudgetCommand      = new Command(async () => await _navigationService.NavigateToAsync("//BudgetsOverviewPage"));
+            GoProfileCommand     = new Command(async () => await _navigationService.NavigateToAsync("//ProfilePage"));
         }
 
         public void LoadUser()
@@ -88,7 +92,7 @@ namespace MoneyMate.ViewModels.Profile
             try
             {
                 // ── Première confirmation ──────────────────────────────
-                bool confirm1 = await Application.Current!.MainPage!.DisplayAlert(
+                bool confirm1 = await _dialogService.ShowConfirmationAsync(
                     "Supprimer le compte",
                     "Cette action est irréversible. Toutes vos données seront définitivement supprimées.",
                     "Continuer", "Annuler");
@@ -96,7 +100,7 @@ namespace MoneyMate.ViewModels.Profile
                 if (!confirm1) return;
 
                 // ── Deuxième confirmation ─────────────────────────────
-                bool confirm2 = await Application.Current.MainPage.DisplayAlert(
+                bool confirm2 = await _dialogService.ShowConfirmationAsync(
                     "Dernière confirmation",
                     "Êtes-vous vraiment sûr ? Il sera impossible de récupérer vos données.",
                     "Supprimer définitivement", "Annuler");
@@ -112,7 +116,7 @@ namespace MoneyMate.ViewModels.Profile
                     return;
 
                 var verified = await _authService.LoginAsync(user.Email, Password);
-                if (verified == null)
+                if (!verified.IsSuccess)
                 {
                     ErrorMessage   = "Mot de passe incorrect";
                     IsErrorVisible = true;
@@ -125,15 +129,12 @@ namespace MoneyMate.ViewModels.Profile
                 var dbContext = DatabaseService.Instance;
                 dbContext.DeleteAllUserData(user.Id);
 
-                Preferences.Remove("remember_email");
-                Preferences.Set("remember_me", false);
-
-                await Application.Current.MainPage.DisplayAlert(
+                await _dialogService.ShowAlertAsync(
                     "Compte supprimé",
                     "Votre compte et toutes vos données ont été supprimés.",
                     "OK");
 
-                await Shell.Current.GoToAsync("//MainPage");
+                await _navigationService.NavigateToAsync("//MainPage");
             }
             catch (Exception ex)
             {
@@ -150,15 +151,13 @@ namespace MoneyMate.ViewModels.Profile
 
         private async Task LogoutAsync()
         {
-            bool confirm = await Application.Current!.MainPage!.DisplayAlert(
+            bool confirm = await _dialogService.ShowConfirmationAsync(
                 "Déconnexion", "Voulez-vous vraiment vous déconnecter ?", "Oui", "Non");
 
             if (!confirm) return;
 
             await _authService.LogoutAsync();
-            Preferences.Remove("remember_email");
-            Preferences.Set("remember_me", false);
-            await Shell.Current.GoToAsync("//MainPage");
+            await _navigationService.NavigateToAsync("//MainPage");
         }
     }
 }

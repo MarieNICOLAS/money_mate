@@ -30,7 +30,11 @@ namespace MoneyMate
                 });
 
             // ── Services ──────────────────────────────────────────────────
+            builder.Services.AddSingleton<IDialogService, DialogService>();
+            builder.Services.AddSingleton<INavigationService, NavigationService>();
+            builder.Services.AddSingleton<ISessionManager, SessionManager>();
             builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
+            builder.Services.AddSingleton<AppShell>();
 
             // ── ViewModels ────────────────────────────────────────────────
             builder.Services.AddTransient<LoginViewModel>();

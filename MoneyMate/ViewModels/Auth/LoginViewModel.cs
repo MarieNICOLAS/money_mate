@@ -10,6 +10,7 @@ namespace MoneyMate.ViewModels.Auth
     public class LoginViewModel : BaseViewModel
     {
         private readonly IAuthenticationService _authService;
+        private readonly INavigationService _navigationService;
 
         private string _email = string.Empty;
         private string _password = string.Empty;
@@ -91,14 +92,15 @@ namespace MoneyMate.ViewModels.Auth
         /// </summary>
         public ICommand GoBackCommand { get; }
 
-        public LoginViewModel(IAuthenticationService authService)
+        public LoginViewModel(IAuthenticationService authService, INavigationService navigationService)
         {
             _authService = authService;
+            _navigationService = navigationService;
             Title = "Connexion";
 
             LoginCommand        = new Command(async () => await LoginAsync(), CanLogin);
-            GoToRegisterCommand = new Command(async () => await Shell.Current.GoToAsync("//RegisterPage"));
-            GoBackCommand       = new Command(async () => await Shell.Current.GoToAsync("//MainPage"));
+            GoToRegisterCommand = new Command(async () => await _navigationService.NavigateToAsync("//RegisterPage"));
+            GoBackCommand       = new Command(async () => await _navigationService.NavigateToAsync("//MainPage"));
         }
 
         /// <summary>
@@ -124,26 +126,18 @@ namespace MoneyMate.ViewModels.Auth
                 IsBusy = true;
                 IsLoginErrorVisible = false;
 
-                var user = await _authService.LoginAsync(Email.Trim(), Password);
+                var result = await _authService.LoginAsync(Email.Trim(), Password, RememberMe);
 
-                if (user != null)
+                if (result.IsSuccess && result.Data != null)
                 {
-                    if (RememberMe)
-                    {
-                        Preferences.Set("remember_email", Email.Trim());
-                        Preferences.Set("remember_me", true);
-                    }
-                    else
-                    {
-                        Preferences.Remove("remember_email");
-                        Preferences.Set("remember_me", false);
-                    }
-
-                    await Shell.Current.GoToAsync("//DashboardPage");
+                    await _navigationService.NavigateToMainAsync();
                 }
                 else
                 {
-                    LoginErrorMessage   = "Email ou mot de passe incorrect";
+                    LoginErrorMessage = string.IsNullOrWhiteSpace(result.Message)
+                        ? "Email ou mot de passe incorrect."
+                        : result.Message;
+
                     IsLoginErrorVisible = true;
                 }
             }
@@ -165,11 +159,11 @@ namespace MoneyMate.ViewModels.Auth
         /// </summary>
         public void LoadRememberMe()
         {
-            bool remembered = Preferences.Get("remember_me", false);
+            bool remembered = _authService.GetRememberMePreference();
 
             if (remembered)
             {
-                Email      = Preferences.Get("remember_email", string.Empty);
+                Email      = _authService.GetRememberedEmail();
                 RememberMe = true;
             }
         }

@@ -23,20 +23,30 @@ namespace MoneyMate.Services.Implementations
 
         private const int MIN_PASSWORD_LENGTH = 8;
         private readonly MoneyMateDbContext _dbContext;
-        private User? _currentUser;
+        private readonly ISessionManager _sessionManager;
+
+        /// <summary>
+        /// Événement déclenché lors d'un changement d'état de session.
+        /// </summary>
+        public event EventHandler? AuthenticationStateChanged
+        {
+            add => _sessionManager.SessionChanged += value;
+            remove => _sessionManager.SessionChanged -= value;
+        }
 
         /// <summary>
         /// Initialise une nouvelle instance du service d'authentification.
         /// </summary>
-        public AuthenticationService()
+        public AuthenticationService(ISessionManager sessionManager)
         {
             _dbContext = DatabaseService.Instance;
+            _sessionManager = sessionManager;
         }
 
         /// <summary>
         /// Indique si un utilisateur est actuellement connecté.
         /// </summary>
-        public bool IsAuthenticated => _currentUser != null;
+        public bool IsAuthenticated => _sessionManager.IsAuthenticated;
 
         /// <summary>
         /// Authentifie un utilisateur avec email et mot de passe.
@@ -44,7 +54,7 @@ namespace MoneyMate.Services.Implementations
         /// <param name="email">Email de l'utilisateur.</param>
         /// <param name="password">Mot de passe en clair.</param>
         /// <returns>Résultat contenant l'utilisateur authentifié si succès.</returns>
-        public async Task<ServiceResult<User>> LoginAsync(string email, string password)
+        public async Task<ServiceResult<User>> LoginAsync(string email, string password, bool rememberSession = false)
         {
             return await Task.Run(() =>
             {
@@ -83,7 +93,7 @@ namespace MoneyMate.Services.Implementations
                             "Email ou mot de passe incorrect.");
                     }
 
-                    _currentUser = user;
+                    _sessionManager.StartSession(user, rememberSession);
 
                     return ServiceResult<User>.Success(
                         user,
@@ -194,11 +204,11 @@ namespace MoneyMate.Services.Implementations
         /// <summary>
         /// Déconnecte l'utilisateur actuel.
         /// </summary>
-        public async Task LogoutAsync()
+        public async Task LogoutAsync(bool clearPersistentSession = true)
         {
             await Task.Run(() =>
             {
-                _currentUser = null;
+                _sessionManager.ClearSession(clearPersistentSession);
                 System.Diagnostics.Debug.WriteLine("Utilisateur déconnecté");
             });
         }
@@ -208,7 +218,37 @@ namespace MoneyMate.Services.Implementations
         /// </summary>
         /// <returns>L'utilisateur connecté ou null.</returns>
         public User? GetCurrentUser()
-            => _currentUser;
+            => _sessionManager.CurrentUser;
+
+        /// <summary>
+        /// Restaure une session persistée si disponible.
+        /// </summary>
+        public bool RestoreSession()
+            => _sessionManager.RestoreSession();
+
+        /// <summary>
+        /// Retourne l'email mémorisé pour pré-remplir la connexion.
+        /// </summary>
+        public string GetRememberedEmail()
+            => _sessionManager.GetRememberedEmail();
+
+        /// <summary>
+        /// Retourne l'état de l'option de persistance de session.
+        /// </summary>
+        public bool GetRememberMePreference()
+            => _sessionManager.GetRememberMePreference();
+
+        /// <summary>
+        /// Vérifie si l'utilisateur courant possède au moins un des rôles demandés.
+        /// </summary>
+        public bool HasRole(params string[] roles)
+            => _sessionManager.HasRole(roles);
+
+        /// <summary>
+        /// Vérifie si l'utilisateur courant peut accéder à une route de navigation.
+        /// </summary>
+        public bool CanAccessRoute(string route)
+            => _sessionManager.CanAccessRoute(route);
 
         /// <summary>
         /// Change le mot de passe de l'utilisateur.
@@ -270,8 +310,8 @@ namespace MoneyMate.Services.Implementations
                             "La mise à jour du mot de passe a échoué.");
                     }
 
-                    if (_currentUser?.Id == user.Id)
-                        _currentUser = user;
+                    if (_sessionManager.CurrentUser?.Id == user.Id)
+                        _sessionManager.UpdateCurrentUser(user);
 
                     System.Diagnostics.Debug.WriteLine($"Mot de passe change pour l utilisateur {userId}");
 
@@ -328,5 +368,6 @@ namespace MoneyMate.Services.Implementations
             => string.IsNullOrWhiteSpace(devise)
                 ? "EUR"
                 : devise.Trim().ToUpperInvariant();
+
     }
 }

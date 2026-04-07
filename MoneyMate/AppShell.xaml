@@ -35,30 +35,30 @@
     </Shell.FlyoutHeader>
 
     <!-- ==================== ACCUEIL ==================== -->
-        <FlyoutItem Title="Accueil" FlyoutDisplayOptions="AsSingleItem">
+        <FlyoutItem x:Name="HomeFlyoutItem" Title="Accueil" FlyoutDisplayOptions="AsSingleItem">
         <ShellContent Title="Accueil" ContentTemplate="{DataTemplate local:MainPage}" Route="MainPage" />
     </FlyoutItem>
 
     <!-- ==================== DASHBOARD ==================== -->
-    <FlyoutItem Title="Tableau de Bord" FlyoutDisplayOptions="AsSingleItem">
+    <FlyoutItem x:Name="DashboardFlyoutItem" Title="Tableau de Bord" FlyoutDisplayOptions="AsSingleItem">
         <ShellContent Title="Dashboard" ContentTemplate="{DataTemplate dashboard:DashboardPage}" Route="DashboardPage" />
     </FlyoutItem>
 
     <!-- ==================== AUTHENTIFICATION ==================== -->
-    <FlyoutItem Title="Authentification" FlyoutDisplayOptions="AsMultipleItems">
+    <FlyoutItem x:Name="AuthenticationFlyoutItem" Title="Authentification" FlyoutDisplayOptions="AsMultipleItems">
         <ShellContent Title="Connexion" ContentTemplate="{DataTemplate auth:LoginPage}" Route="LoginPage" />
         <ShellContent Title="Inscription" ContentTemplate="{DataTemplate auth:RegisterPage}" Route="RegisterPage" />
     </FlyoutItem>
 
     <!-- ==================== PROFIL ==================== -->
-    <FlyoutItem Title="Mon Compte" FlyoutDisplayOptions="AsMultipleItems">
+    <FlyoutItem x:Name="ProfileFlyoutItem" Title="Mon Compte" FlyoutDisplayOptions="AsMultipleItems">
         <ShellContent Title="Mon Profil" ContentTemplate="{DataTemplate profile:ProfilePage}" Route="ProfilePage" />
         <ShellContent Title="Changer mot de passe" ContentTemplate="{DataTemplate profile:ChangePasswordPage}" Route="ChangePasswordPage" />
         <ShellContent Title="Supprimer compte" ContentTemplate="{DataTemplate profile:DeleteAccountPage}" Route="DeleteAccountPage" />
     </FlyoutItem>
 
     <!-- ==================== DEPENSES ==================== -->
-    <FlyoutItem Title="Depenses" FlyoutDisplayOptions="AsMultipleItems">
+    <FlyoutItem x:Name="ExpensesFlyoutItem" Title="Depenses" FlyoutDisplayOptions="AsMultipleItems">
         <ShellContent Title="Liste des Depenses" ContentTemplate="{DataTemplate expenses:ExpensesListPage}" Route="ExpensesListPage" />
         <ShellContent Title="Ajouter Depense" ContentTemplate="{DataTemplate expenses:AddExpensePage}" Route="AddExpensePage" />
         <ShellContent Title="Modifier Depense" ContentTemplate="{DataTemplate expenses:EditExpensePage}" Route="EditExpensePage" />
@@ -67,26 +67,26 @@
     </FlyoutItem>
 
     <!-- ==================== CATEGORIES ==================== -->
-    <FlyoutItem Title="Categories" FlyoutDisplayOptions="AsMultipleItems">
+    <FlyoutItem x:Name="CategoriesFlyoutItem" Title="Categories" FlyoutDisplayOptions="AsMultipleItems">
         <ShellContent Title="Liste Categories" ContentTemplate="{DataTemplate categories:CategoriesListPage}" Route="CategoriesListPage" />
         <ShellContent Title="Ajouter Categorie" ContentTemplate="{DataTemplate categories:AddCategoryPage}" Route="AddCategoryPage" />
         <ShellContent Title="Modifier Categorie" ContentTemplate="{DataTemplate categories:EditCategoryPage}" Route="EditCategoryPage" />
     </FlyoutItem>
 
     <!-- ==================== BUDGETS ==================== -->
-    <FlyoutItem Title="Budgets" FlyoutDisplayOptions="AsMultipleItems">
+    <FlyoutItem x:Name="BudgetsFlyoutItem" Title="Budgets" FlyoutDisplayOptions="AsMultipleItems">
         <ShellContent Title="Vue d'ensemble" ContentTemplate="{DataTemplate budgets:BudgetsOverviewPage}" Route="BudgetsOverviewPage" />
         <ShellContent Title="Ajouter Budget" ContentTemplate="{DataTemplate budgets:AddBudgetPage}" Route="AddBudgetPage" />
         <ShellContent Title="Modifier Budget" ContentTemplate="{DataTemplate budgets:EditBudgetPage}" Route="EditBudgetPage" />
     </FlyoutItem>
 
     <!-- ==================== ALERTES ==================== -->
-    <FlyoutItem Title="Alertes" FlyoutDisplayOptions="AsSingleItem">
+    <FlyoutItem x:Name="AlertsFlyoutItem" Title="Alertes" FlyoutDisplayOptions="AsSingleItem">
         <ShellContent Title="Seuils d'Alerte" ContentTemplate="{DataTemplate alerts:AlertThresholdPage}" Route="AlertThresholdPage" />
     </FlyoutItem>
 
     <!-- ==================== CALENDRIER ==================== -->
-    <FlyoutItem Title="Calendrier" FlyoutDisplayOptions="AsSingleItem">
+    <FlyoutItem x:Name="CalendarFlyoutItem" Title="Calendrier" FlyoutDisplayOptions="AsSingleItem">
         <ShellContent Title="Calendrier" ContentTemplate="{DataTemplate calendar:CalendarPage}" Route="CalendarPage" />
     </FlyoutItem>
 

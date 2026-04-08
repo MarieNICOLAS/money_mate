@@ -7,7 +7,7 @@ namespace MoneyMate.Data.Context
     /// Contexte de base de données SQLite pour Money Mate.
     /// Centralise les opérations CRUD synchrones et l'initialisation de la base.
     /// </summary>
-    public sealed class MoneyMateDbContext : IDisposable
+    public sealed class MoneyMateDbContext : IMoneyMateDbContext, IDisposable
     {
         private readonly string _dbPath;
         private SQLiteConnection? _connection;

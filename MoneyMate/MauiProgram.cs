@@ -34,6 +34,12 @@ namespace MoneyMate
             builder.Services.AddSingleton<INavigationService, NavigationService>();
             builder.Services.AddSingleton<ISessionManager, SessionManager>();
             builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
+            builder.Services.AddSingleton<ICategoryService, CategoryService>();
+            builder.Services.AddSingleton<IExpenseService, ExpenseService>();
+            builder.Services.AddSingleton<IBudgetService, BudgetService>();
+            builder.Services.AddSingleton<IFixedChargeService, FixedChargeService>();
+            builder.Services.AddSingleton<IAlertThresholdService, AlertThresholdService>();
+            builder.Services.AddSingleton<IDashboardService, DashboardService>();
             builder.Services.AddSingleton<AppShell>();
 
             // ── ViewModels ────────────────────────────────────────────────

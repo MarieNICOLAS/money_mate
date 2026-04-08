@@ -12,11 +12,16 @@ namespace MoneyMate.Services.Implementations
     /// </summary>
     public class ExpenseService : IExpenseService
     {
-        private readonly MoneyMateDbContext _dbContext;
+        private readonly IMoneyMateDbContext _dbContext;
 
         public ExpenseService()
+            : this(DatabaseService.Instance)
         {
-            _dbContext = DatabaseService.Instance;
+        }
+
+        public ExpenseService(IMoneyMateDbContext dbContext)
+        {
+            _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         }
 
         public async Task<ServiceResult<List<Expense>>> GetExpensesAsync(int userId)

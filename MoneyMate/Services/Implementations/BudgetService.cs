@@ -19,11 +19,16 @@ namespace MoneyMate.Services.Implementations
             "Yearly"
         };
 
-        private readonly MoneyMateDbContext _dbContext;
+        private readonly IMoneyMateDbContext _dbContext;
 
         public BudgetService()
+            : this(DatabaseService.Instance)
         {
-            _dbContext = DatabaseService.Instance;
+        }
+
+        public BudgetService(IMoneyMateDbContext dbContext)
+        {
+            _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         }
 
         public async Task<ServiceResult<List<Budget>>> GetBudgetsAsync(int userId)

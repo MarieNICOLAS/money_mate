@@ -10,11 +10,16 @@ namespace MoneyMate.Services.Implementations
     /// </summary>
     public class CategoryService : ICategoryService
     {
-        private readonly MoneyMateDbContext _dbContext;
+        private readonly IMoneyMateDbContext _dbContext;
 
         public CategoryService()
+            : this(DatabaseService.Instance)
         {
-            _dbContext = DatabaseService.Instance;
+        }
+
+        public CategoryService(IMoneyMateDbContext dbContext)
+        {
+            _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         }
 
         public async Task<ServiceResult<List<Category>>> GetCategoriesAsync(int userId)

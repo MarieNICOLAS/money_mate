@@ -11,11 +11,16 @@ namespace MoneyMate.Services.Implementations
     /// </summary>
     public class DashboardService : IDashboardService
     {
-        private readonly MoneyMateDbContext _dbContext;
+        private readonly IMoneyMateDbContext _dbContext;
 
         public DashboardService()
+            : this(DatabaseService.Instance)
         {
-            _dbContext = DatabaseService.Instance;
+        }
+
+        public DashboardService(IMoneyMateDbContext dbContext)
+        {
+            _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         }
 
         public async Task<ServiceResult<DashboardSummary>> GetDashboardSummaryAsync(int userId)
@@ -32,11 +37,15 @@ namespace MoneyMate.Services.Implementations
                     DateTime nextMonthStart = monthStart.AddMonths(1);
                     DateTime previousMonthStart = monthStart.AddMonths(-1);
 
-                    List<global::MoneyMate.Models.Expense> monthlyExpenses = _dbContext.GetExpensesByUserId(userId)
+                    List<Expense> userExpenses = _dbContext.GetExpensesByUserId(userId);
+
+                    List<Expense> monthlyExpenses = userExpenses
                         .Where(expense => expense.DateOperation >= monthStart && expense.DateOperation < nextMonthStart)
                         .ToList();
 
-                    decimal previousMonthExpenses = _dbContext.GetExpensesByUserId(userId)
+                    decimal currentMonthExpenses = monthlyExpenses.Sum(expense => expense.Amount);
+
+                    decimal previousMonthExpenses = userExpenses
                         .Where(expense => expense.DateOperation >= previousMonthStart && expense.DateOperation < monthStart)
                         .Sum(expense => expense.Amount);
 
@@ -48,10 +57,10 @@ namespace MoneyMate.Services.Implementations
 
                     DashboardSummary summary = new()
                     {
-                        CurrentMonthExpenses = monthlyExpenses.Sum(expense => expense.Amount),
+                        CurrentMonthExpenses = currentMonthExpenses,
                         CurrentMonthExpensesCount = monthlyExpenses.Count,
                         PreviousMonthExpenses = previousMonthExpenses,
-                        ExpensesDeltaFromPreviousMonth = monthlyExpenses.Sum(expense => expense.Amount) - previousMonthExpenses,
+                        ExpensesDeltaFromPreviousMonth = currentMonthExpenses - previousMonthExpenses,
                         ActiveBudgetsCount = budgets.Count,
                         ActiveFixedChargesCount = _dbContext.GetFixedChargesByUserId(userId).Count,
                         ActiveAlertsCount = alertThresholds.Count,

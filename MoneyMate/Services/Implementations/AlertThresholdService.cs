@@ -17,11 +17,16 @@ namespace MoneyMate.Services.Implementations
             "Critical"
         };
 
-        private readonly MoneyMateDbContext _dbContext;
+        private readonly IMoneyMateDbContext _dbContext;
 
         public AlertThresholdService()
+            : this(DatabaseService.Instance)
         {
-            _dbContext = DatabaseService.Instance;
+        }
+
+        public AlertThresholdService(IMoneyMateDbContext dbContext)
+        {
+            _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         }
 
         public async Task<ServiceResult<List<AlertThreshold>>> GetAlertThresholdsAsync(int userId)

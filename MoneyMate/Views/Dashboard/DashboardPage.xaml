@@ -18,10 +18,72 @@
 
             <!-- Contenu principal -->
             <ScrollView Grid.Row="1">
-                <VerticalStackLayout Spacing="20" Padding="30">
-                    <Label Text="Bienvenue sur votre tableau de bord !"
-                           Style="{StaticResource PageTitle}"
-                           HorizontalOptions="Center" />
+                <VerticalStackLayout Spacing="20" Padding="24">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <VerticalStackLayout Grid.Column="0" Spacing="4">
+                            <Label Text="Bonjour"
+                                   TextColor="{StaticResource Secondary}" />
+                            <Label Text="{Binding UserName}"
+                                   Style="{StaticResource PageTitle}" />
+                            <Label Text="Voici la synthèse actuelle de vos finances." TextColor="{StaticResource Secondary}" />
+                        </VerticalStackLayout>
+                        <Button Grid.Column="1"
+                                Text="Actualiser"
+                                Command="{Binding RefreshCommand}"
+                                BackgroundColor="{StaticResource Primary}"
+                                TextColor="White" />
+                    </Grid>
+
+                    <Label Text="{Binding ErrorMessage}"
+                           IsVisible="{Binding HasError}"
+                           TextColor="#E57373"
+                           FontAttributes="Bold" />
+
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="12">
+                        <components:StatCard Grid.Row="0" Grid.Column="0" Title="Dépenses du mois" Value="{Binding CurrentMonthExpensesDisplay}" Icon="💸" CardColor="#6793AE" />
+                        <components:StatCard Grid.Row="0" Grid.Column="1" Title="Opérations" Value="{Binding ExpensesCountDisplay}" Icon="🧾" CardColor="#7D8F69" />
+                        <components:StatCard Grid.Row="1" Grid.Column="0" Title="Budgets actifs" Value="{Binding ActiveBudgetsDisplay}" Icon="📊" CardColor="#8D6E63" />
+                        <components:StatCard Grid.Row="1" Grid.Column="1" Title="Charges fixes" Value="{Binding ActiveFixedChargesDisplay}" Icon="📅" CardColor="#7986CB" />
+                        <components:StatCard Grid.Row="2" Grid.Column="0" Title="Alertes actives" Value="{Binding ActiveAlertsDisplay}" Icon="🔔" CardColor="#FFB74D" />
+                        <components:StatCard Grid.Row="2" Grid.Column="1" Title="Alertes déclenchées" Value="{Binding TriggeredAlertsDisplay}" Icon="🚨" CardColor="#E57373" />
+                        <components:StatCard Grid.Row="3" Grid.Column="0" Title="Budgets à risque" Value="{Binding BudgetsAtRiskDisplay}" Icon="⚠️" CardColor="#A1887F" />
+                        <components:StatCard Grid.Row="3" Grid.Column="1" Title="Écart vs mois dernier" Value="{Binding PreviousMonthDeltaDisplay}" Icon="📈" CardColor="#4DB6AC" />
+                    </Grid>
+
+                    <Label Text="Top catégories du mois"
+                           Style="{StaticResource SectionTitle}" />
+
+                    <CollectionView ItemsSource="{Binding TopCategories}"
+                                    IsVisible="{Binding HasTopCategories}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="16" Margin="0,4" Stroke="#D6E1EA" StrokeThickness="1">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="14" />
+                                    </Border.StrokeShape>
+
+                                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="6" ColumnSpacing="12">
+                                        <Label Grid.Row="0" Grid.Column="0"
+                                               Text="{Binding CategoryName}"
+                                               FontAttributes="Bold"
+                                               FontSize="16" />
+                                        <components:AmountDisplay Grid.Row="0" Grid.Column="1"
+                                                                  Amount="{Binding TotalAmount}"
+                                                                  Devise="{Binding Devise}"
+                                                                  FontSize="16"
+                                                                  TextColor="{StaticResource Accent}" />
+                                        <Label Grid.Row="1" Grid.Column="0"
+                                               Text="{Binding ExpensesCountText}"
+                                               TextColor="{StaticResource Secondary}" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                    <components:EmptyStateView IsVisible="{Binding HasTopCategories, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"
+                                               Icon="📭"
+                                               Message="Aucune dépense à afficher pour ce mois." />
                 </VerticalStackLayout>
             </ScrollView>
 

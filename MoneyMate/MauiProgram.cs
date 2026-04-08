@@ -2,11 +2,21 @@
 using Microsoft.Extensions.Logging;
 using MoneyMate.Services.Implementations;
 using MoneyMate.Services.Interfaces;
+using MoneyMate.ViewModels.Alerts;
 using MoneyMate.ViewModels.Auth;
+using MoneyMate.ViewModels.Budgets;
+using MoneyMate.ViewModels.Categories;
 using MoneyMate.ViewModels.Dashboard;
+using MoneyMate.ViewModels.Expenses;
+using MoneyMate.ViewModels.FixedCharges;
 using MoneyMate.ViewModels.Profile;
+using MoneyMate.Views.Alerts;
 using MoneyMate.Views.Auth;
+using MoneyMate.Views.Budgets;
+using MoneyMate.Views.Categories;
 using MoneyMate.Views.Dashboard;
+using MoneyMate.Views.Expenses;
+using MoneyMate.Views.FixedCharges;
 using MoneyMate.Views.Profile;
 
 namespace MoneyMate
@@ -46,6 +56,11 @@ namespace MoneyMate
             builder.Services.AddTransient<LoginViewModel>();
             builder.Services.AddTransient<RegisterViewModel>();
             builder.Services.AddTransient<DashboardViewModel>();
+            builder.Services.AddTransient<CategoriesViewModel>();
+            builder.Services.AddTransient<ExpensesListViewModel>();
+            builder.Services.AddTransient<BudgetsOverviewViewModel>();
+            builder.Services.AddTransient<FixedChargesViewModel>();
+            builder.Services.AddTransient<AlertThresholdsViewModel>();
             builder.Services.AddTransient<ProfileViewModel>();
             builder.Services.AddTransient<ChangePasswordViewModel>();
             builder.Services.AddTransient<DeleteAccountViewModel>();
@@ -54,6 +69,11 @@ namespace MoneyMate
             builder.Services.AddTransient<LoginPage>();
             builder.Services.AddTransient<RegisterPage>();
             builder.Services.AddTransient<DashboardPage>();
+            builder.Services.AddTransient<CategoriesListPage>();
+            builder.Services.AddTransient<ExpensesListPage>();
+            builder.Services.AddTransient<BudgetsOverviewPage>();
+            builder.Services.AddTransient<FixedChargesPage>();
+            builder.Services.AddTransient<AlertThresholdPage>();
             builder.Services.AddTransient<ProfilePage>();
             builder.Services.AddTransient<ChangePasswordPage>();
             builder.Services.AddTransient<DeleteAccountPage>();

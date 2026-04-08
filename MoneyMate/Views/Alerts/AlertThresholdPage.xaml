@@ -2,12 +2,101 @@
 <views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
+                xmlns:components="clr-namespace:MoneyMate.Components"
                 x:Class="MoneyMate.Views.Alerts.AlertThresholdPage"
+                x:Name="Page"
                 Title="Seuils d Alerte">
-    <VerticalStackLayout Spacing="20" Padding="30">
-        <Label 
-            Text="Gestion des Seuils d'Alerte"
-            Style="{StaticResource PageTitle}"
-            HorizontalOptions="Center" />
-    </VerticalStackLayout>
+    <views:BasePage.PageContent>
+        <ScrollView>
+            <VerticalStackLayout Spacing="20" Padding="24">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <VerticalStackLayout Grid.Column="0" Spacing="4">
+                        <Label Text="Alertes"
+                               Style="{StaticResource PageTitle}" />
+                        <Label Text="Contrôlez vos seuils et repérez les budgets déclenchés." TextColor="{StaticResource Secondary}" />
+                    </VerticalStackLayout>
+                    <Button Grid.Column="1" Text="Actualiser" Command="{Binding RefreshCommand}" BackgroundColor="{StaticResource Primary}" TextColor="White" />
+                </Grid>
+
+                <Label Text="{Binding ErrorMessage}"
+                       IsVisible="{Binding HasError}"
+                       TextColor="#E57373"
+                       FontAttributes="Bold" />
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Border Grid.Column="0" Padding="16" StrokeThickness="0" BackgroundColor="#F3F8FC">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="14" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Alertes actives" TextColor="{StaticResource Secondary}" />
+                            <Label Text="{Binding ActiveAlertsCount}" FontSize="24" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Border Grid.Column="1" Padding="16" StrokeThickness="0" BackgroundColor="#FFF0F0">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="14" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Déclenchées" TextColor="{StaticResource Secondary}" />
+                            <Label Text="{Binding TriggeredAlertsCount}" FontSize="24" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <CollectionView ItemsSource="{Binding Alerts}"
+                                IsVisible="{Binding HasAlerts}">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="16" Margin="0,4" Stroke="#D6E1EA" StrokeThickness="1">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="14" />
+                                </Border.StrokeShape>
+
+                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="12">
+                                    <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="4">
+                                        <Label Text="{Binding TargetName}" FontAttributes="Bold" FontSize="16" />
+                                        <Label Text="{Binding AlertTypeLabel}" TextColor="{StaticResource Secondary}" />
+                                    </VerticalStackLayout>
+
+                                    <VerticalStackLayout Grid.Row="0" Grid.Column="1" Grid.RowSpan="4" Spacing="8">
+                                        <Button Text="Évaluer"
+                                                Command="{Binding Source={x:Reference Page}, Path=BindingContext.EvaluateAlertCommand}"
+                                                CommandParameter="{Binding .}"
+                                                BackgroundColor="{StaticResource Accent}"
+                                                TextColor="White" />
+                                        <Button Text="{Binding ToggleActionText}"
+                                                Command="{Binding Source={x:Reference Page}, Path=BindingContext.ToggleAlertActiveCommand}"
+                                                CommandParameter="{Binding .}"
+                                                BackgroundColor="{StaticResource Primary}"
+                                                TextColor="White" />
+                                    </VerticalStackLayout>
+
+                                    <HorizontalStackLayout Grid.Row="1" Grid.Column="0" Spacing="16">
+                                        <Label Text="{Binding ThresholdPercentage, StringFormat='Seuil : {0:F0} %'}" TextColor="{StaticResource Secondary}" />
+                                        <Label Text="{Binding CurrentPercentage, StringFormat='Actuel : {0:F0} %'}" TextColor="{StaticResource Secondary}" />
+                                    </HorizontalStackLayout>
+
+                                    <Label Grid.Row="2" Grid.Column="0"
+                                           Text="{Binding StatusText}"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource Secondary}" />
+
+                                    <Label Grid.Row="3" Grid.Column="0"
+                                           Text="{Binding Message}"
+                                           IsVisible="{Binding HasMessage}"
+                                           TextColor="{StaticResource Secondary}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <components:EmptyStateView IsVisible="{Binding HasAlerts, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"
+                                           Icon="🚨"
+                                           Message="Aucun seuil d'alerte actif pour le moment." />
+            </VerticalStackLayout>
+        </ScrollView>
+    </views:BasePage.PageContent>
 </views:BasePage>

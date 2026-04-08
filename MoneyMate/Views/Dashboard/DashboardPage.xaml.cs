@@ -15,7 +15,7 @@ namespace MoneyMate.Views.Dashboard
         protected override void OnAppearing()
         {
             base.OnAppearing();
-            ViewModel.LoadUser();
+            _ = ViewModel.LoadAsync();
         }
     }
 }

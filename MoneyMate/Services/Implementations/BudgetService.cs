@@ -81,6 +81,9 @@ namespace MoneyMate.Services.Implementations
                     if (!validationResult.IsSuccess)
                         return ServiceResult<Budget>.Failure(validationResult.ErrorCode, validationResult.Message);
 
+                    if (!CategoryExistsForUser(budget.UserId, budget.CategoryId))
+                        return ServiceResult<Budget>.Failure("BUDGET_CATEGORY_NOT_FOUND", "La catégorie sélectionnée est introuvable ou inactive.");
+
                     ServiceResult<bool> conflictResult = HasActiveBudgetConflictInternal(budget);
                     if (!conflictResult.IsSuccess)
                         return ServiceResult<Budget>.Failure(conflictResult.ErrorCode, conflictResult.Message);
@@ -122,12 +125,21 @@ namespace MoneyMate.Services.Implementations
                     if (!validationResult.IsSuccess)
                         return ServiceResult<Budget>.Failure(validationResult.ErrorCode, validationResult.Message);
 
+                    Budget? existingBudget = _dbContext.GetBudgetById(budget.Id, budget.UserId);
+                    if (existingBudget == null)
+                        return ServiceResult<Budget>.Failure("BUDGET_NOT_FOUND", "Budget introuvable.");
+
+                    if (!CategoryExistsForUser(budget.UserId, budget.CategoryId))
+                        return ServiceResult<Budget>.Failure("BUDGET_CATEGORY_NOT_FOUND", "La catégorie sélectionnée est introuvable ou inactive.");
+
                     ServiceResult<bool> conflictResult = HasActiveBudgetConflictInternal(budget, budget.Id);
                     if (!conflictResult.IsSuccess)
                         return ServiceResult<Budget>.Failure(conflictResult.ErrorCode, conflictResult.Message);
 
                     if (conflictResult.Data)
                         return ServiceResult<Budget>.Failure("BUDGET_CONFLICT", "Un budget actif existe déjà pour cette catégorie sur une période qui se chevauche.");
+
+                    budget.PeriodType = budget.PeriodType.Trim();
 
                     int updatedRows = _dbContext.UpdateBudget(budget);
                     if (updatedRows != 1)
@@ -323,6 +335,12 @@ namespace MoneyMate.Services.Implementations
                 System.Diagnostics.Debug.WriteLine($"Erreur HasActiveBudgetConflictInternal : {ex.Message}");
                 return ServiceResult<bool>.Failure("BUDGET_UNEXPECTED_ERROR", "Une erreur est survenue lors de la vérification des conflits de budget.");
             }
+        }
+
+        private bool CategoryExistsForUser(int userId, int categoryId)
+        {
+            Category? category = _dbContext.GetCategoryById(categoryId, userId);
+            return category != null && category.IsActive;
         }
     }
 }

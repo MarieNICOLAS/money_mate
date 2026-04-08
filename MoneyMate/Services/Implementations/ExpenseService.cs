@@ -152,6 +152,9 @@ namespace MoneyMate.Services.Implementations
                     if (!validationResult.IsSuccess)
                         return ServiceResult<Expense>.Failure(validationResult.ErrorCode, validationResult.Message);
 
+                    if (!CategoryExistsForUser(expense.UserId, expense.CategoryId))
+                        return ServiceResult<Expense>.Failure("EXPENSE_CATEGORY_NOT_FOUND", "La catégorie sélectionnée est introuvable ou inactive.");
+
                     expense.Note = expense.Note?.Trim() ?? string.Empty;
 
                     int expenseId = _dbContext.InsertExpense(expense);
@@ -183,6 +186,15 @@ namespace MoneyMate.Services.Implementations
                     ServiceResult validationResult = ValidateExpense(expense);
                     if (!validationResult.IsSuccess)
                         return ServiceResult<Expense>.Failure(validationResult.ErrorCode, validationResult.Message);
+
+                    Expense? existingExpense = _dbContext.GetExpenseById(expense.Id, expense.UserId);
+                    if (existingExpense == null)
+                        return ServiceResult<Expense>.Failure("EXPENSE_NOT_FOUND", "Dépense introuvable.");
+
+                    if (!CategoryExistsForUser(expense.UserId, expense.CategoryId))
+                        return ServiceResult<Expense>.Failure("EXPENSE_CATEGORY_NOT_FOUND", "La catégorie sélectionnée est introuvable ou inactive.");
+
+                    expense.Note = expense.Note?.Trim() ?? string.Empty;
 
                     int updatedRows = _dbContext.UpdateExpense(expense);
                     if (updatedRows != 1)
@@ -375,6 +387,12 @@ namespace MoneyMate.Services.Implementations
             }
 
             return expenses;
+        }
+
+        private bool CategoryExistsForUser(int userId, int categoryId)
+        {
+            Category? category = _dbContext.GetCategoryById(categoryId, userId);
+            return category != null && category.IsActive;
         }
     }
 }

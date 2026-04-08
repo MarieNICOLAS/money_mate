@@ -208,6 +208,9 @@ namespace MoneyMate.Services.Implementations
                     if (!validationResult.IsSuccess)
                         return ServiceResult<FixedCharge>.Failure(validationResult.ErrorCode, validationResult.Message);
 
+                    if (!CategoryExistsForUser(fixedCharge.UserId, fixedCharge.CategoryId))
+                        return ServiceResult<FixedCharge>.Failure("FIXED_CHARGE_CATEGORY_NOT_FOUND", "La catégorie sélectionnée est introuvable ou inactive.");
+
                     fixedCharge.Name = fixedCharge.Name.Trim();
                     fixedCharge.Description = fixedCharge.Description?.Trim() ?? string.Empty;
                     fixedCharge.Frequency = fixedCharge.Frequency.Trim();
@@ -243,6 +246,13 @@ namespace MoneyMate.Services.Implementations
                     ServiceResult validationResult = ValidateFixedCharge(fixedCharge);
                     if (!validationResult.IsSuccess)
                         return ServiceResult<FixedCharge>.Failure(validationResult.ErrorCode, validationResult.Message);
+
+                    FixedCharge? existingFixedCharge = _dbContext.GetFixedChargeById(fixedCharge.Id, fixedCharge.UserId);
+                    if (existingFixedCharge == null)
+                        return ServiceResult<FixedCharge>.Failure("FIXED_CHARGE_NOT_FOUND", "Charge fixe introuvable.");
+
+                    if (!CategoryExistsForUser(fixedCharge.UserId, fixedCharge.CategoryId))
+                        return ServiceResult<FixedCharge>.Failure("FIXED_CHARGE_CATEGORY_NOT_FOUND", "La catégorie sélectionnée est introuvable ou inactive.");
 
                     fixedCharge.Name = fixedCharge.Name.Trim();
                     fixedCharge.Description = fixedCharge.Description?.Trim() ?? string.Empty;
@@ -339,6 +349,12 @@ namespace MoneyMate.Services.Implementations
                     _ => occurrence.AddMonths(1)
                 };
             }
+        }
+
+        private bool CategoryExistsForUser(int userId, int categoryId)
+        {
+            Category? category = _dbContext.GetCategoryById(categoryId, userId);
+            return category != null && category.IsActive;
         }
     }
 }

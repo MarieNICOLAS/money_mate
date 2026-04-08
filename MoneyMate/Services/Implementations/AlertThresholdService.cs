@@ -164,6 +164,10 @@ namespace MoneyMate.Services.Implementations
                     if (!validationResult.IsSuccess)
                         return ServiceResult<AlertThreshold>.Failure(validationResult.ErrorCode, validationResult.Message);
 
+                    ServiceResult referencesValidationResult = ValidateAlertThresholdReferences(alertThreshold);
+                    if (!referencesValidationResult.IsSuccess)
+                        return ServiceResult<AlertThreshold>.Failure(referencesValidationResult.ErrorCode, referencesValidationResult.Message);
+
                     alertThreshold.AlertType = alertThreshold.AlertType.Trim();
                     alertThreshold.Message = alertThreshold.Message?.Trim() ?? string.Empty;
                     alertThreshold.CreatedAt = DateTime.UtcNow;
@@ -198,6 +202,14 @@ namespace MoneyMate.Services.Implementations
                     ServiceResult validationResult = ValidateAlertThreshold(alertThreshold);
                     if (!validationResult.IsSuccess)
                         return ServiceResult<AlertThreshold>.Failure(validationResult.ErrorCode, validationResult.Message);
+
+                    AlertThreshold? existingAlertThreshold = _dbContext.GetAlertThresholdById(alertThreshold.Id, alertThreshold.UserId);
+                    if (existingAlertThreshold == null)
+                        return ServiceResult<AlertThreshold>.Failure("ALERT_NOT_FOUND", "Seuil d'alerte introuvable.");
+
+                    ServiceResult referencesValidationResult = ValidateAlertThresholdReferences(alertThreshold);
+                    if (!referencesValidationResult.IsSuccess)
+                        return ServiceResult<AlertThreshold>.Failure(referencesValidationResult.ErrorCode, referencesValidationResult.Message);
 
                     alertThreshold.AlertType = alertThreshold.AlertType.Trim();
                     alertThreshold.Message = alertThreshold.Message?.Trim() ?? string.Empty;
@@ -274,11 +286,38 @@ namespace MoneyMate.Services.Implementations
             if (alertThreshold.UserId <= 0)
                 return ServiceResult.Failure("ALERT_INVALID_USER", "Utilisateur invalide.");
 
-            if (alertThreshold.ThresholdPercentage <= 0 || alertThreshold.ThresholdPercentage > 100)
+            if (alertThreshold.ThresholdPercentage < 0 || alertThreshold.ThresholdPercentage > 100)
                 return ServiceResult.Failure("ALERT_INVALID_THRESHOLD", "Le seuil doit être compris entre 0 et 100.");
 
             if (string.IsNullOrWhiteSpace(alertThreshold.AlertType) || !AllowedAlertTypes.Contains(alertThreshold.AlertType.Trim()))
                 return ServiceResult.Failure("ALERT_INVALID_TYPE", "Le type d'alerte est invalide.");
+
+            return ServiceResult.Success();
+        }
+
+        private ServiceResult ValidateAlertThresholdReferences(AlertThreshold alertThreshold)
+        {
+            if (!alertThreshold.BudgetId.HasValue && !alertThreshold.CategoryId.HasValue)
+                return ServiceResult.Failure("ALERT_TARGET_REQUIRED", "Le seuil d'alerte doit cibler un budget ou une catégorie.");
+
+            Budget? budget = null;
+
+            if (alertThreshold.BudgetId.HasValue)
+            {
+                budget = _dbContext.GetBudgetById(alertThreshold.BudgetId.Value, alertThreshold.UserId);
+                if (budget == null)
+                    return ServiceResult.Failure("ALERT_BUDGET_NOT_FOUND", "Le budget sélectionné est introuvable.");
+            }
+
+            if (alertThreshold.CategoryId.HasValue)
+            {
+                Category? category = _dbContext.GetCategoryById(alertThreshold.CategoryId.Value, alertThreshold.UserId);
+                if (category == null || !category.IsActive)
+                    return ServiceResult.Failure("ALERT_CATEGORY_NOT_FOUND", "La catégorie sélectionnée est introuvable ou inactive.");
+            }
+
+            if (budget != null && alertThreshold.CategoryId.HasValue && budget.CategoryId != alertThreshold.CategoryId.Value)
+                return ServiceResult.Failure("ALERT_BUDGET_CATEGORY_MISMATCH", "Le budget sélectionné ne correspond pas à la catégorie choisie.");
 
             return ServiceResult.Success();
         }

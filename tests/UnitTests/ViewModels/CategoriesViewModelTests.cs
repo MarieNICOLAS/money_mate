@@ -66,4 +66,75 @@ public class CategoriesViewModelTests
         Assert.IsTrue(viewModel.HasError);
         Assert.AreEqual("Impossible de charger les catégories.", viewModel.ErrorMessage);
     }
+
+    [TestMethod]
+    public async Task AddCategoryCommand_NavigatesToAddCategoryPage()
+    {
+        User user = ViewModelTestHelper.CreateUser();
+        Mock<INavigationService> navigationServiceMock = ViewModelTestHelper.CreateNavigationServiceMock();
+
+        CategoriesViewModel viewModel = new(
+            new Mock<ICategoryService>().Object,
+            ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
+            ViewModelTestHelper.CreateDialogServiceMock().Object,
+            navigationServiceMock.Object);
+
+        viewModel.AddCategoryCommand.Execute(null);
+        await Task.Delay(100);
+
+        navigationServiceMock.Verify(x => x.NavigateToAsync("//AddCategoryPage"), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task DeleteCategoryCommand_WhenConfirmed_DeletesCategory()
+    {
+        User user = ViewModelTestHelper.CreateUser();
+        Mock<ICategoryService> categoryServiceMock = new();
+
+        categoryServiceMock.Setup(x => x.GetCategoriesAsync(user.Id))
+            .ReturnsAsync(ServiceResult<List<Category>>.Success(new List<Category>()));
+
+        categoryServiceMock.Setup(x => x.GetInactiveCategoriesAsync(user.Id))
+            .ReturnsAsync(ServiceResult<List<Category>>.Success(new List<Category>()));
+
+        categoryServiceMock.Setup(x => x.DeleteCategoryAsync(5, user.Id))
+            .ReturnsAsync(ServiceResult.Success());
+
+        CategoriesViewModel viewModel = new(
+            categoryServiceMock.Object,
+            ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
+            ViewModelTestHelper.CreateDialogServiceMock(confirmationResult: true).Object,
+            ViewModelTestHelper.CreateNavigationServiceMock().Object);
+
+        await viewModel.LoadAsync();
+
+        viewModel.DeleteCategoryCommand.Execute(new CategoryItemViewModel
+        {
+            Id = 5,
+            Name = "Maison",
+            IsSystem = false,
+            IsActive = true
+        });
+
+        await Task.Delay(100);
+
+        categoryServiceMock.Verify(x => x.DeleteCategoryAsync(5, user.Id), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task LoadAsync_WithoutCurrentUser_SetsSessionError()
+    {
+        Mock<ICategoryService> categoryServiceMock = new();
+
+        CategoriesViewModel viewModel = new(
+            categoryServiceMock.Object,
+            ViewModelTestHelper.CreateAuthenticationServiceMock(null).Object,
+            ViewModelTestHelper.CreateDialogServiceMock().Object,
+            ViewModelTestHelper.CreateNavigationServiceMock().Object);
+
+        await viewModel.LoadAsync();
+
+        Assert.AreEqual("Aucune session utilisateur active.", viewModel.ErrorMessage);
+        categoryServiceMock.Verify(x => x.GetCategoriesAsync(It.IsAny<int>()), Times.Never);
+    }
 }

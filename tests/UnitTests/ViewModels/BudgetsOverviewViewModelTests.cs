@@ -68,4 +68,41 @@ public class BudgetsOverviewViewModelTests
         Assert.IsTrue(viewModel.HasBudgets);
         Assert.AreEqual("Courses", viewModel.Budgets[0].CategoryName);
     }
+
+    [TestMethod]
+    public async Task AddBudgetCommand_NavigatesToAddBudgetPage()
+    {
+        User user = ViewModelTestHelper.CreateUser();
+        Mock<INavigationService> navigationServiceMock = ViewModelTestHelper.CreateNavigationServiceMock();
+
+        BudgetsOverviewViewModel viewModel = new(
+            new Mock<IBudgetService>().Object,
+            new Mock<ICategoryService>().Object,
+            ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
+            ViewModelTestHelper.CreateDialogServiceMock().Object,
+            navigationServiceMock.Object);
+
+        viewModel.AddBudgetCommand.Execute(null);
+        await Task.Delay(100);
+
+        navigationServiceMock.Verify(x => x.NavigateToAsync("//AddBudgetPage"), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task LoadAsync_WithoutCurrentUser_SetsSessionError()
+    {
+        Mock<IBudgetService> budgetServiceMock = new();
+
+        BudgetsOverviewViewModel viewModel = new(
+            budgetServiceMock.Object,
+            new Mock<ICategoryService>().Object,
+            ViewModelTestHelper.CreateAuthenticationServiceMock(null).Object,
+            ViewModelTestHelper.CreateDialogServiceMock().Object,
+            ViewModelTestHelper.CreateNavigationServiceMock().Object);
+
+        await viewModel.LoadAsync();
+
+        Assert.AreEqual("Aucune session utilisateur active.", viewModel.ErrorMessage);
+        budgetServiceMock.Verify(x => x.GetBudgetsAsync(It.IsAny<int>()), Times.Never);
+    }
 }

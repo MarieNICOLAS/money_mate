@@ -71,4 +71,42 @@ public class DashboardViewModelTests
         authenticationServiceMock.Verify(x => x.LogoutAsync(true), Times.Once);
         navigationServiceMock.Verify(x => x.NavigateToAsync("//MainPage"), Times.Once);
     }
+
+    [TestMethod]
+    public async Task RefreshCommand_LoadsSummary()
+    {
+        var user = ViewModelTestHelper.CreateUser();
+        Mock<IDashboardService> dashboardServiceMock = new();
+
+        dashboardServiceMock.Setup(x => x.GetDashboardSummaryAsync(user.Id))
+            .ReturnsAsync(ServiceResult<DashboardSummary>.Success(new DashboardSummary()));
+
+        DashboardViewModel viewModel = new(
+            ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
+            dashboardServiceMock.Object,
+            ViewModelTestHelper.CreateDialogServiceMock().Object,
+            ViewModelTestHelper.CreateNavigationServiceMock().Object);
+
+        viewModel.RefreshCommand.Execute(null);
+        await Task.Delay(100);
+
+        dashboardServiceMock.Verify(x => x.GetDashboardSummaryAsync(user.Id), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task LoadAsync_WithoutCurrentUser_SetsSessionError()
+    {
+        Mock<IDashboardService> dashboardServiceMock = new();
+
+        DashboardViewModel viewModel = new(
+            ViewModelTestHelper.CreateAuthenticationServiceMock(null).Object,
+            dashboardServiceMock.Object,
+            ViewModelTestHelper.CreateDialogServiceMock().Object,
+            ViewModelTestHelper.CreateNavigationServiceMock().Object);
+
+        await viewModel.LoadAsync();
+
+        Assert.AreEqual("Aucune session utilisateur active.", viewModel.ErrorMessage);
+        dashboardServiceMock.Verify(x => x.GetDashboardSummaryAsync(It.IsAny<int>()), Times.Never);
+    }
 }

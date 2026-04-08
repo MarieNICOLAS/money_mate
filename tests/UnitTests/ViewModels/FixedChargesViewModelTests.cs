@@ -71,4 +71,56 @@ public class FixedChargesViewModelTests
         Assert.IsTrue(viewModel.FixedCharges.Any(charge => charge.Name == "Netflix" && charge.FrequencyLabel == "Mensuelle"));
         Assert.IsTrue(viewModel.FixedCharges.Any(charge => charge.Name == "Assurance" && charge.FrequencyLabel == "Annuelle"));
     }
+
+    [TestMethod]
+    public async Task GenerateExpensesCommand_ShowsGeneratedCount()
+    {
+        User user = ViewModelTestHelper.CreateUser();
+        Mock<IFixedChargeService> fixedChargeServiceMock = new();
+        Mock<IDialogService> dialogServiceMock = ViewModelTestHelper.CreateDialogServiceMock();
+
+        fixedChargeServiceMock.Setup(x => x.GenerateExpensesUntilAsync(user.Id, It.IsAny<DateTime>()))
+            .ReturnsAsync(ServiceResult<List<Expense>>.Success(new List<Expense>
+            {
+                new() { Id = 1, UserId = user.Id, Amount = 20m, CategoryId = 10, DateOperation = DateTime.Today }
+            }));
+
+        fixedChargeServiceMock.Setup(x => x.GetFixedChargesAsync(user.Id))
+            .ReturnsAsync(ServiceResult<List<FixedCharge>>.Success(new List<FixedCharge>()));
+
+        Mock<ICategoryService> categoryServiceMock = new();
+        categoryServiceMock.Setup(x => x.GetCategoriesAsync(user.Id))
+            .ReturnsAsync(ServiceResult<List<Category>>.Success(new List<Category>()));
+
+        FixedChargesViewModel viewModel = new(
+            fixedChargeServiceMock.Object,
+            categoryServiceMock.Object,
+            ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
+            dialogServiceMock.Object,
+            ViewModelTestHelper.CreateNavigationServiceMock().Object);
+
+        viewModel.GenerateExpensesCommand.Execute(null);
+        await Task.Delay(100);
+
+        fixedChargeServiceMock.Verify(x => x.GenerateExpensesUntilAsync(user.Id, It.IsAny<DateTime>()), Times.Once);
+        dialogServiceMock.Verify(x => x.ShowAlertAsync("Charges fixes", It.Is<string>(message => message.Contains("1 dépense(s) récurrente(s) générée(s).")), "OK"), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task LoadAsync_WithoutCurrentUser_SetsSessionError()
+    {
+        Mock<IFixedChargeService> fixedChargeServiceMock = new();
+
+        FixedChargesViewModel viewModel = new(
+            fixedChargeServiceMock.Object,
+            new Mock<ICategoryService>().Object,
+            ViewModelTestHelper.CreateAuthenticationServiceMock(null).Object,
+            ViewModelTestHelper.CreateDialogServiceMock().Object,
+            ViewModelTestHelper.CreateNavigationServiceMock().Object);
+
+        await viewModel.LoadAsync();
+
+        Assert.AreEqual("Aucune session utilisateur active.", viewModel.ErrorMessage);
+        fixedChargeServiceMock.Verify(x => x.GetFixedChargesAsync(It.IsAny<int>()), Times.Never);
+    }
 }

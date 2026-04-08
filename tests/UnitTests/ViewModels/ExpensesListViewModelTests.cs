@@ -48,4 +48,60 @@ public class ExpensesListViewModelTests
         Assert.AreEqual("EUR", viewModel.Expenses[0].Devise);
         Assert.AreEqual("Charge fixe", viewModel.Expenses[1].Note);
     }
+
+    [TestMethod]
+    public async Task AddExpenseCommand_NavigatesToAddExpensePage()
+    {
+        User user = ViewModelTestHelper.CreateUser();
+        Mock<INavigationService> navigationServiceMock = ViewModelTestHelper.CreateNavigationServiceMock();
+
+        ExpensesListViewModel viewModel = new(
+            new Mock<IExpenseService>().Object,
+            new Mock<ICategoryService>().Object,
+            ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
+            ViewModelTestHelper.CreateDialogServiceMock().Object,
+            navigationServiceMock.Object);
+
+        viewModel.AddExpenseCommand.Execute(null);
+        await Task.Delay(100);
+
+        navigationServiceMock.Verify(x => x.NavigateToAsync("//AddExpensePage"), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task QuickAddExpenseCommand_NavigatesToQuickAddExpensePage()
+    {
+        User user = ViewModelTestHelper.CreateUser();
+        Mock<INavigationService> navigationServiceMock = ViewModelTestHelper.CreateNavigationServiceMock();
+
+        ExpensesListViewModel viewModel = new(
+            new Mock<IExpenseService>().Object,
+            new Mock<ICategoryService>().Object,
+            ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
+            ViewModelTestHelper.CreateDialogServiceMock().Object,
+            navigationServiceMock.Object);
+
+        viewModel.QuickAddExpenseCommand.Execute(null);
+        await Task.Delay(100);
+
+        navigationServiceMock.Verify(x => x.NavigateToAsync("//QuickAddExpensePage"), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task LoadAsync_WithoutCurrentUser_SetsSessionError()
+    {
+        Mock<IExpenseService> expenseServiceMock = new();
+
+        ExpensesListViewModel viewModel = new(
+            expenseServiceMock.Object,
+            new Mock<ICategoryService>().Object,
+            ViewModelTestHelper.CreateAuthenticationServiceMock(null).Object,
+            ViewModelTestHelper.CreateDialogServiceMock().Object,
+            ViewModelTestHelper.CreateNavigationServiceMock().Object);
+
+        await viewModel.LoadAsync();
+
+        Assert.AreEqual("Aucune session utilisateur active.", viewModel.ErrorMessage);
+        expenseServiceMock.Verify(x => x.GetExpensesAsync(It.IsAny<int>()), Times.Never);
+    }
 }

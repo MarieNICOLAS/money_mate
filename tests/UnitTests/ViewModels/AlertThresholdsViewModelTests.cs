@@ -74,4 +74,51 @@ public class AlertThresholdsViewModelTests
         Assert.IsTrue(viewModel.Alerts.Any(alert => alert.TargetName == "Budget • Courses" && alert.CurrentPercentage == 86m));
         Assert.IsTrue(viewModel.Alerts.Any(alert => alert.TargetName == "Catégorie • Courses" && alert.CurrentPercentage == 40m));
     }
+
+    [TestMethod]
+    public async Task EvaluateAlertCommand_ShowsEvaluationMessage()
+    {
+        User user = ViewModelTestHelper.CreateUser();
+        Mock<IAlertThresholdService> alertServiceMock = new();
+        Mock<IDialogService> dialogServiceMock = ViewModelTestHelper.CreateDialogServiceMock();
+
+        alertServiceMock.Setup(x => x.EvaluateAlertAsync(7, user.Id))
+            .ReturnsAsync(ServiceResult<AlertTriggerInfo>.Success(new AlertTriggerInfo
+            {
+                ConsumedPercentage = 92m,
+                IsTriggered = true
+            }));
+
+        AlertThresholdsViewModel viewModel = new(
+            alertServiceMock.Object,
+            new Mock<IBudgetService>().Object,
+            new Mock<ICategoryService>().Object,
+            ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
+            dialogServiceMock.Object,
+            ViewModelTestHelper.CreateNavigationServiceMock().Object);
+
+        viewModel.EvaluateAlertCommand.Execute(new AlertThresholdItemViewModel { Id = 7, IsActive = true });
+        await Task.Delay(100);
+
+        dialogServiceMock.Verify(x => x.ShowAlertAsync("Évaluation d'alerte", It.Is<string>(message => message.Contains("92")), "OK"), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task LoadAsync_WithoutCurrentUser_SetsSessionError()
+    {
+        Mock<IAlertThresholdService> alertServiceMock = new();
+
+        AlertThresholdsViewModel viewModel = new(
+            alertServiceMock.Object,
+            new Mock<IBudgetService>().Object,
+            new Mock<ICategoryService>().Object,
+            ViewModelTestHelper.CreateAuthenticationServiceMock(null).Object,
+            ViewModelTestHelper.CreateDialogServiceMock().Object,
+            ViewModelTestHelper.CreateNavigationServiceMock().Object);
+
+        await viewModel.LoadAsync();
+
+        Assert.AreEqual("Aucune session utilisateur active.", viewModel.ErrorMessage);
+        alertServiceMock.Verify(x => x.GetAlertThresholdsAsync(It.IsAny<int>()), Times.Never);
+    }
 }

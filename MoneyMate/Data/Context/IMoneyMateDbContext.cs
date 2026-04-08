@@ -45,7 +45,9 @@ namespace MoneyMate.Data.Context
         int DeleteAlertThreshold(AlertThreshold alertThreshold);
 
         User? GetUserById(int id);
+        User? GetUserByEmail(string email);
         int InsertUser(User user);
+        int UpdateUser(User user);
         void DeleteAllUserData(int userId);
         void Close();
     }

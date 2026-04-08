@@ -22,7 +22,7 @@ namespace MoneyMate.Services.Implementations
         };
 
         private const int MIN_PASSWORD_LENGTH = 8;
-        private readonly MoneyMateDbContext _dbContext;
+        private readonly IMoneyMateDbContext _dbContext;
         private readonly ISessionManager _sessionManager;
 
         /// <summary>
@@ -38,9 +38,17 @@ namespace MoneyMate.Services.Implementations
         /// Initialise une nouvelle instance du service d'authentification.
         /// </summary>
         public AuthenticationService(ISessionManager sessionManager)
+            : this(DatabaseService.Instance, sessionManager)
         {
-            _dbContext = DatabaseService.Instance;
-            _sessionManager = sessionManager;
+        }
+
+        /// <summary>
+        /// Initialise une nouvelle instance du service d'authentification avec contexte injecté.
+        /// </summary>
+        public AuthenticationService(IMoneyMateDbContext dbContext, ISessionManager sessionManager)
+        {
+            _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+            _sessionManager = sessionManager ?? throw new ArgumentNullException(nameof(sessionManager));
         }
 
         /// <summary>
@@ -68,7 +76,7 @@ namespace MoneyMate.Services.Implementations
                     }
 
                     string normalizedEmail = NormalizeEmail(email);
-                    var user = _dbContext.GetUserByEmail(normalizedEmail);
+                    User? user = _dbContext.GetUserByEmail(normalizedEmail);
 
                     if (user == null)
                     {
@@ -163,7 +171,7 @@ namespace MoneyMate.Services.Implementations
 
                     string passwordHash = BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
 
-                    var newUser = new User
+                    User newUser = new()
                     {
                         Email = normalizedEmail,
                         PasswordHash = passwordHash,
@@ -270,7 +278,7 @@ namespace MoneyMate.Services.Implementations
                             "Les informations saisies sont invalides.");
                     }
 
-                    var user = _dbContext.GetUserById(userId);
+                    User? user = _dbContext.GetUserById(userId);
                     if (user == null)
                     {
                         return ServiceResult.Failure(
@@ -360,14 +368,9 @@ namespace MoneyMate.Services.Implementations
             => email.Trim().ToLowerInvariant();
 
         /// <summary>
-        /// Normalise une devise.
+        /// Normalise une devise sur 3 lettres majuscules.
         /// </summary>
-        /// <param name="devise">Devise brute.</param>
-        /// <returns>Devise normalisée.</returns>
         private static string NormalizeCurrency(string devise)
-            => string.IsNullOrWhiteSpace(devise)
-                ? "EUR"
-                : devise.Trim().ToUpperInvariant();
-
+            => string.IsNullOrWhiteSpace(devise) ? string.Empty : devise.Trim().ToUpperInvariant();
     }
 }

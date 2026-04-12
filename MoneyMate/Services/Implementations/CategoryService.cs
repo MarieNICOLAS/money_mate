@@ -222,7 +222,7 @@ namespace MoneyMate.Services.Implementations
                         return ServiceResult.Failure(inUseResult.ErrorCode, inUseResult.Message);
 
                     if (inUseResult.Data)
-                        return ServiceResult.Failure("CATEGORY_IN_USE", "Cette catégorie est utilisée par des dépenses, budgets, charges fixes ou alertes.");
+                        return ServiceResult.Failure("CATEGORY_IN_USE", "Cette catégorie est utilisée par des dépenses, charges fixes ou alertes.");
 
                     int deletedRows = _dbContext.DeleteCategory(category);
                     if (deletedRows != 1)
@@ -374,7 +374,6 @@ namespace MoneyMate.Services.Implementations
                     return ServiceResult<bool>.Failure("CATEGORY_INVALID_INPUT", "Les informations demandées sont invalides.");
 
                 bool isInUse = _dbContext.GetExpensesByCategory(userId, categoryId).Count > 0
-                    || _dbContext.GetBudgetsByUserId(userId).Any(budget => budget.CategoryId == categoryId)
                     || _dbContext.GetFixedChargesByUserId(userId).Any(fixedCharge => fixedCharge.CategoryId == categoryId)
                     || _dbContext.GetAlertThresholdsByUserId(userId).Any(alert => alert.CategoryId == categoryId);
 

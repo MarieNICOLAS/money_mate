@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Microsoft.Maui.Graphics;
 using MoneyMate.Models;
@@ -8,12 +8,11 @@ using MoneyMate.Services.Models;
 namespace MoneyMate.ViewModels.Budgets;
 
 /// <summary>
-/// ViewModel de synthèse des budgets.
+/// ViewModel de synthèse des budgets mensuels globaux.
 /// </summary>
 public class BudgetsOverviewViewModel : AuthenticatedViewModelBase
 {
     private readonly IBudgetService _budgetService;
-    private readonly ICategoryService _categoryService;
     private decimal _totalBudgetAmount;
     private decimal _totalConsumedAmount;
 
@@ -26,13 +25,14 @@ public class BudgetsOverviewViewModel : AuthenticatedViewModelBase
         : base(authenticationService, dialogService, navigationService)
     {
         _budgetService = budgetService ?? throw new ArgumentNullException(nameof(budgetService));
-        _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
 
         Title = "Budgets";
         Budgets = [];
 
         RefreshCommand = new Command(async () => await LoadAsync());
-        AddBudgetCommand = new Command(async () => await NavigationService.NavigateToAsync("//AddBudgetPage"));
+        AddBudgetCommand = new Command(async () => await NavigationService.NavigateToAsync("AddBudgetPage"));
+        ManageCategoriesCommand = new Command(async () => await NavigationService.NavigateToAsync("//CategoriesListPage"));
+        OpenEditBudgetCommand = new Command<BudgetOverviewItemViewModel>(async budget => await OpenEditBudgetAsync(budget));
     }
 
     public ObservableCollection<BudgetOverviewItemViewModel> Budgets { get; }
@@ -40,6 +40,10 @@ public class BudgetsOverviewViewModel : AuthenticatedViewModelBase
     public ICommand RefreshCommand { get; }
 
     public ICommand AddBudgetCommand { get; }
+
+    public ICommand ManageCategoriesCommand { get; }
+
+    public ICommand OpenEditBudgetCommand { get; }
 
     public decimal TotalBudgetAmount
     {
@@ -76,19 +80,6 @@ public class BudgetsOverviewViewModel : AuthenticatedViewModelBase
                 return;
             }
 
-            var categoriesResult = await _categoryService.GetCategoriesAsync(CurrentUserId);
-            if (!categoriesResult.IsSuccess)
-            {
-                ErrorMessage = categoriesResult.Message;
-                RefreshState();
-                return;
-            }
-
-            Dictionary<int, Category> categoriesById = (categoriesResult.Data ?? [])
-                .GroupBy(category => category.Id)
-                .Select(group => group.First())
-                .ToDictionary(category => category.Id, category => category);
-
             List<BudgetOverviewItemViewModel> budgetItems = [];
             foreach (Budget budget in (budgetsResult.Data ?? []).OrderByDescending(budget => budget.StartDate))
             {
@@ -96,7 +87,7 @@ public class BudgetsOverviewViewModel : AuthenticatedViewModelBase
                 if (!summaryResult.IsSuccess || summaryResult.Data == null)
                     continue;
 
-                budgetItems.Add(BudgetOverviewItemViewModel.FromData(budget, summaryResult.Data, categoriesById, Devise));
+                budgetItems.Add(BudgetOverviewItemViewModel.FromData(budget, summaryResult.Data, Devise));
             }
 
             Budgets.Clear();
@@ -116,22 +107,29 @@ public class BudgetsOverviewViewModel : AuthenticatedViewModelBase
         OnPropertyChanged(nameof(HasBudgets));
         OnPropertyChanged(nameof(Devise));
     }
+
+    private async Task OpenEditBudgetAsync(BudgetOverviewItemViewModel? budget)
+    {
+        if (budget == null)
+            return;
+
+        await NavigationService.NavigateToAsync($"EditBudgetPage?{NavigationParameterKeys.BudgetId}={budget.Id}");
+    }
 }
 
-/// <summary>
-/// Représentation UI d'un budget.
-/// </summary>
 public sealed class BudgetOverviewItemViewModel
 {
     private static readonly Color DefaultColor = Color.FromArgb("#6B7A8F");
 
     public int Id { get; init; }
 
-    public string CategoryName { get; init; } = string.Empty;
+    public string PeriodLabel { get; init; } = string.Empty;
 
-    public string CategoryIcon { get; init; } = "💰";
+    public string CategoryName => PeriodLabel;
 
-    public Color CategoryColor { get; init; } = DefaultColor;
+    public string SummaryLabel { get; init; } = string.Empty;
+
+    public Color AccentColor { get; init; } = DefaultColor;
 
     public decimal BudgetAmount { get; init; }
 
@@ -140,8 +138,6 @@ public sealed class BudgetOverviewItemViewModel
     public decimal RemainingAmount { get; init; }
 
     public decimal ConsumedPercentage { get; init; }
-
-    public string PeriodLabel { get; init; } = string.Empty;
 
     public string Devise { get; init; } = "EUR";
 
@@ -158,52 +154,26 @@ public sealed class BudgetOverviewItemViewModel
     public static BudgetOverviewItemViewModel FromData(
         Budget budget,
         BudgetConsumptionSummary summary,
-        IReadOnlyDictionary<int, Category> categoriesById,
         string devise)
     {
         ArgumentNullException.ThrowIfNull(budget);
         ArgumentNullException.ThrowIfNull(summary);
 
-        categoriesById.TryGetValue(budget.CategoryId, out Category? category);
-
         return new BudgetOverviewItemViewModel
         {
             Id = budget.Id,
-            CategoryName = category?.Name ?? "Catégorie inconnue",
-            CategoryIcon = string.IsNullOrWhiteSpace(category?.Icon) ? "💰" : category!.Icon,
-            CategoryColor = TryCreateColor(category?.Color),
+            PeriodLabel = budget.StartDate.ToString("MMMM yyyy"),
+            SummaryLabel = BuildSummaryLabel(budget),
+            AccentColor = DefaultColor,
             BudgetAmount = summary.Budget?.Amount ?? budget.Amount,
             ConsumedAmount = summary.ConsumedAmount,
             RemainingAmount = summary.RemainingAmount,
             ConsumedPercentage = summary.ConsumedPercentage,
-            PeriodLabel = BuildPeriodLabel(budget),
             Devise = devise,
             IsExceeded = summary.IsExceeded
         };
     }
 
-    private static string BuildPeriodLabel(Budget budget)
-    {
-        string endLabel = budget.EndDate.HasValue
-            ? budget.EndDate.Value.ToString("dd/MM/yyyy")
-            : "sans fin";
-
-        return $"{budget.PeriodType} • {budget.StartDate:dd/MM/yyyy} → {endLabel}";
-    }
-
-    private static Color TryCreateColor(string? color)
-    {
-        if (!string.IsNullOrWhiteSpace(color))
-        {
-            try
-            {
-                return Color.FromArgb(color);
-            }
-            catch
-            {
-            }
-        }
-
-        return DefaultColor;
-    }
+    private static string BuildSummaryLabel(Budget budget)
+        => $"Budget global • {budget.StartDate:MM/yyyy}";
 }

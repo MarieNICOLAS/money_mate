@@ -1,23 +1,40 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
                 xmlns:components="clr-namespace:MoneyMate.Components"
                 x:Class="MoneyMate.Views.Budgets.BudgetsOverviewPage"
                 x:Name="Page"
-                Title="Vue d'ensemble des Budgets">
+                Title="Vue d'ensemble des Budgets"
+                UseAuthenticatedFooter="True">
     <views:BasePage.PageContent>
         <ScrollView>
             <VerticalStackLayout Spacing="20" Padding="24">
-                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
-                    <VerticalStackLayout Grid.Column="0" Spacing="4">
-                        <Label Text="Budgets"
-                               Style="{StaticResource PageTitle}" />
-                        <Label Text="Surveillez vos enveloppes et les catégories à risque." TextColor="{StaticResource Secondary}" />
-                    </VerticalStackLayout>
-                    <Button Grid.Column="1" Text="Ajouter" Command="{Binding AddBudgetCommand}" BackgroundColor="{StaticResource Accent}" TextColor="White" />
-                    <Button Grid.Column="2" Text="Actualiser" Command="{Binding RefreshCommand}" BackgroundColor="{StaticResource Primary}" TextColor="White" />
-                </Grid>
+                <VerticalStackLayout Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                        <VerticalStackLayout Grid.Column="0" Spacing="4">
+                            <Label Text="Budgets"
+                                   Style="{StaticResource PageTitle}" />
+                            <Label Text="Surveillez vos enveloppes et les catégories à risque."
+                                   TextColor="{StaticResource Secondary}" />
+                        </VerticalStackLayout>
+                        <Button Grid.Column="1"
+                                Text="Ajouter"
+                                Command="{Binding AddBudgetCommand}"
+                                BackgroundColor="{StaticResource Accent}"
+                                TextColor="White" />
+                        <Button Grid.Column="2"
+                                Text="Actualiser"
+                                Command="{Binding RefreshCommand}"
+                                BackgroundColor="{StaticResource Primary}"
+                                TextColor="White" />
+                    </Grid>
+
+                    <Button Text="Gérer les catégories"
+                            Command="{Binding ManageCategoriesCommand}"
+                            BackgroundColor="#E8EEF3"
+                            TextColor="{StaticResource TextDark}" />
+                </VerticalStackLayout>
 
                 <Label Text="{Binding ErrorMessage}"
                        IsVisible="{Binding HasError}"
@@ -87,6 +104,12 @@
                                         <Label Grid.Column="0" Text="{Binding PeriodLabel}" TextColor="{StaticResource Secondary}" />
                                         <Label Grid.Column="1" Text="{Binding StatusText}" FontAttributes="Bold" TextColor="{StaticResource Secondary}" />
                                     </Grid>
+
+                                    <Button Text="Modifier"
+                                            Command="{Binding Source={x:Reference Page}, Path=BindingContext.OpenEditBudgetCommand}"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="#E8EEF3"
+                                            TextColor="{StaticResource TextDark}" />
                                 </VerticalStackLayout>
                             </Border>
                         </DataTemplate>

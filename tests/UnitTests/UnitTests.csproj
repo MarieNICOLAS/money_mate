@@ -5,6 +5,11 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <EnableMauiImageProcessing>false</EnableMauiImageProcessing>
+    <EnableMauiFontProcessing>false</EnableMauiFontProcessing>
+    <EnableMauiSplashScreenProcessing>false</EnableMauiSplashScreenProcessing>
+    <EnableMauiAssetProcessing>false</EnableMauiAssetProcessing>
+    <DisableResizetizer>true</DisableResizetizer>
   </PropertyGroup>
 
   <ItemGroup>

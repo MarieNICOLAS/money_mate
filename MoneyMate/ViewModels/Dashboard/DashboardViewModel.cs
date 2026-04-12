@@ -37,7 +37,8 @@ namespace MoneyMate.ViewModels.Dashboard
             LogoutCommand = new Command(async () => await LogoutAsync());
             RefreshCommand = new Command(async () => await LoadAsync());
             GoHomeCommand = new Command(async () => await NavigationService.NavigateToAsync("//DashboardPage"));
-            GoExpensesCommand = new Command(async () => await NavigationService.NavigateToAsync("//ExpensesListPage"));
+            GoCalendarCommand = new Command(async () => await NavigationService.NavigateToAsync("//CalendarPage"));
+            GoQuickAddExpenseCommand = new Command(async () => await NavigationService.NavigateToAsync("//QuickAddExpensePage"));
             GoBudgetCommand = new Command(async () => await NavigationService.NavigateToAsync("//BudgetsOverviewPage"));
             GoProfileCommand = new Command(async () => await NavigationService.NavigateToAsync("//ProfilePage"));
         }
@@ -106,7 +107,9 @@ namespace MoneyMate.ViewModels.Dashboard
 
         public ICommand GoHomeCommand { get; }
 
-        public ICommand GoExpensesCommand { get; }
+        public ICommand GoCalendarCommand { get; }
+
+        public ICommand GoQuickAddExpenseCommand { get; }
 
         public ICommand GoBudgetCommand { get; }
 

@@ -1,13 +1,86 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
+                xmlns:components="clr-namespace:MoneyMate.Components"
                 x:Class="MoneyMate.Views.Expenses.ExpenseDetailsPage"
-                Title="Details de la Depense">
-    <VerticalStackLayout Spacing="20" Padding="30">
-        <Label 
-            Text="Details de la Depense"
-            Style="{StaticResource PageTitle}"
-            HorizontalOptions="Center" />
-    </VerticalStackLayout>
+                Title="Détail dépense"
+                UseAuthenticatedFooter="True">
+    <views:BasePage.PageContent>
+        <ScrollView>
+            <VerticalStackLayout Style="{StaticResource MainContainer}" Spacing="18">
+                <Label Text="Détail de la dépense"
+                       Style="{StaticResource PageTitle}"
+                       Margin="0,8,0,0" />
+
+                <Border Style="{StaticResource CardFrame}">
+                    <VerticalStackLayout Spacing="16">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <VerticalStackLayout Spacing="6">
+                                <Label Text="{Binding CategoryName}"
+                                       Style="{StaticResource SectionTitle}" />
+                                <Label Text="{Binding ExpenseDate, StringFormat='Le {0:dd/MM/yyyy}'}"
+                                       TextColor="{StaticResource Secondary}" />
+                            </VerticalStackLayout>
+
+                            <components:AmountDisplay Grid.Column="1"
+                                                      Amount="{Binding Amount}"
+                                                      Devise="{Binding Devise}"
+                                                      FontSize="24"
+                                                      TextColor="{StaticResource Accent}" />
+                        </Grid>
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                            <Border Grid.Column="0" Padding="12" StrokeThickness="0" BackgroundColor="#F3F8FC">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="12" />
+                                </Border.StrokeShape>
+                                <VerticalStackLayout Spacing="4">
+                                    <Label Text="Type" TextColor="{StaticResource Secondary}" />
+                                    <Label Text="{Binding ExpenseTypeText}" FontAttributes="Bold" />
+                                </VerticalStackLayout>
+                            </Border>
+
+                            <Border Grid.Column="1" Padding="12" StrokeThickness="0" BackgroundColor="#EEF7EE">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="12" />
+                                </Border.StrokeShape>
+                                <VerticalStackLayout Spacing="4">
+                                    <Label Text="Créée le" TextColor="{StaticResource Secondary}" />
+                                    <Label Text="{Binding CreatedAt, StringFormat='{0:dd/MM/yyyy HH:mm}'}" FontAttributes="Bold" />
+                                </VerticalStackLayout>
+                            </Border>
+                        </Grid>
+
+                        <Label Text="Description"
+                               Style="{StaticResource FormLabel}" />
+                        <Border Style="{StaticResource InputContainer}">
+                            <Label Text="{Binding Description}"
+                                   TextColor="{StaticResource TextDark}"
+                                   LineBreakMode="WordWrap" />
+                        </Border>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Label Text="{Binding ErrorMessage}"
+                       IsVisible="{Binding HasError}"
+                       TextColor="{StaticResource Error}"
+                       FontAttributes="Bold" />
+
+                <VerticalStackLayout Spacing="12" Margin="0,8,0,0">
+                    <Button Text="Modifier"
+                            Command="{Binding EditCommand}"
+                            Style="{StaticResource PrimaryButton}" />
+                    <Button Text="Dupliquer"
+                            Command="{Binding DuplicateCommand}"
+                            BackgroundColor="#E8EEF3"
+                            TextColor="{StaticResource TextDark}" />
+                    <Button Text="Supprimer"
+                            Command="{Binding DeleteCommand}"
+                            BackgroundColor="#FFF0F0"
+                            TextColor="{StaticResource Error}" />
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </ScrollView>
+    </views:BasePage.PageContent>
 </views:BasePage>

@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
@@ -26,7 +26,7 @@ public class AlertThresholdFormViewModelTests
         budgetServiceMock.Setup(x => x.GetBudgetsAsync(user.Id))
             .ReturnsAsync(ServiceResult<List<Budget>>.Success(new List<Budget>
             {
-                new() { Id = 3, UserId = user.Id, CategoryId = 10, Amount = 200m, PeriodType = "Monthly", StartDate = DateTime.Today }
+                new() { Id = 3, UserId = user.Id, Amount = 200m, PeriodType = "Monthly", StartDate = new DateTime(2026, 4, 1) }
             }));
 
         AlertThresholdFormViewModel viewModel = new(
@@ -42,40 +42,26 @@ public class AlertThresholdFormViewModelTests
         Assert.AreEqual(1, viewModel.Categories.Count);
         Assert.AreEqual(1, viewModel.Budgets.Count);
         Assert.AreEqual("Warning", viewModel.SelectedAlertType);
+        Assert.IsTrue(viewModel.Budgets[0].Label.Contains("avril", StringComparison.OrdinalIgnoreCase));
     }
 
     [TestMethod]
-    public async Task SaveCommand_WhenBudgetCategoryMismatch_DoesNotCallService()
+    public async Task SaveCommand_WhenNoTargetSelected_DoesNotCallService()
     {
         User user = ViewModelTestHelper.CreateUser();
         Mock<IAlertThresholdService> alertServiceMock = new();
-        Mock<IBudgetService> budgetServiceMock = new();
-        Mock<ICategoryService> categoryServiceMock = new();
-
-        categoryServiceMock.Setup(x => x.GetCategoriesAsync(user.Id))
-            .ReturnsAsync(ServiceResult<List<Category>>.Success(new List<Category>
-            {
-                new() { Id = 10, Name = "Courses", IsActive = true, IsSystem = true },
-                new() { Id = 20, Name = "Transport", IsActive = true, IsSystem = true }
-            }));
-
-        budgetServiceMock.Setup(x => x.GetBudgetsAsync(user.Id))
-            .ReturnsAsync(ServiceResult<List<Budget>>.Success(new List<Budget>
-            {
-                new() { Id = 3, UserId = user.Id, CategoryId = 10, Amount = 200m, PeriodType = "Monthly", StartDate = DateTime.Today }
-            }));
 
         AlertThresholdFormViewModel viewModel = new(
             alertServiceMock.Object,
-            budgetServiceMock.Object,
-            categoryServiceMock.Object,
+            new Mock<IBudgetService>().Object,
+            new Mock<ICategoryService>().Object,
             ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
             ViewModelTestHelper.CreateDialogServiceMock().Object,
             ViewModelTestHelper.CreateNavigationServiceMock().Object);
 
         await viewModel.InitializeAsync();
-        viewModel.SelectedBudgetId = 3;
-        viewModel.SelectedCategoryId = 20;
+        viewModel.SelectedBudgetId = 0;
+        viewModel.SelectedCategoryId = 0;
         viewModel.ThresholdPercentageText = "80";
 
         viewModel.SaveCommand.Execute(null);

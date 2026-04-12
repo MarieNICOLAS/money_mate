@@ -39,8 +39,17 @@ namespace MoneyMate.Data.Context
                 if (_connection != null)
                     return _connection;
 
-                _connection = new SQLiteConnection(_dbPath);
-                InitializeDatabase(_connection);
+                try
+                {
+                    _connection = new SQLiteConnection(_dbPath);
+                    InitializeDatabase(_connection);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine(
+                        $"Erreur SQLite à l'initialisation de la base '{_dbPath}' : {ex}");
+                    throw;
+                }
 
                 return _connection;
             }
@@ -420,11 +429,6 @@ namespace MoneyMate.Data.Context
                     userId,
                     existingCategory.Id);
 
-                database.Execute(
-                    "DELETE FROM Budgets WHERE UserId = ? AND CategoryId = ?",
-                    userId,
-                    existingCategory.Id);
-
                 deletedCategoryRows = database.Execute(
                     "DELETE FROM Categories WHERE Id = ? AND UserId = ? AND IsSystem = 0",
                     existingCategory.Id,
@@ -596,9 +600,6 @@ namespace MoneyMate.Data.Context
             if (!IsValidUserId(budget.UserId))
                 return 0;
 
-            if (!CategoryExistsForUser(budget.CategoryId, budget.UserId))
-                return 0;
-
             Database.Insert(budget);
             return budget.Id;
         }
@@ -615,9 +616,6 @@ namespace MoneyMate.Data.Context
 
             var existingBudget = GetBudgetById(budget.Id, budget.UserId);
             if (existingBudget == null)
-                return 0;
-
-            if (!CategoryExistsForUser(budget.CategoryId, budget.UserId))
                 return 0;
 
             return Database.Update(budget);

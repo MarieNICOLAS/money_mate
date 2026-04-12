@@ -3,6 +3,7 @@ using Moq;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.Services.Results;
+using MoneyMate.ViewModels;
 using MoneyMate.ViewModels.Expenses;
 
 namespace UnitTests.ViewModels;
@@ -85,6 +86,33 @@ public class ExpensesListViewModelTests
         await Task.Delay(100);
 
         navigationServiceMock.Verify(x => x.NavigateToAsync("//QuickAddExpensePage"), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task OpenExpenseDetailsCommand_NavigatesWithExpenseId()
+    {
+        User user = ViewModelTestHelper.CreateUser();
+        Mock<INavigationService> navigationServiceMock = ViewModelTestHelper.CreateNavigationServiceMock();
+
+        ExpensesListViewModel viewModel = new(
+            new Mock<IExpenseService>().Object,
+            new Mock<ICategoryService>().Object,
+            ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
+            ViewModelTestHelper.CreateDialogServiceMock().Object,
+            navigationServiceMock.Object);
+
+        viewModel.OpenExpenseDetailsCommand.Execute(new ExpenseItemViewModel
+        {
+            Id = 42,
+            Amount = 18.50m,
+            CategoryName = "Repas",
+            Devise = "EUR"
+        });
+        await Task.Delay(100);
+
+        navigationServiceMock.Verify(x => x.NavigateToAsync("//ExpenseDetailsPage", It.Is<Dictionary<string, object>>(parameters =>
+            parameters.ContainsKey(NavigationParameterKeys.ExpenseId) &&
+            (int)parameters[NavigationParameterKeys.ExpenseId] == 42)), Times.Once);
     }
 
     [TestMethod]

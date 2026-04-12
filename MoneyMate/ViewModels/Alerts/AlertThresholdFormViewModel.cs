@@ -50,15 +50,7 @@ public class AlertThresholdFormViewModel : FormViewModelBase
     public int SelectedBudgetId
     {
         get => _selectedBudgetId;
-        set
-        {
-            if (SetFormProperty(ref _selectedBudgetId, value) && value > 0)
-            {
-                BudgetOptionViewModel? selectedBudget = Budgets.FirstOrDefault(budget => budget.Id == value);
-                if (selectedBudget != null)
-                    SelectedCategoryId = selectedBudget.CategoryId;
-            }
-        }
+        set => SetFormProperty(ref _selectedBudgetId, value);
     }
 
     public int SelectedCategoryId
@@ -124,17 +116,9 @@ public class AlertThresholdFormViewModel : FormViewModelBase
             return;
         }
 
-        Dictionary<int, string> categoryNames = Categories.ToDictionary(category => category.Id, category => category.Name);
-
         Budgets.Clear();
         foreach (Budget budget in (budgetsResult.Data ?? []).OrderByDescending(budget => budget.StartDate))
-        {
-            string categoryName = categoryNames.TryGetValue(budget.CategoryId, out string? name)
-                ? name
-                : $"Catégorie {budget.CategoryId}";
-
-            Budgets.Add(BudgetOptionViewModel.FromModel(budget, categoryName));
-        }
+            Budgets.Add(BudgetOptionViewModel.FromModel(budget));
     }
 
     protected override Task InitializeForCreateAsync()
@@ -185,10 +169,6 @@ public class AlertThresholdFormViewModel : FormViewModelBase
 
         if (SelectedBudgetId <= 0 && SelectedCategoryId <= 0)
             return "Le seuil d'alerte doit cibler un budget ou une catégorie.";
-
-        BudgetOptionViewModel? selectedBudget = Budgets.FirstOrDefault(budget => budget.Id == SelectedBudgetId);
-        if (selectedBudget != null && SelectedCategoryId > 0 && selectedBudget.CategoryId != SelectedCategoryId)
-            return "Le budget sélectionné ne correspond pas à la catégorie choisie.";
 
         return string.Empty;
     }

@@ -19,7 +19,7 @@ public class AlertThresholdsViewModelTests
         Mock<IBudgetService> budgetServiceMock = new();
         Mock<ICategoryService> categoryServiceMock = new();
 
-        Budget budget = new() { Id = 5, UserId = user.Id, CategoryId = 100, Amount = 150m, PeriodType = "Monthly", StartDate = DateTime.Today.AddDays(-10) };
+        Budget budget = new() { Id = 5, UserId = user.Id, Amount = 150m, PeriodType = "Monthly", StartDate = new DateTime(2026, 4, 1) };
         AlertThreshold warningAlert = new() { Id = 1, UserId = user.Id, BudgetId = 5, ThresholdPercentage = 80m, AlertType = "Warning", IsActive = true };
         AlertThreshold criticalAlert = new() { Id = 2, UserId = user.Id, CategoryId = 100, ThresholdPercentage = 95m, AlertType = "Critical", IsActive = true };
 
@@ -71,7 +71,7 @@ public class AlertThresholdsViewModelTests
         Assert.AreEqual(2, viewModel.ActiveAlertsCount);
         Assert.AreEqual(1, viewModel.TriggeredAlertsCount);
         Assert.IsTrue(viewModel.HasAlerts);
-        Assert.IsTrue(viewModel.Alerts.Any(alert => alert.TargetName == "Budget • Courses" && alert.CurrentPercentage == 86m));
+        Assert.IsTrue(viewModel.Alerts.Any(alert => alert.TargetName.Contains("Budget •", StringComparison.OrdinalIgnoreCase) && alert.CurrentPercentage == 86m));
         Assert.IsTrue(viewModel.Alerts.Any(alert => alert.TargetName == "Catégorie • Courses" && alert.CurrentPercentage == 40m));
     }
 

@@ -28,7 +28,7 @@ namespace UnitTests.Services
         }
 
         [TestMethod]
-        public async Task CreateAlertThresholdAsync_WithMismatchedBudgetAndCategory_ReturnsFailure()
+        public async Task CreateAlertThresholdAsync_WithBudgetAndCategoryTargets_ReturnsSuccess()
         {
             Mock<IMoneyMateDbContext> dbContextMock = new();
 
@@ -37,7 +37,6 @@ namespace UnitTests.Services
                 {
                     Id = 4,
                     UserId = 1,
-                    CategoryId = 2,
                     Amount = 300m,
                     PeriodType = "Monthly",
                     StartDate = DateTime.Today,
@@ -53,6 +52,10 @@ namespace UnitTests.Services
                     IsActive = true
                 });
 
+            dbContextMock.Setup(x => x.InsertAlertThreshold(It.IsAny<AlertThreshold>()))
+                .Callback<AlertThreshold>(alert => alert.Id = 12)
+                .Returns(12);
+
             AlertThresholdService service = new(dbContextMock.Object);
 
             AlertThreshold alertThreshold = new()
@@ -66,8 +69,9 @@ namespace UnitTests.Services
 
             var result = await service.CreateAlertThresholdAsync(alertThreshold);
 
-            Assert.IsFalse(result.IsSuccess);
-            Assert.AreEqual("ALERT_BUDGET_CATEGORY_MISMATCH", result.ErrorCode);
+            Assert.IsTrue(result.IsSuccess);
+            Assert.IsNotNull(result.Data);
+            Assert.AreEqual(12, result.Data.Id);
         }
 
         [TestMethod]
@@ -80,7 +84,6 @@ namespace UnitTests.Services
                 {
                     Id = 5,
                     UserId = 1,
-                    CategoryId = 2,
                     Amount = 500m,
                     PeriodType = "Monthly",
                     StartDate = DateTime.Today,

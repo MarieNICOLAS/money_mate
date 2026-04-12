@@ -14,6 +14,7 @@ public class ExpenseFormViewModel : FormViewModelBase
     private readonly ICategoryService _categoryService;
     private string _amountText = string.Empty;
     private int _selectedCategoryId;
+    private CategoryOptionViewModel? _selectedCategory;
     private DateTime _dateOperation = DateTime.Now;
     private string _note = string.Empty;
     private bool _isFixedCharge;
@@ -44,7 +45,25 @@ public class ExpenseFormViewModel : FormViewModelBase
     public int SelectedCategoryId
     {
         get => _selectedCategoryId;
-        set => SetFormProperty(ref _selectedCategoryId, value);
+        set
+        {
+            if (SetFormProperty(ref _selectedCategoryId, value))
+            {
+                CategoryOptionViewModel? matchingCategory = Categories.FirstOrDefault(category => category.Id == value);
+                if (!ReferenceEquals(_selectedCategory, matchingCategory))
+                    SetProperty(ref _selectedCategory, matchingCategory, nameof(SelectedCategory));
+            }
+        }
+    }
+
+    public CategoryOptionViewModel? SelectedCategory
+    {
+        get => _selectedCategory;
+        set
+        {
+            if (SetProperty(ref _selectedCategory, value))
+                SelectedCategoryId = value?.Id ?? 0;
+        }
     }
 
     public DateTime DateOperation
@@ -80,6 +99,9 @@ public class ExpenseFormViewModel : FormViewModelBase
         Categories.Clear();
         foreach (Category category in (result.Data ?? []).OrderBy(category => category.Name))
             Categories.Add(CategoryOptionViewModel.FromModel(category));
+
+        if (SelectedCategoryId > 0)
+            SelectedCategory = Categories.FirstOrDefault(category => category.Id == SelectedCategoryId);
     }
 
     protected override Task InitializeForCreateAsync()

@@ -1,4 +1,4 @@
-﻿using MoneyMate.Data.Context;
+using MoneyMate.Data.Context;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.Services.Models;
@@ -104,9 +104,6 @@ namespace MoneyMate.Services.Implementations
             });
         }
 
-        /// <summary>
-        /// Retourne les catégories les plus dépensières sur une période.
-        /// </summary>
         private ServiceResult<List<DashboardCategorySpending>> GetTopSpendingCategoriesInternal(int userId, int topCount, DateTime startDate, DateTime endDate)
         {
             if (topCount <= 0)
@@ -133,60 +130,51 @@ namespace MoneyMate.Services.Implementations
             return ServiceResult<List<DashboardCategorySpending>>.Success(categories);
         }
 
-        /// <summary>
-        /// Indique si un budget est à risque à partir de 80 % de consommation.
-        /// </summary>
         private bool IsBudgetAtRisk(int userId, Budget budget)
         {
             if (budget.Amount <= 0)
                 return false;
 
+            budget.NormalizeToMonthlyPeriod();
+
             DateTime endDate = budget.EndDate ?? DateTime.MaxValue;
-            decimal consumedAmount = _dbContext.GetExpensesByCategory(userId, budget.CategoryId)
+            decimal consumedAmount = _dbContext.GetExpensesByUserId(userId)
                 .Where(expense => expense.DateOperation >= budget.StartDate && expense.DateOperation <= endDate)
                 .Sum(expense => expense.Amount);
 
             return budget.CalculateBudgetPercentage(consumedAmount) >= 80m;
         }
 
-        /// <summary>
-        /// Indique si un seuil d'alerte est déclenché.
-        /// </summary>
         private bool IsAlertTriggered(int userId, AlertThreshold alertThreshold)
         {
             Budget? budget = ResolveBudget(userId, alertThreshold);
             if (budget == null || budget.Amount <= 0)
                 return false;
 
-            int categoryId = alertThreshold.CategoryId ?? budget.CategoryId;
+            budget.NormalizeToMonthlyPeriod();
             DateTime endDate = budget.EndDate ?? DateTime.MaxValue;
 
-            decimal consumedAmount = _dbContext.GetExpensesByCategory(userId, categoryId)
-                .Where(expense => expense.DateOperation >= budget.StartDate && expense.DateOperation <= endDate)
-                .Sum(expense => expense.Amount);
+            IEnumerable<Expense> expenses = _dbContext.GetExpensesByUserId(userId)
+                .Where(expense => expense.DateOperation >= budget.StartDate && expense.DateOperation <= endDate);
+
+            if (alertThreshold.CategoryId.HasValue)
+                expenses = expenses.Where(expense => expense.CategoryId == alertThreshold.CategoryId.Value);
+
+            decimal consumedAmount = expenses.Sum(expense => expense.Amount);
 
             return budget.CalculateBudgetPercentage(consumedAmount) >= alertThreshold.ThresholdPercentage;
         }
 
-        /// <summary>
-        /// Résout le budget applicable à une alerte.
-        /// </summary>
         private Budget? ResolveBudget(int userId, AlertThreshold alertThreshold)
         {
             if (alertThreshold.BudgetId.HasValue)
                 return _dbContext.GetBudgetById(alertThreshold.BudgetId.Value, userId);
 
-            if (!alertThreshold.CategoryId.HasValue)
-                return null;
-
             DateTime now = DateTime.Now;
 
             return _dbContext.GetBudgetsByUserId(userId)
-                .Where(budget => budget.CategoryId == alertThreshold.CategoryId.Value)
-                .Where(budget => budget.StartDate <= now)
-                .Where(budget => !budget.EndDate.HasValue || budget.EndDate.Value >= now)
-                .OrderByDescending(budget => budget.StartDate)
-                .ThenByDescending(budget => budget.CreatedAt)
+                .Where(budget => budget.StartDate.Year == now.Year && budget.StartDate.Month == now.Month)
+                .OrderByDescending(budget => budget.CreatedAt)
                 .FirstOrDefault();
         }
     }

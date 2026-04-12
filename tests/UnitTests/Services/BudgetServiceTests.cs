@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using MoneyMate.Data.Context;
 using MoneyMate.Models;
@@ -10,44 +10,29 @@ namespace UnitTests.Services
     public class BudgetServiceTests
     {
         [TestMethod]
-        public async Task CreateBudgetAsync_WithUnknownCategory_ReturnsCategoryNotFound()
+        public async Task CreateBudgetAsync_WithFutureMonth_ReturnsValidationError()
         {
             Mock<IMoneyMateDbContext> dbContextMock = new();
-
-            dbContextMock.Setup(x => x.GetCategoryById(3, 1))
-                .Returns((Category?)null);
-
             BudgetService service = new(dbContextMock.Object);
 
             Budget budget = new()
             {
                 UserId = 1,
-                CategoryId = 3,
                 Amount = 200m,
                 PeriodType = "Monthly",
-                StartDate = DateTime.Today,
-                EndDate = DateTime.Today.AddMonths(1)
+                StartDate = DateTime.Today.AddMonths(1)
             };
 
             var result = await service.CreateBudgetAsync(budget);
 
             Assert.IsFalse(result.IsSuccess);
-            Assert.AreEqual("BUDGET_CATEGORY_NOT_FOUND", result.ErrorCode);
+            Assert.AreEqual("BUDGET_FUTURE_MONTH_NOT_ALLOWED", result.ErrorCode);
         }
 
         [TestMethod]
-        public async Task CreateBudgetAsync_WithOverlappingBudget_ReturnsConflict()
+        public async Task CreateBudgetAsync_WithExistingMonthBudget_ReturnsConflict()
         {
             Mock<IMoneyMateDbContext> dbContextMock = new();
-
-            dbContextMock.Setup(x => x.GetCategoryById(3, 1))
-                .Returns(new Category
-                {
-                    Id = 3,
-                    UserId = 1,
-                    Name = "Courses",
-                    IsActive = true
-                });
 
             dbContextMock.Setup(x => x.GetBudgetsByUserId(1))
                 .Returns(new List<Budget>
@@ -56,7 +41,6 @@ namespace UnitTests.Services
                     {
                         Id = 8,
                         UserId = 1,
-                        CategoryId = 3,
                         Amount = 150m,
                         PeriodType = "Monthly",
                         StartDate = new DateTime(2026, 1, 1),
@@ -70,7 +54,6 @@ namespace UnitTests.Services
             Budget budget = new()
             {
                 UserId = 1,
-                CategoryId = 3,
                 Amount = 250m,
                 PeriodType = "Monthly",
                 StartDate = new DateTime(2026, 1, 15),

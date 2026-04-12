@@ -5,7 +5,8 @@
                 xmlns:components="clr-namespace:MoneyMate.Components"
                 x:Class="MoneyMate.Views.Alerts.AlertThresholdPage"
                 x:Name="Page"
-                Title="Seuils d Alerte">
+                Title="Seuils d Alerte"
+                UseAuthenticatedFooter="True">
     <views:BasePage.PageContent>
         <ScrollView>
             <VerticalStackLayout Spacing="20" Padding="24">

@@ -32,6 +32,7 @@ public class ExpensesListViewModel : AuthenticatedViewModelBase
         RefreshCommand = new Command(async () => await LoadAsync());
         AddExpenseCommand = new Command(async () => await NavigationService.NavigateToAsync("//AddExpensePage"));
         QuickAddExpenseCommand = new Command(async () => await NavigationService.NavigateToAsync("//QuickAddExpensePage"));
+        OpenExpenseDetailsCommand = new Command<ExpenseItemViewModel>(async expense => await OpenExpenseDetailsAsync(expense));
     }
 
     public ObservableCollection<ExpenseItemViewModel> Expenses { get; }
@@ -41,6 +42,8 @@ public class ExpensesListViewModel : AuthenticatedViewModelBase
     public ICommand AddExpenseCommand { get; }
 
     public ICommand QuickAddExpenseCommand { get; }
+
+    public ICommand OpenExpenseDetailsCommand { get; }
 
     public decimal TotalExpenses
     {
@@ -101,6 +104,17 @@ public class ExpensesListViewModel : AuthenticatedViewModelBase
         OnPropertyChanged(nameof(ExpensesCount));
         OnPropertyChanged(nameof(HasExpenses));
         OnPropertyChanged(nameof(Devise));
+    }
+
+    private async Task OpenExpenseDetailsAsync(ExpenseItemViewModel? expense)
+    {
+        if (expense == null)
+            return;
+
+        await NavigationService.NavigateToAsync("//ExpenseDetailsPage", new Dictionary<string, object>
+        {
+            [NavigationParameterKeys.ExpenseId] = expense.Id
+        });
     }
 }
 

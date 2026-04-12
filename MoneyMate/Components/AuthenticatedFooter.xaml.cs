@@ -14,6 +14,12 @@ public partial class AuthenticatedFooter : ContentView
     public static readonly BindableProperty GoExpensesCommandProperty =
         BindableProperty.Create(nameof(GoExpensesCommand), typeof(ICommand), typeof(AuthenticatedFooter), null);
 
+    public static readonly BindableProperty GoCalendarCommandProperty =
+        BindableProperty.Create(nameof(GoCalendarCommand), typeof(ICommand), typeof(AuthenticatedFooter), null);
+
+    public static readonly BindableProperty GoQuickAddExpenseCommandProperty =
+        BindableProperty.Create(nameof(GoQuickAddExpenseCommand), typeof(ICommand), typeof(AuthenticatedFooter), null);
+
     public static readonly BindableProperty GoBudgetCommandProperty =
         BindableProperty.Create(nameof(GoBudgetCommand), typeof(ICommand), typeof(AuthenticatedFooter), null);
 
@@ -30,6 +36,18 @@ public partial class AuthenticatedFooter : ContentView
     {
         get => (ICommand?)GetValue(GoExpensesCommandProperty);
         set => SetValue(GoExpensesCommandProperty, value);
+    }
+
+    public ICommand? GoCalendarCommand
+    {
+        get => (ICommand?)GetValue(GoCalendarCommandProperty);
+        set => SetValue(GoCalendarCommandProperty, value);
+    }
+
+    public ICommand? GoQuickAddExpenseCommand
+    {
+        get => (ICommand?)GetValue(GoQuickAddExpenseCommandProperty);
+        set => SetValue(GoQuickAddExpenseCommandProperty, value);
     }
 
     public ICommand? GoBudgetCommand

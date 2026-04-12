@@ -200,7 +200,7 @@ namespace MoneyMate.Services.Implementations
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Erreur RegisterAsync : {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"Erreur RegisterAsync : {ex}");
 
                     return ServiceResult<User>.Failure(
                         "AUTH_UNEXPECTED_ERROR",

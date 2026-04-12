@@ -39,8 +39,17 @@ namespace MoneyMate.Data.Context
                 if (_connection != null)
                     return _connection;
 
-                _connection = new SQLiteConnection(_dbPath);
-                InitializeDatabase(_connection);
+                try
+                {
+                    _connection = new SQLiteConnection(_dbPath);
+                    InitializeDatabase(_connection);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine(
+                        $"Erreur SQLite à l'initialisation de la base '{_dbPath}' : {ex}");
+                    throw;
+                }
 
                 return _connection;
             }

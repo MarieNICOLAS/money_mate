@@ -1,78 +1,108 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MoneyMate.Components.AuthenticatedFooter"
-             x:Name="this">
+             x:Name="this"
+             BackgroundColor="Transparent"
+             Margin="0">
 
-    <Border BackgroundColor="{StaticResource Secondary}"
-            Padding="8,10">
-        <Grid ColumnDefinitions="*,*,*,*"
+    <Border BackgroundColor="{StaticResource Primary}"
+            StrokeThickness="0"
+            Padding="18,10,18,12"
+            Margin="0">
+        <Grid ColumnDefinitions="*,*,*,*,*"
+              ColumnSpacing="4"
               HorizontalOptions="Fill">
 
-            <!-- Accueil -->
-            <VerticalStackLayout Grid.Column="0" Spacing="3" HorizontalOptions="Center">
+            <VerticalStackLayout Grid.Column="0"
+                                 Spacing="2"
+                                 HorizontalOptions="Center"
+                                 VerticalOptions="Center">
                 <Label Text="{StaticResource IconHome}"
                        FontFamily="MaterialIcons"
-                       FontSize="26"
-                       TextColor="{StaticResource TextLight}"
+                       FontSize="22"
+                       TextColor="White"
                        HorizontalOptions="Center" />
                 <Label Text="Accueil"
                        FontSize="11"
-                       TextColor="{StaticResource TextLight}"
+                       TextColor="White"
                        HorizontalOptions="Center" />
                 <VerticalStackLayout.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoHomeCommand}" />
                 </VerticalStackLayout.GestureRecognizers>
             </VerticalStackLayout>
 
-            <!-- Depenses -->
-            <VerticalStackLayout Grid.Column="1" Spacing="3" HorizontalOptions="Center">
-                <Label Text="{StaticResource IconExpense}"
+            <VerticalStackLayout Grid.Column="1"
+                                 Spacing="2"
+                                 HorizontalOptions="Center"
+                                 VerticalOptions="Center">
+                <Label Text="{StaticResource IconCalendar}"
                        FontFamily="MaterialIcons"
-                       FontSize="26"
-                       TextColor="{StaticResource TextLight}"
+                       FontSize="22"
+                       TextColor="White"
                        HorizontalOptions="Center" />
-                <Label Text="Dépenses"
+                <Label Text="Calendrier"
                        FontSize="11"
-                       TextColor="{StaticResource TextLight}"
+                       TextColor="White"
                        HorizontalOptions="Center" />
                 <VerticalStackLayout.GestureRecognizers>
-                    <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoExpensesCommand}" />
+                    <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoCalendarCommand}" />
                 </VerticalStackLayout.GestureRecognizers>
             </VerticalStackLayout>
 
-            <!-- Budget -->
-            <VerticalStackLayout Grid.Column="2" Spacing="3" HorizontalOptions="Center">
+            <VerticalStackLayout Grid.Column="2"
+                                 Spacing="2"
+                                 HorizontalOptions="Center"
+                                 VerticalOptions="Center">
+                <Label Text="+"
+                       FontSize="28"
+                       FontAttributes="Bold"
+                       TextColor="White"
+                       HorizontalOptions="Center" />
+                <Label Text="Ajouter"
+                       FontSize="11"
+                       TextColor="White"
+                       HorizontalOptions="Center" />
+                <VerticalStackLayout.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoQuickAddExpenseCommand}" />
+                </VerticalStackLayout.GestureRecognizers>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Grid.Column="3"
+                                 Spacing="2"
+                                 HorizontalOptions="Center"
+                                 VerticalOptions="Center">
                 <Label Text="{StaticResource IconBudget}"
                        FontFamily="MaterialIcons"
-                       FontSize="26"
-                       TextColor="{StaticResource TextLight}"
+                       FontSize="22"
+                       TextColor="White"
                        HorizontalOptions="Center" />
-                <Label Text="Budget"
+                <Label Text="Budgets"
                        FontSize="11"
-                       TextColor="{StaticResource TextLight}"
+                       TextColor="White"
                        HorizontalOptions="Center" />
                 <VerticalStackLayout.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoBudgetCommand}" />
                 </VerticalStackLayout.GestureRecognizers>
             </VerticalStackLayout>
 
-            <!-- Profil -->
-            <VerticalStackLayout Grid.Column="3" Spacing="3" HorizontalOptions="Center">
+            <VerticalStackLayout Grid.Column="4"
+                                 Spacing="2"
+                                 HorizontalOptions="Center"
+                                 VerticalOptions="Center">
                 <Label Text="{StaticResource IconProfile}"
                        FontFamily="MaterialIcons"
-                       FontSize="26"
-                       TextColor="{StaticResource TextLight}"
+                       FontSize="22"
+                       TextColor="White"
                        HorizontalOptions="Center" />
                 <Label Text="Profil"
                        FontSize="11"
-                       TextColor="{StaticResource TextLight}"
+                       TextColor="White"
                        HorizontalOptions="Center" />
                 <VerticalStackLayout.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoProfileCommand}" />
                 </VerticalStackLayout.GestureRecognizers>
             </VerticalStackLayout>
-
         </Grid>
     </Border>
 

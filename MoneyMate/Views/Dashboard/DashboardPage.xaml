@@ -90,7 +90,8 @@
             <!-- Footer authentifié -->
             <components:AuthenticatedFooter Grid.Row="2"
                                             GoHomeCommand="{Binding GoHomeCommand}"
-                                            GoExpensesCommand="{Binding GoExpensesCommand}"
+                                            GoCalendarCommand="{Binding GoCalendarCommand}"
+                                            GoQuickAddExpenseCommand="{Binding GoQuickAddExpenseCommand}"
                                             GoBudgetCommand="{Binding GoBudgetCommand}"
                                             GoProfileCommand="{Binding GoProfileCommand}" />
 

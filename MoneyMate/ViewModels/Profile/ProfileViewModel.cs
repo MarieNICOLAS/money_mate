@@ -69,7 +69,8 @@ namespace MoneyMate.ViewModels.Profile
         public ICommand GoToChangePasswordCommand { get; }
         public ICommand GoToDeleteAccountCommand { get; }
         public ICommand GoHomeCommand { get; }
-        public ICommand GoExpensesCommand { get; }
+        public ICommand GoCalendarCommand { get; }
+        public ICommand GoQuickAddExpenseCommand { get; }
         public ICommand GoBudgetCommand { get; }
         public ICommand GoProfileCommand { get; }
 
@@ -84,7 +85,8 @@ namespace MoneyMate.ViewModels.Profile
             GoToChangePasswordCommand  = new Command(async () => await _navigationService.NavigateToAsync("//ChangePasswordPage"));
             GoToDeleteAccountCommand   = new Command(async () => await _navigationService.NavigateToAsync("//DeleteAccountPage"));
             GoHomeCommand              = new Command(async () => await _navigationService.NavigateToAsync("//DashboardPage"));
-            GoExpensesCommand          = new Command(async () => await _navigationService.NavigateToAsync("//ExpensesListPage"));
+            GoCalendarCommand          = new Command(async () => await _navigationService.NavigateToAsync("//CalendarPage"));
+            GoQuickAddExpenseCommand   = new Command(async () => await _navigationService.NavigateToAsync("//QuickAddExpensePage"));
             GoBudgetCommand            = new Command(async () => await _navigationService.NavigateToAsync("//BudgetsOverviewPage"));
             GoProfileCommand           = new Command(async () => await _navigationService.NavigateToAsync("//ProfilePage"));
         }

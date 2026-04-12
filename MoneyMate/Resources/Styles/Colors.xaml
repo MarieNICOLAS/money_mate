@@ -23,6 +23,7 @@
     <x:String x:Key="IconExpense">&#xE870;</x:String>
     <x:String x:Key="IconBudget">&#xE263;</x:String>
     <x:String x:Key="IconProfile">&#xE853;</x:String>
+    <x:String x:Key="IconCalendar">&#xE935;</x:String>
     <x:String x:Key="IconLogout">&#xE9BA;</x:String>
     <x:String x:Key="IconEyeOpen">&#xE8F4;</x:String>
     <x:String x:Key="IconEyeClosed">&#xE8F5;</x:String>

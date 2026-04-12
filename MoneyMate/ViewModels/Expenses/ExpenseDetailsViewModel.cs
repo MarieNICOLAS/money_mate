@@ -85,10 +85,16 @@ public class ExpenseDetailsViewModel : AuthenticatedViewModelBase
     public bool IsFixedCharge
     {
         get => _isFixedCharge;
-        private set => SetProperty(ref _isFixedCharge, value);
+        private set
+        {
+            if (SetProperty(ref _isFixedCharge, value))
+                OnPropertyChanged(nameof(ExpenseTypeText));
+        }
     }
 
     public bool HasExpense => ExpenseId > 0;
+
+    public string ExpenseTypeText => IsFixedCharge ? "Récurrente" : "Ponctuelle";
 
     public ICommand EditCommand { get; }
 

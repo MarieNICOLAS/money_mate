@@ -1,13 +1,126 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
                 x:Class="MoneyMate.Views.Expenses.ExpenseDetailsPage"
-                Title="Details de la Depense">
-    <VerticalStackLayout Spacing="20" Padding="30">
-        <Label 
-            Text="Details de la Depense"
-            Style="{StaticResource PageTitle}"
-            HorizontalOptions="Center" />
-    </VerticalStackLayout>
+                Title="Détail dépense">
+    <views:BasePage.PageContent>
+        <ScrollView>
+            <VerticalStackLayout Style="{StaticResource MainContainer}" Spacing="18">
+                <Label Text="Détail de la dépense"
+                       Style="{StaticResource PageTitle}"
+                       Margin="0,8,0,0" />
+
+                <Border Style="{StaticResource CardFrame}" Margin="0,0,0,8">
+                    <VerticalStackLayout Spacing="18">
+                        <Label Text="{Binding ErrorMessage}"
+                               IsVisible="{Binding HasError}"
+                               TextColor="{StaticResource Error}"
+                               FontAttributes="Bold" />
+
+                        <Border BackgroundColor="#F7F4EF"
+                                StrokeThickness="0"
+                                Padding="16">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="20" />
+                            </Border.StrokeShape>
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                                <Border WidthRequest="52"
+                                        HeightRequest="52"
+                                        StrokeThickness="0"
+                                        BackgroundColor="{Binding CategoryColor}">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="26" />
+                                    </Border.StrokeShape>
+                                    <Label Text="{Binding CategoryIcon}"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center"
+                                           FontSize="22" />
+                                </Border>
+
+                                <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                    <Label Text="{Binding CategoryName}"
+                                           FontSize="20"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource TextDark}" />
+                                    <Label Text="{Binding DateOperation, StringFormat='Le {0:dd MMMM yyyy}'}"
+                                           Style="{StaticResource BodyText}"
+                                           TextColor="{StaticResource Secondary}" />
+                                    <Label Text="{Binding AmountDisplay}"
+                                           FontSize="28"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource Accent}" />
+                                </VerticalStackLayout>
+                            </Grid>
+                        </Border>
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                            <Border Grid.Column="0"
+                                    BackgroundColor="#F3F8FC"
+                                    StrokeThickness="0"
+                                    Padding="16">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="16" />
+                                </Border.StrokeShape>
+                                <VerticalStackLayout Spacing="6">
+                                    <Label Text="Type"
+                                           Style="{StaticResource FormLabel}" />
+                                    <Label Text="{Binding ExpenseTypeText}"
+                                           Style="{StaticResource BodyText}" />
+                                </VerticalStackLayout>
+                            </Border>
+
+                            <Border Grid.Column="1"
+                                    BackgroundColor="#FFF6E9"
+                                    StrokeThickness="0"
+                                    Padding="16">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="16" />
+                                </Border.StrokeShape>
+                                <VerticalStackLayout Spacing="6">
+                                    <Label Text="Statut"
+                                           Style="{StaticResource FormLabel}" />
+                                    <Label Text="Opération enregistrée"
+                                           Style="{StaticResource BodyText}" />
+                                </VerticalStackLayout>
+                            </Border>
+                        </Grid>
+
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Note"
+                                   Style="{StaticResource FormLabel}" />
+                            <Border Style="{StaticResource InputContainer}"
+                                    BackgroundColor="White">
+                                <Label Text="{Binding Note}"
+                                       Style="{StaticResource BodyText}" />
+                            </Border>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Button Grid.Column="0"
+                            Text="Modifier"
+                            Style="{StaticResource PrimaryButton}"
+                            Command="{Binding EditCommand}" />
+                    <Button Grid.Column="1"
+                            Text="Dupliquer"
+                            Style="{StaticResource OutlineButton}"
+                            Command="{Binding DuplicateCommand}" />
+                </Grid>
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Button Grid.Column="0"
+                            Text="Retour"
+                            Style="{StaticResource OutlineButton}"
+                            Command="{Binding BackCommand}" />
+                    <Button Grid.Column="1"
+                            Text="Supprimer"
+                            Style="{StaticResource SecondaryButton}"
+                            BackgroundColor="{StaticResource Error}"
+                            Command="{Binding DeleteCommand}" />
+                </Grid>
+            </VerticalStackLayout>
+        </ScrollView>
+    </views:BasePage.PageContent>
 </views:BasePage>

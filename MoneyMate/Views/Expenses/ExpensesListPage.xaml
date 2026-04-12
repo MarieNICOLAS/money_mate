@@ -60,7 +60,8 @@
                                                     CategoryName="{Binding CategoryName}"
                                                     CategoryIcon="{Binding CategoryIcon}"
                                                     CategoryColor="{Binding CategoryColor}"
-                                                    Note="{Binding Note}" />
+                                                    Note="{Binding Note}"
+                                                    TapCommand="{Binding Source={x:Reference Page}, Path=BindingContext.OpenExpenseDetailsCommand}" />
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
                 </CollectionView>

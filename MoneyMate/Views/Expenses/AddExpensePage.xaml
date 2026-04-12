@@ -1,13 +1,108 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
                 x:Class="MoneyMate.Views.Expenses.AddExpensePage"
-                Title="Ajouter une Depense">
-    <VerticalStackLayout Spacing="20" Padding="30">
-        <Label 
-            Text="Ajouter une Depense"
-            Style="{StaticResource PageTitle}"
-            HorizontalOptions="Center" />
-    </VerticalStackLayout>
+                Title="Ajouter une dépense">
+    <views:BasePage.PageContent>
+        <ScrollView>
+            <VerticalStackLayout Style="{StaticResource MainContainer}" Spacing="18">
+                <Label Text="Nouvelle dépense"
+                       Style="{StaticResource PageTitle}"
+                       Margin="0,8,0,0" />
+
+                <Border Style="{StaticResource CardFrame}" Margin="0,0,0,8">
+                    <VerticalStackLayout Spacing="16">
+                        <Label Text="Ajoutez une opération dans le style doux et lisible validé pour Money Mate."
+                               Style="{StaticResource BodyText}"
+                               TextColor="{StaticResource Secondary}" />
+
+                        <Label Text="{Binding ErrorMessage}"
+                               IsVisible="{Binding HasError}"
+                               TextColor="{StaticResource Error}"
+                               FontAttributes="Bold" />
+
+                        <Label Text="{Binding ValidationMessage}"
+                               IsVisible="{Binding HasValidationErrors}"
+                               TextColor="{StaticResource Error}" />
+
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Montant"
+                                   Style="{StaticResource FormLabel}" />
+                            <Border Style="{StaticResource InputContainer}"
+                                    BackgroundColor="White">
+                                <Entry Style="{StaticResource EntryForm}"
+                                       Placeholder="Ex : 32,90"
+                                       Keyboard="Numeric"
+                                       Text="{Binding AmountText}" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Catégorie"
+                                   Style="{StaticResource FormLabel}" />
+                            <Border Style="{StaticResource InputContainer}"
+                                    BackgroundColor="White">
+                                <Picker Title="Sélectionner une catégorie"
+                                        ItemsSource="{Binding Categories}"
+                                        ItemDisplayBinding="{Binding Name}"
+                                        SelectedItem="{Binding SelectedCategory}" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                            <VerticalStackLayout Grid.Column="0" Spacing="8">
+                                <Label Text="Date"
+                                       Style="{StaticResource FormLabel}" />
+                                <Border Style="{StaticResource InputContainer}"
+                                        BackgroundColor="White">
+                                    <DatePicker Date="{Binding DateOperation}" />
+                                </Border>
+                            </VerticalStackLayout>
+
+                            <VerticalStackLayout Grid.Column="1" Spacing="8">
+                                <Label Text="Charge fixe"
+                                       Style="{StaticResource FormLabel}" />
+                                <Border Style="{StaticResource InputContainer}"
+                                        BackgroundColor="White"
+                                        Padding="16,12">
+                                    <HorizontalStackLayout Spacing="10">
+                                        <Switch IsToggled="{Binding IsFixedCharge}"
+                                                OnColor="{StaticResource Accent}" />
+                                        <Label Text="Marquer comme récurrente"
+                                               VerticalOptions="Center"
+                                               Style="{StaticResource BodyText}" />
+                                    </HorizontalStackLayout>
+                                </Border>
+                            </VerticalStackLayout>
+                        </Grid>
+
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Note"
+                                   Style="{StaticResource FormLabel}" />
+                            <Border Style="{StaticResource InputContainer}"
+                                    BackgroundColor="White">
+                                <Editor Text="{Binding Note}"
+                                        Placeholder="Ex : Courses Monoprix"
+                                        AutoSize="TextChanges"
+                                        BackgroundColor="Transparent"
+                                        TextColor="{StaticResource TextDark}" />
+                            </Border>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <HorizontalStackLayout Spacing="12">
+                    <Button Text="Annuler"
+                            Style="{StaticResource OutlineButton}"
+                            HorizontalOptions="FillAndExpand"
+                            Command="{Binding CancelCommand}" />
+                    <Button Text="Enregistrer"
+                            Style="{StaticResource PrimaryButton}"
+                            HorizontalOptions="FillAndExpand"
+                            Command="{Binding SaveCommand}" />
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+        </ScrollView>
+    </views:BasePage.PageContent>
 </views:BasePage>

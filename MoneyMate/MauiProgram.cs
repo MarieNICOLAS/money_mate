@@ -58,6 +58,9 @@ namespace MoneyMate
             builder.Services.AddTransient<DashboardViewModel>();
             builder.Services.AddTransient<CategoriesViewModel>();
             builder.Services.AddTransient<ExpensesListViewModel>();
+            builder.Services.AddTransient<ExpenseFormViewModel>();
+            builder.Services.AddTransient<QuickAddExpenseViewModel>();
+            builder.Services.AddTransient<ExpenseDetailsViewModel>();
             builder.Services.AddTransient<BudgetsOverviewViewModel>();
             builder.Services.AddTransient<FixedChargesViewModel>();
             builder.Services.AddTransient<AlertThresholdsViewModel>();
@@ -71,6 +74,10 @@ namespace MoneyMate
             builder.Services.AddTransient<DashboardPage>();
             builder.Services.AddTransient<CategoriesListPage>();
             builder.Services.AddTransient<ExpensesListPage>();
+            builder.Services.AddTransient<AddExpensePage>();
+            builder.Services.AddTransient<EditExpensePage>();
+            builder.Services.AddTransient<QuickAddExpensePage>();
+            builder.Services.AddTransient<ExpenseDetailsPage>();
             builder.Services.AddTransient<BudgetsOverviewPage>();
             builder.Services.AddTransient<FixedChargesPage>();
             builder.Services.AddTransient<AlertThresholdPage>();

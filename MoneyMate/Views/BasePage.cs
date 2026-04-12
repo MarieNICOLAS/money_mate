@@ -1,4 +1,5 @@
-﻿using MoneyMate.Components;
+using System.Windows.Input;
+using MoneyMate.Components;
 using MoneyMate.ViewModels;
 
 namespace MoneyMate.Views
@@ -18,6 +19,7 @@ namespace MoneyMate.Views
 
         private readonly Header _header = new();
         private readonly Footer _footer = new();
+        private readonly AuthenticatedFooter _authenticatedFooter;
 
         /// <summary>
         /// Contenu central de la page (entre le header et le footer).
@@ -51,7 +53,18 @@ namespace MoneyMate.Views
                 typeof(bool),
                 typeof(BasePage),
                 true,
-                propertyChanged: (b, _, n) => ((BasePage)b)._footer.IsVisible = (bool)n);
+                propertyChanged: (b, _, _) => ((BasePage)b).UpdateFooterVisibility());
+
+        /// <summary>
+        /// Affiche la navbar des pages authentifiées à la place du footer public.
+        /// </summary>
+        public static readonly BindableProperty UseAuthenticatedFooterProperty =
+            BindableProperty.Create(
+                nameof(UseAuthenticatedFooter),
+                typeof(bool),
+                typeof(BasePage),
+                false,
+                propertyChanged: (b, _, _) => ((BasePage)b).UpdateFooterVisibility());
 
         public View? PageContent
         {
@@ -71,6 +84,22 @@ namespace MoneyMate.Views
             set => SetValue(ShowFooterProperty, value);
         }
 
+        public bool UseAuthenticatedFooter
+        {
+            get => (bool)GetValue(UseAuthenticatedFooterProperty);
+            set => SetValue(UseAuthenticatedFooterProperty, value);
+        }
+
+        protected ICommand GoHomeCommand { get; }
+
+        protected ICommand GoCalendarCommand { get; }
+
+        protected ICommand GoQuickAddExpenseCommand { get; }
+
+        protected ICommand GoBudgetCommand { get; }
+
+        protected ICommand GoProfileCommand { get; }
+
         private static void OnPageContentChanged(BindableObject bindable, object oldValue, object newValue)
         {
             if (bindable is BasePage page && newValue is View view)
@@ -79,6 +108,22 @@ namespace MoneyMate.Views
 
         protected BasePage()
         {
+            GoHomeCommand = new Command(async () => await NavigateToAsync("//DashboardPage"));
+            GoCalendarCommand = new Command(async () => await NavigateToAsync("//CalendarPage"));
+            GoQuickAddExpenseCommand = new Command(async () => await NavigateToAsync("//QuickAddExpensePage"));
+            GoBudgetCommand = new Command(async () => await NavigateToAsync("//BudgetsOverviewPage"));
+            GoProfileCommand = new Command(async () => await NavigateToAsync("//ProfilePage"));
+
+            _authenticatedFooter = new AuthenticatedFooter
+            {
+                GoHomeCommand = GoHomeCommand,
+                GoCalendarCommand = GoCalendarCommand,
+                GoQuickAddExpenseCommand = GoQuickAddExpenseCommand,
+                GoBudgetCommand = GoBudgetCommand,
+                GoProfileCommand = GoProfileCommand,
+                IsVisible = false
+            };
+
             var grid = new Grid
             {
                 RowDefinitions =
@@ -92,12 +137,15 @@ namespace MoneyMate.Views
             Grid.SetRow(_header, 0);
             Grid.SetRow(_contentSlot, 1);
             Grid.SetRow(_footer, 2);
+            Grid.SetRow(_authenticatedFooter, 2);
 
             grid.Children.Add(_header);
             grid.Children.Add(_contentSlot);
             grid.Children.Add(_footer);
+            grid.Children.Add(_authenticatedFooter);
 
             Content = grid;
+            UpdateFooterVisibility();
         }
 
         /// <summary>
@@ -106,6 +154,20 @@ namespace MoneyMate.Views
         protected void SetViewModel(BaseViewModel viewModel)
         {
             BindingContext = viewModel;
+        }
+
+        private void UpdateFooterVisibility()
+        {
+            _authenticatedFooter.IsVisible = UseAuthenticatedFooter;
+            _footer.IsVisible = !UseAuthenticatedFooter && ShowFooter;
+        }
+
+        private static async Task NavigateToAsync(string route)
+        {
+            if (Shell.Current == null)
+                return;
+
+            await Shell.Current.GoToAsync(route);
         }
     }
 

@@ -3,7 +3,8 @@
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
                 x:Class="MoneyMate.Views.Expenses.AddExpensePage"
-                Title="Ajouter une dépense">
+                Title="Ajouter une dépense"
+                UseAuthenticatedFooter="True">
     <views:BasePage.PageContent>
         <ScrollView>
             <VerticalStackLayout Style="{StaticResource MainContainer}" Spacing="18">
@@ -13,95 +14,75 @@
 
                 <Border Style="{StaticResource CardFrame}" Margin="0,0,0,8">
                     <VerticalStackLayout Spacing="16">
-                        <Label Text="Ajoutez une opération dans le style doux et lisible validé pour Money Mate."
-                               Style="{StaticResource BodyText}"
-                               TextColor="{StaticResource Secondary}" />
+                        <Label Text="Informations principales"
+                               Style="{StaticResource SectionTitle}" />
 
-                        <Label Text="{Binding ErrorMessage}"
-                               IsVisible="{Binding HasError}"
-                               TextColor="{StaticResource Error}"
-                               FontAttributes="Bold" />
+                        <Label Text="Montant"
+                               Style="{StaticResource FormLabel}" />
+                        <Border Style="{StaticResource InputContainer}">
+                            <Entry Text="{Binding AmountText, Mode=TwoWay}"
+                                   Keyboard="Numeric"
+                                   Placeholder="0,00"
+                                   Style="{StaticResource EntryForm}" />
+                        </Border>
 
-                        <Label Text="{Binding ValidationMessage}"
-                               IsVisible="{Binding HasValidationErrors}"
-                               TextColor="{StaticResource Error}" />
+                        <Label Text="Date"
+                               Style="{StaticResource FormLabel}" />
+                        <DatePicker Date="{Binding ExpenseDate, Mode=TwoWay}" />
 
-                        <VerticalStackLayout Spacing="8">
-                            <Label Text="Montant"
-                                   Style="{StaticResource FormLabel}" />
-                            <Border Style="{StaticResource InputContainer}"
-                                    BackgroundColor="White">
-                                <Entry Style="{StaticResource EntryForm}"
-                                       Placeholder="Ex : 32,90"
-                                       Keyboard="Numeric"
-                                       Text="{Binding AmountText}" />
-                            </Border>
-                        </VerticalStackLayout>
+                        <Label Text="Catégorie"
+                               Style="{StaticResource FormLabel}" />
+                        <Picker ItemsSource="{Binding AvailableCategories}"
+                                ItemDisplayBinding="{Binding Name}"
+                                SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"
+                                Title="Sélectionnez une catégorie" />
 
-                        <VerticalStackLayout Spacing="8">
-                            <Label Text="Catégorie"
-                                   Style="{StaticResource FormLabel}" />
-                            <Border Style="{StaticResource InputContainer}"
-                                    BackgroundColor="White">
-                                <Picker Title="Sélectionner une catégorie"
-                                        ItemsSource="{Binding Categories}"
-                                        ItemDisplayBinding="{Binding Name}"
-                                        SelectedItem="{Binding SelectedCategory}" />
-                            </Border>
-                        </VerticalStackLayout>
-
-                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                            <VerticalStackLayout Grid.Column="0" Spacing="8">
-                                <Label Text="Date"
-                                       Style="{StaticResource FormLabel}" />
-                                <Border Style="{StaticResource InputContainer}"
-                                        BackgroundColor="White">
-                                    <DatePicker Date="{Binding DateOperation}" />
-                                </Border>
-                            </VerticalStackLayout>
-
-                            <VerticalStackLayout Grid.Column="1" Spacing="8">
-                                <Label Text="Charge fixe"
-                                       Style="{StaticResource FormLabel}" />
-                                <Border Style="{StaticResource InputContainer}"
-                                        BackgroundColor="White"
-                                        Padding="16,12">
-                                    <HorizontalStackLayout Spacing="10">
-                                        <Switch IsToggled="{Binding IsFixedCharge}"
-                                                OnColor="{StaticResource Accent}" />
-                                        <Label Text="Marquer comme récurrente"
-                                               VerticalOptions="Center"
-                                               Style="{StaticResource BodyText}" />
-                                    </HorizontalStackLayout>
-                                </Border>
-                            </VerticalStackLayout>
-                        </Grid>
-
-                        <VerticalStackLayout Spacing="8">
-                            <Label Text="Note"
-                                   Style="{StaticResource FormLabel}" />
-                            <Border Style="{StaticResource InputContainer}"
-                                    BackgroundColor="White">
-                                <Editor Text="{Binding Note}"
-                                        Placeholder="Ex : Courses Monoprix"
-                                        AutoSize="TextChanges"
-                                        BackgroundColor="Transparent"
-                                        TextColor="{StaticResource TextDark}" />
-                            </Border>
-                        </VerticalStackLayout>
+                        <Label Text="Notes"
+                               Style="{StaticResource FormLabel}" />
+                        <Border Style="{StaticResource InputContainer}">
+                            <Editor Text="{Binding Description, Mode=TwoWay}"
+                                    Placeholder="Ajoutez un contexte ou un détail"
+                                    AutoSize="TextChanges"
+                                    MinimumHeightRequest="90" />
+                        </Border>
                     </VerticalStackLayout>
                 </Border>
 
-                <HorizontalStackLayout Spacing="12">
-                    <Button Text="Annuler"
-                            Style="{StaticResource OutlineButton}"
-                            HorizontalOptions="FillAndExpand"
-                            Command="{Binding CancelCommand}" />
-                    <Button Text="Enregistrer"
-                            Style="{StaticResource PrimaryButton}"
-                            HorizontalOptions="FillAndExpand"
-                            Command="{Binding SaveCommand}" />
-                </HorizontalStackLayout>
+                <Border Style="{StaticResource CardFrame}">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Options"
+                               Style="{StaticResource SectionTitle}" />
+
+                        <Grid ColumnDefinitions="Auto,*"
+                              ColumnSpacing="12">
+                            <Switch IsToggled="{Binding IsRecurring, Mode=TwoWay}" />
+                            <Label Grid.Column="1"
+                                   Text="Marquer cette dépense comme récurrente"
+                                   VerticalTextAlignment="Center"
+                                   TextColor="{StaticResource TextDark}" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Label Text="{Binding ErrorMessage}"
+                       IsVisible="{Binding HasError}"
+                       TextColor="{StaticResource Error}"
+                       FontAttributes="Bold" />
+
+                <Grid ColumnDefinitions="*,*"
+                      ColumnSpacing="12"
+                      Margin="0,8,0,0">
+                    <Button Grid.Column="0"
+                            Text="Annuler"
+                            Command="{Binding CancelCommand}"
+                            BackgroundColor="#E8EEF3"
+                            TextColor="{StaticResource TextDark}" />
+                    <Button Grid.Column="1"
+                            Text="Enregistrer"
+                            Command="{Binding SaveCommand}"
+                            IsEnabled="{Binding CanSave}"
+                            Style="{StaticResource PrimaryButton}" />
+                </Grid>
             </VerticalStackLayout>
         </ScrollView>
     </views:BasePage.PageContent>

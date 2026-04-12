@@ -1,13 +1,16 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
                 x:Class="MoneyMate.Views.Calendar.CalendarPage"
-                Title="Calendrier">
-    <VerticalStackLayout Spacing="20" Padding="30">
-        <Label 
-            Text="Vue Calendrier"
-            Style="{StaticResource PageTitle}"
-            HorizontalOptions="Center" />
-    </VerticalStackLayout>
+                Title="Calendrier"
+                UseAuthenticatedFooter="True">
+    <views:BasePage.PageContent>
+        <VerticalStackLayout Spacing="20" Padding="30">
+            <Label
+                Text="Vue Calendrier"
+                Style="{StaticResource PageTitle}"
+                HorizontalOptions="Center" />
+        </VerticalStackLayout>
+    </views:BasePage.PageContent>
 </views:BasePage>

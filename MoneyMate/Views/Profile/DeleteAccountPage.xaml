@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
@@ -6,10 +6,11 @@
                 x:Class="MoneyMate.Views.Profile.DeleteAccountPage"
                 Title="Supprimer le compte"
                 ShowHeader="False"
-                ShowFooter="False">
+                ShowFooter="False"
+                UseAuthenticatedFooter="True">
 
     <views:BasePage.PageContent>
-        <Grid RowDefinitions="Auto,*,Auto">
+        <Grid RowDefinitions="Auto,*">
 
             <components:AuthenticatedHeader Grid.Row="0"
                                             UserName="{Binding UserName}"
@@ -32,7 +33,6 @@
                            TextColor="{StaticResource Error}"
                            HorizontalOptions="Center" />
 
-                    <!-- Avertissement -->
                     <Border BackgroundColor="#FFF3F3"
                             Padding="16"
                             StrokeShape="RoundRectangle 12">
@@ -51,7 +51,6 @@
                         </VerticalStackLayout>
                     </Border>
 
-                    <!-- Mot de passe pour confirmer -->
                     <Label Text="Confirmez avec votre mot de passe" Style="{StaticResource FormLabel}" />
                     <Border Style="{StaticResource InputContainer}">
                         <Entry Placeholder="Votre mot de passe"
@@ -60,7 +59,6 @@
                                Style="{StaticResource EntryForm}" />
                     </Border>
 
-                    <!-- Message d'erreur -->
                     <Label Text="{Binding ErrorMessage}"
                            TextColor="{StaticResource Error}"
                            FontSize="13"
@@ -82,13 +80,6 @@
 
                 </VerticalStackLayout>
             </ScrollView>
-
-            <components:AuthenticatedFooter Grid.Row="2"
-                                            GoHomeCommand="{Binding GoHomeCommand}"
-                                            GoCalendarCommand="{Binding GoCalendarCommand}"
-                                            GoQuickAddExpenseCommand="{Binding GoQuickAddExpenseCommand}"
-                                            GoBudgetCommand="{Binding GoBudgetCommand}"
-                                            GoProfileCommand="{Binding GoProfileCommand}" />
         </Grid>
     </views:BasePage.PageContent>
 

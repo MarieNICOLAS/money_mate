@@ -5,7 +5,8 @@
                 xmlns:components="clr-namespace:MoneyMate.Components"
                 x:Class="MoneyMate.Views.Categories.CategoriesListPage"
                 x:Name="Page"
-                Title="Categories">
+                Title="Categories"
+                UseAuthenticatedFooter="True">
     <views:BasePage.PageContent>
         <ScrollView>
             <VerticalStackLayout Spacing="20" Padding="24">

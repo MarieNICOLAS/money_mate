@@ -5,7 +5,8 @@
                 xmlns:components="clr-namespace:MoneyMate.Components"
                 x:Class="MoneyMate.Views.Budgets.BudgetsOverviewPage"
                 x:Name="Page"
-                Title="Vue d'ensemble des Budgets">
+                Title="Vue d'ensemble des Budgets"
+                UseAuthenticatedFooter="True">
     <views:BasePage.PageContent>
         <ScrollView>
             <VerticalStackLayout Spacing="20" Padding="24">

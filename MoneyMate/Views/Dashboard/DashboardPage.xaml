@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
@@ -6,17 +6,16 @@
                 x:Class="MoneyMate.Views.Dashboard.DashboardPage"
                 Title="Tableau de Bord"
                 ShowHeader="False"
-                ShowFooter="False">
+                ShowFooter="False"
+                UseAuthenticatedFooter="True">
 
     <views:BasePage.PageContent>
-        <Grid RowDefinitions="Auto,*,Auto">
+        <Grid RowDefinitions="Auto,*">
 
-            <!-- Header authentifié -->
             <components:AuthenticatedHeader Grid.Row="0"
                                             UserName="{Binding UserName}"
                                             LogoutCommand="{Binding LogoutCommand}" />
 
-            <!-- Contenu principal -->
             <ScrollView Grid.Row="1">
                 <VerticalStackLayout Spacing="20" Padding="24">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
@@ -86,15 +85,6 @@
                                                Message="Aucune dépense à afficher pour ce mois." />
                 </VerticalStackLayout>
             </ScrollView>
-
-            <!-- Footer authentifié -->
-            <components:AuthenticatedFooter Grid.Row="2"
-                                            GoHomeCommand="{Binding GoHomeCommand}"
-                                            GoCalendarCommand="{Binding GoCalendarCommand}"
-                                            GoQuickAddExpenseCommand="{Binding GoQuickAddExpenseCommand}"
-                                            GoBudgetCommand="{Binding GoBudgetCommand}"
-                                            GoProfileCommand="{Binding GoProfileCommand}" />
-
         </Grid>
     </views:BasePage.PageContent>
 

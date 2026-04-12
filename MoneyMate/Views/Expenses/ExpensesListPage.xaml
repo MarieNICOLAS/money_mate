@@ -2,12 +2,75 @@
 <views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
+                xmlns:components="clr-namespace:MoneyMate.Components"
                 x:Class="MoneyMate.Views.Expenses.ExpensesListPage"
+                x:Name="Page"
                 Title="Mes Depenses">
-    <VerticalStackLayout Spacing="20" Padding="30">
-        <Label 
-            Text="Liste des Depenses"
-            Style="{StaticResource PageTitle}"
-            HorizontalOptions="Center" />
-    </VerticalStackLayout>
+    <views:BasePage.PageContent>
+        <ScrollView>
+            <VerticalStackLayout Spacing="20" Padding="24">
+                <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
+                    <VerticalStackLayout Grid.Column="0" Spacing="4">
+                        <Label Text="Dépenses"
+                               Style="{StaticResource PageTitle}" />
+                        <Label Text="Consultez vos opérations récentes et vos totaux." TextColor="{StaticResource Secondary}" />
+                    </VerticalStackLayout>
+                    <Button Grid.Column="1" Text="Ajouter" Command="{Binding AddExpenseCommand}" BackgroundColor="{StaticResource Accent}" TextColor="White" />
+                    <Button Grid.Column="2" Text="Rapide" Command="{Binding QuickAddExpenseCommand}" BackgroundColor="#6793AE" TextColor="White" />
+                    <Button Grid.Column="3" Text="Actualiser" Command="{Binding RefreshCommand}" BackgroundColor="{StaticResource Primary}" TextColor="White" />
+                </Grid>
+
+                <Label Text="{Binding ErrorMessage}"
+                       IsVisible="{Binding HasError}"
+                       TextColor="#E57373"
+                       FontAttributes="Bold" />
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Border Grid.Column="0" Padding="16" StrokeThickness="0" BackgroundColor="#F3F8FC">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="14" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Total" TextColor="{StaticResource Secondary}" />
+                            <components:AmountDisplay Amount="{Binding TotalExpenses}"
+                                                      Devise="{Binding Devise}"
+                                                      FontSize="24"
+                                                      TextColor="{StaticResource TextDark}" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Border Grid.Column="1" Padding="16" StrokeThickness="0" BackgroundColor="#EEF7EE">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="14" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Nombre d'opérations" TextColor="{StaticResource Secondary}" />
+                            <Label Text="{Binding ExpensesCount}" FontSize="24" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <CollectionView ItemsSource="{Binding Expenses}"
+                                IsVisible="{Binding HasExpenses}">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <components:ExpenseCard ExpenseDate="{Binding ExpenseDate}"
+                                                    Amount="{Binding Amount}"
+                                                    Devise="{Binding Devise}"
+                                                    CategoryName="{Binding CategoryName}"
+                                                    CategoryIcon="{Binding CategoryIcon}"
+                                                    CategoryColor="{Binding CategoryColor}"
+                                                    Note="{Binding Note}" />
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <components:EmptyStateView IsVisible="{Binding HasExpenses, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"
+                                           Icon="💸"
+                                           Message="Aucune dépense enregistrée pour le moment."
+                                           ActionText="Ajouter une dépense"
+                                           ActionCommand="{Binding AddExpenseCommand}" />
+            </VerticalStackLayout>
+        </ScrollView>
+    </views:BasePage.PageContent>
 </views:BasePage>

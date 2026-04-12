@@ -11,6 +11,7 @@
     xmlns:categories="clr-namespace:MoneyMate.Views.Categories"
     xmlns:budgets="clr-namespace:MoneyMate.Views.Budgets"
     xmlns:alerts="clr-namespace:MoneyMate.Views.Alerts"
+    xmlns:fixedCharges="clr-namespace:MoneyMate.Views.FixedCharges"
     xmlns:calendar="clr-namespace:MoneyMate.Views.Calendar"
     xmlns:errors="clr-namespace:MoneyMate.Views.Errors"
     Title="Money Mate"
@@ -78,6 +79,11 @@
         <ShellContent Title="Vue d'ensemble" ContentTemplate="{DataTemplate budgets:BudgetsOverviewPage}" Route="BudgetsOverviewPage" />
         <ShellContent Title="Ajouter Budget" ContentTemplate="{DataTemplate budgets:AddBudgetPage}" Route="AddBudgetPage" />
         <ShellContent Title="Modifier Budget" ContentTemplate="{DataTemplate budgets:EditBudgetPage}" Route="EditBudgetPage" />
+    </FlyoutItem>
+
+    <!-- ==================== CHARGES FIXES ==================== -->
+    <FlyoutItem x:Name="FixedChargesFlyoutItem" Title="Charges fixes" FlyoutDisplayOptions="AsSingleItem">
+        <ShellContent Title="Charges fixes" ContentTemplate="{DataTemplate fixedCharges:FixedChargesPage}" Route="FixedChargesPage" />
     </FlyoutItem>
 
     <!-- ==================== ALERTES ==================== -->

@@ -119,6 +119,7 @@ namespace MoneyMate
             SetFlyoutItemVisibility("Depenses", isAuthenticated);
             SetFlyoutItemVisibility("Categories", isAuthenticated);
             SetFlyoutItemVisibility("Budgets", isAuthenticated);
+            SetFlyoutItemVisibility("Charges fixes", isAuthenticated);
             SetFlyoutItemVisibility("Alertes", isAuthenticated);
             SetFlyoutItemVisibility("Calendrier", isAuthenticated);
         }

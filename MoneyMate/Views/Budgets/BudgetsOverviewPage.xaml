@@ -2,12 +2,103 @@
 <views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
+                xmlns:components="clr-namespace:MoneyMate.Components"
                 x:Class="MoneyMate.Views.Budgets.BudgetsOverviewPage"
+                x:Name="Page"
                 Title="Vue d'ensemble des Budgets">
-    <VerticalStackLayout Spacing="20" Padding="30">
-        <Label 
-            Text="Vue d'ensemble des Budgets"
-            Style="{StaticResource PageTitle}"
-            HorizontalOptions="Center" />
-    </VerticalStackLayout>
+    <views:BasePage.PageContent>
+        <ScrollView>
+            <VerticalStackLayout Spacing="20" Padding="24">
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                    <VerticalStackLayout Grid.Column="0" Spacing="4">
+                        <Label Text="Budgets"
+                               Style="{StaticResource PageTitle}" />
+                        <Label Text="Surveillez vos enveloppes et les catégories à risque." TextColor="{StaticResource Secondary}" />
+                    </VerticalStackLayout>
+                    <Button Grid.Column="1" Text="Ajouter" Command="{Binding AddBudgetCommand}" BackgroundColor="{StaticResource Accent}" TextColor="White" />
+                    <Button Grid.Column="2" Text="Actualiser" Command="{Binding RefreshCommand}" BackgroundColor="{StaticResource Primary}" TextColor="White" />
+                </Grid>
+
+                <Label Text="{Binding ErrorMessage}"
+                       IsVisible="{Binding HasError}"
+                       TextColor="#E57373"
+                       FontAttributes="Bold" />
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Border Grid.Column="0" Padding="16" StrokeThickness="0" BackgroundColor="#F3F8FC">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="14" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Budgets actifs" TextColor="{StaticResource Secondary}" />
+                            <Label Text="{Binding ActiveBudgetsCount}" FontSize="24" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Border Grid.Column="1" Padding="16" StrokeThickness="0" BackgroundColor="#FFF6E9">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="14" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="À risque" TextColor="{StaticResource Secondary}" />
+                            <Label Text="{Binding BudgetsAtRiskCount}" FontSize="24" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Border Grid.Column="0" Padding="16" StrokeThickness="0" BackgroundColor="#EEF7EE">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="14" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Budget total" TextColor="{StaticResource Secondary}" />
+                            <components:AmountDisplay Amount="{Binding TotalBudgetAmount}" Devise="{Binding Devise}" FontSize="22" TextColor="{StaticResource TextDark}" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Border Grid.Column="1" Padding="16" StrokeThickness="0" BackgroundColor="#FFF0F0">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="14" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Déjà consommé" TextColor="{StaticResource Secondary}" />
+                            <components:AmountDisplay Amount="{Binding TotalConsumedAmount}" Devise="{Binding Devise}" FontSize="22" TextColor="{StaticResource TextDark}" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <CollectionView ItemsSource="{Binding Budgets}"
+                                IsVisible="{Binding HasBudgets}">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="16" Margin="0,4" Stroke="#D6E1EA" StrokeThickness="1">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="14" />
+                                </Border.StrokeShape>
+
+                                <VerticalStackLayout Spacing="10">
+                                    <components:BudgetProgressBar CategoryName="{Binding CategoryName}"
+                                                                  SpentAmount="{Binding ConsumedAmount}"
+                                                                  BudgetAmount="{Binding BudgetAmount}"
+                                                                  Devise="{Binding Devise}" />
+
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                        <Label Grid.Column="0" Text="{Binding PeriodLabel}" TextColor="{StaticResource Secondary}" />
+                                        <Label Grid.Column="1" Text="{Binding StatusText}" FontAttributes="Bold" TextColor="{StaticResource Secondary}" />
+                                    </Grid>
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <components:EmptyStateView IsVisible="{Binding HasBudgets, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"
+                                           Icon="📊"
+                                           Message="Aucun budget actif pour le moment."
+                                           ActionText="Créer un budget"
+                                           ActionCommand="{Binding AddBudgetCommand}" />
+            </VerticalStackLayout>
+        </ScrollView>
+    </views:BasePage.PageContent>
 </views:BasePage>

@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
@@ -11,58 +11,41 @@ namespace UnitTests.ViewModels;
 public class BudgetFormViewModelTests
 {
     [TestMethod]
-    public async Task InitializeAsync_LoadsCategoriesAndDefaults()
+    public async Task InitializeAsync_LoadsMonthOptionsAndDefaults()
     {
         User user = ViewModelTestHelper.CreateUser();
-        Mock<ICategoryService> categoryServiceMock = new();
-
-        categoryServiceMock.Setup(x => x.GetCategoriesAsync(user.Id))
-            .ReturnsAsync(ServiceResult<List<Category>>.Success(new List<Category>
-            {
-                new() { Id = 10, Name = "Courses", IsActive = true, IsSystem = true }
-            }));
 
         BudgetFormViewModel viewModel = new(
             new Mock<IBudgetService>().Object,
-            categoryServiceMock.Object,
+            new Mock<ICategoryService>().Object,
             ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
             ViewModelTestHelper.CreateDialogServiceMock().Object,
             ViewModelTestHelper.CreateNavigationServiceMock().Object);
 
         await viewModel.InitializeAsync();
 
-        Assert.AreEqual(1, viewModel.Categories.Count);
-        Assert.AreEqual(10, viewModel.SelectedCategoryId);
-        Assert.AreEqual("Monthly", viewModel.SelectedPeriodType);
-        Assert.IsFalse(viewModel.HasEndDate);
+        Assert.IsTrue(viewModel.MonthOptions.Count > 0);
+        Assert.IsNotNull(viewModel.SelectedMonth);
+        Assert.AreEqual(DateTime.Today.Month, viewModel.SelectedMonth!.Month);
+        Assert.IsTrue(viewModel.IsActive);
     }
 
     [TestMethod]
-    public async Task SaveCommand_WhenPeriodInvalid_DoesNotCallService()
+    public async Task SaveCommand_WhenMonthMissing_DoesNotCallService()
     {
         User user = ViewModelTestHelper.CreateUser();
         Mock<IBudgetService> budgetServiceMock = new();
-        Mock<ICategoryService> categoryServiceMock = new();
-
-        categoryServiceMock.Setup(x => x.GetCategoriesAsync(user.Id))
-            .ReturnsAsync(ServiceResult<List<Category>>.Success(new List<Category>
-            {
-                new() { Id = 10, Name = "Courses", IsActive = true, IsSystem = true }
-            }));
 
         BudgetFormViewModel viewModel = new(
             budgetServiceMock.Object,
-            categoryServiceMock.Object,
+            new Mock<ICategoryService>().Object,
             ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
             ViewModelTestHelper.CreateDialogServiceMock().Object,
             ViewModelTestHelper.CreateNavigationServiceMock().Object);
 
         await viewModel.InitializeAsync();
         viewModel.AmountText = "100";
-        viewModel.SelectedCategoryId = 10;
-        viewModel.HasEndDate = true;
-        viewModel.StartDate = DateTime.Today;
-        viewModel.EndDate = DateTime.Today.AddDays(-1);
+        viewModel.SelectedMonth = null;
 
         viewModel.SaveCommand.Execute(null);
         await Task.Delay(100);

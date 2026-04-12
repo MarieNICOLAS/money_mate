@@ -73,6 +73,8 @@ public abstract class FormViewModelBase : AuthenticatedViewModelBase
 
     protected virtual bool CanDeleteEntity => IsEditMode;
 
+    protected virtual string? CancelNavigationFallbackRoute => null;
+
     public async Task InitializeAsync(Dictionary<string, object>? parameters = null)
     {
         await ExecuteBusyActionAsync(async () =>
@@ -208,7 +210,24 @@ public abstract class FormViewModelBase : AuthenticatedViewModelBase
         if (IsBusy)
             return;
 
-        await NavigationService.GoBackAsync();
+        bool shouldUseFallback = !string.IsNullOrWhiteSpace(CancelNavigationFallbackRoute)
+            && Shell.Current?.Navigation?.NavigationStack?.Count <= 1;
+
+        if (shouldUseFallback)
+        {
+            await NavigationService.NavigateToAsync(CancelNavigationFallbackRoute!);
+            return;
+        }
+
+        try
+        {
+            await NavigationService.GoBackAsync();
+        }
+        catch
+        {
+            if (!string.IsNullOrWhiteSpace(CancelNavigationFallbackRoute))
+                await NavigationService.NavigateToAsync(CancelNavigationFallbackRoute);
+        }
     }
 
     private async Task DeleteAsync()
@@ -255,19 +274,16 @@ public sealed class BudgetOptionViewModel
 {
     public int Id { get; init; }
 
-    public int CategoryId { get; init; }
-
     public string Label { get; init; } = string.Empty;
 
-    public static BudgetOptionViewModel FromModel(Budget budget, string categoryName)
+    public static BudgetOptionViewModel FromModel(Budget budget)
     {
         ArgumentNullException.ThrowIfNull(budget);
 
         return new BudgetOptionViewModel
         {
             Id = budget.Id,
-            CategoryId = budget.CategoryId,
-            Label = $"{categoryName} • {budget.Amount:N2}"
+            Label = $"{budget.MonthLabel} • {budget.Amount:N2}"
         };
     }
 }

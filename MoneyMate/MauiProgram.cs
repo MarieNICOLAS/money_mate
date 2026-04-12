@@ -33,12 +33,13 @@ namespace MoneyMate
                 .UseMauiCommunityToolkit()
                 .ConfigureFonts(fonts =>
                 {
+                    fonts.AddFont("OpenSans-Regular.ttf", "OpenSans");
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                     fonts.AddFont("MaterialIcons-Regular.ttf", "MaterialIcons");
-                    fonts.AddFont("Lora-Regular.ttf", "Lora");
-                    fonts.AddFont("Lora-Bold.ttf", "LoraBold");
-                    fonts.AddFont("FunnelDisplay-Regular.ttf", "FunnelDisplay");
+                    fonts.AddFont("Lora-VariableFont_wght.ttf", "Lora");
+                    fonts.AddFont("Lora-VariableFont_wght.ttf", "LoraBold");
+                    fonts.AddFont("FunnelDisplay-VariableFont_wght.ttf", "FunnelDisplay");
                 });
 
             // ── Services ──────────────────────────────────────────────────
@@ -64,6 +65,7 @@ namespace MoneyMate
             builder.Services.AddTransient<QuickAddExpenseViewModel>();
             builder.Services.AddTransient<ExpenseDetailsViewModel>();
             builder.Services.AddTransient<BudgetsOverviewViewModel>();
+            builder.Services.AddTransient<BudgetFormViewModel>();
             builder.Services.AddTransient<FixedChargesViewModel>();
             builder.Services.AddTransient<AlertThresholdsViewModel>();
             builder.Services.AddTransient<ProfileViewModel>();
@@ -81,6 +83,8 @@ namespace MoneyMate
             builder.Services.AddTransient<QuickAddExpensePage>();
             builder.Services.AddTransient<ExpenseDetailsPage>();
             builder.Services.AddTransient<BudgetsOverviewPage>();
+            builder.Services.AddTransient<AddBudgetPage>();
+            builder.Services.AddTransient<EditBudgetPage>();
             builder.Services.AddTransient<FixedChargesPage>();
             builder.Services.AddTransient<AlertThresholdPage>();
             builder.Services.AddTransient<ProfilePage>();

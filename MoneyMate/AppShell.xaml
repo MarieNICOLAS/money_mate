@@ -77,8 +77,6 @@
     <!-- ==================== BUDGETS ==================== -->
     <FlyoutItem x:Name="BudgetsFlyoutItem" Title="Budgets" FlyoutDisplayOptions="AsMultipleItems">
         <ShellContent Title="Vue d'ensemble" ContentTemplate="{DataTemplate budgets:BudgetsOverviewPage}" Route="BudgetsOverviewPage" />
-        <ShellContent Title="Ajouter Budget" ContentTemplate="{DataTemplate budgets:AddBudgetPage}" Route="AddBudgetPage" />
-        <ShellContent Title="Modifier Budget" ContentTemplate="{DataTemplate budgets:EditBudgetPage}" Route="EditBudgetPage" />
     </FlyoutItem>
 
     <!-- ==================== CHARGES FIXES ==================== -->

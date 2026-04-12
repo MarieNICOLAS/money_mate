@@ -1,4 +1,4 @@
-﻿using MoneyMate.Data.Context;
+using MoneyMate.Data.Context;
 using MoneyMate.Helpers;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
@@ -8,17 +8,10 @@ using MoneyMate.Services.Results;
 namespace MoneyMate.Services.Implementations
 {
     /// <summary>
-    /// Implémentation du service métier pour la gestion des budgets.
+    /// ImplÃ©mentation du service mÃ©tier pour la gestion des budgets mensuels globaux.
     /// </summary>
     public class BudgetService : IBudgetService
     {
-        private static readonly HashSet<string> AllowedPeriodTypes = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "Weekly",
-            "Monthly",
-            "Yearly"
-        };
-
         private readonly IMoneyMateDbContext _dbContext;
 
         public BudgetService()
@@ -33,7 +26,7 @@ namespace MoneyMate.Services.Implementations
 
         public async Task<ServiceResult<List<Budget>>> GetBudgetsAsync(int userId)
         {
-            return await Task.Run(async () =>
+            return await Task.Run(() =>
             {
                 try
                 {
@@ -53,17 +46,18 @@ namespace MoneyMate.Services.Implementations
 
         public async Task<ServiceResult<Budget>> GetBudgetByIdAsync(int budgetId, int userId)
         {
-            return await Task.Run(async () =>
+            return await Task.Run(() =>
             {
                 try
                 {
                     if (budgetId <= 0 || userId <= 0)
-                        return ServiceResult<Budget>.Failure("BUDGET_INVALID_INPUT", "Les informations demandées sont invalides.");
+                        return ServiceResult<Budget>.Failure("BUDGET_INVALID_INPUT", "Les informations demandÃ©es sont invalides.");
 
                     Budget? budget = _dbContext.GetBudgetById(budgetId, userId);
                     if (budget == null)
                         return ServiceResult<Budget>.Failure("BUDGET_NOT_FOUND", "Budget introuvable.");
 
+                    budget.NormalizeToMonthlyPeriod();
                     return ServiceResult<Budget>.Success(budget);
                 }
                 catch (Exception ex)
@@ -82,35 +76,33 @@ namespace MoneyMate.Services.Implementations
                 {
                     ArgumentNullException.ThrowIfNull(budget);
 
+                    budget.NormalizeToMonthlyPeriod();
+
                     ServiceResult validationResult = ValidateBudget(budget);
                     if (!validationResult.IsSuccess)
                         return ServiceResult<Budget>.Failure(validationResult.ErrorCode, validationResult.Message);
-
-                    if (!CategoryExistsForUser(budget.UserId, budget.CategoryId))
-                        return ServiceResult<Budget>.Failure("BUDGET_CATEGORY_NOT_FOUND", "La catégorie sélectionnée est introuvable ou inactive.");
 
                     ServiceResult<bool> conflictResult = HasActiveBudgetConflictInternal(budget);
                     if (!conflictResult.IsSuccess)
                         return ServiceResult<Budget>.Failure(conflictResult.ErrorCode, conflictResult.Message);
 
                     if (conflictResult.Data)
-                        return ServiceResult<Budget>.Failure("BUDGET_CONFLICT", "Un budget actif existe déjà pour cette catégorie sur une période qui se chevauche.");
+                        return ServiceResult<Budget>.Failure("BUDGET_CONFLICT", "Un budget existe dÃ©jÃ  pour ce mois.");
 
-                    budget.PeriodType = budget.PeriodType.Trim();
                     budget.CreatedAt = DateTime.UtcNow;
                     budget.IsActive = true;
 
                     int budgetId = _dbContext.InsertBudget(budget);
                     if (budgetId <= 0)
-                        return ServiceResult<Budget>.Failure("BUDGET_CREATE_FAILED", "Impossible de créer le budget.");
+                        return ServiceResult<Budget>.Failure("BUDGET_CREATE_FAILED", "Impossible de crÃ©er le budget.");
 
                     budget.Id = budgetId;
-                    return ServiceResult<Budget>.Success(budget, "Budget créé avec succès.");
+                    return ServiceResult<Budget>.Success(budget, "Budget crÃ©Ã© avec succÃ¨s.");
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Erreur CreateBudgetAsync : {ex.Message}");
-                    return ServiceResult<Budget>.Failure("BUDGET_UNEXPECTED_ERROR", "Une erreur est survenue lors de la création du budget.");
+                    return ServiceResult<Budget>.Failure("BUDGET_UNEXPECTED_ERROR", "Une erreur est survenue lors de la crÃ©ation du budget.");
                 }
             });
         }
@@ -124,7 +116,9 @@ namespace MoneyMate.Services.Implementations
                     ArgumentNullException.ThrowIfNull(budget);
 
                     if (budget.Id <= 0)
-                        return ServiceResult<Budget>.Failure("BUDGET_INVALID_ID", "Le budget à modifier est invalide.");
+                        return ServiceResult<Budget>.Failure("BUDGET_INVALID_ID", "Le budget Ã  modifier est invalide.");
+
+                    budget.NormalizeToMonthlyPeriod();
 
                     ServiceResult validationResult = ValidateBudget(budget);
                     if (!validationResult.IsSuccess)
@@ -134,28 +128,30 @@ namespace MoneyMate.Services.Implementations
                     if (existingBudget == null)
                         return ServiceResult<Budget>.Failure("BUDGET_NOT_FOUND", "Budget introuvable.");
 
-                    if (!CategoryExistsForUser(budget.UserId, budget.CategoryId))
-                        return ServiceResult<Budget>.Failure("BUDGET_CATEGORY_NOT_FOUND", "La catégorie sélectionnée est introuvable ou inactive.");
+                    existingBudget.NormalizeToMonthlyPeriod();
+                    bool monthChanged = existingBudget.StartDate.Year != budget.StartDate.Year
+                        || existingBudget.StartDate.Month != budget.StartDate.Month;
 
-                    ServiceResult<bool> conflictResult = HasActiveBudgetConflictInternal(budget, budget.Id);
-                    if (!conflictResult.IsSuccess)
-                        return ServiceResult<Budget>.Failure(conflictResult.ErrorCode, conflictResult.Message);
+                    if (monthChanged)
+                    {
+                        ServiceResult<bool> conflictResult = HasActiveBudgetConflictInternal(budget, budget.Id);
+                        if (!conflictResult.IsSuccess)
+                            return ServiceResult<Budget>.Failure(conflictResult.ErrorCode, conflictResult.Message);
 
-                    if (conflictResult.Data)
-                        return ServiceResult<Budget>.Failure("BUDGET_CONFLICT", "Un budget actif existe déjà pour cette catégorie sur une période qui se chevauche.");
-
-                    budget.PeriodType = budget.PeriodType.Trim();
+                        if (conflictResult.Data)
+                            return ServiceResult<Budget>.Failure("BUDGET_CONFLICT", "Un budget existe dÃ©jÃ  pour ce mois.");
+                    }
 
                     int updatedRows = _dbContext.UpdateBudget(budget);
                     if (updatedRows != 1)
-                        return ServiceResult<Budget>.Failure("BUDGET_UPDATE_FAILED", "La mise à jour du budget a échoué.");
+                        return ServiceResult<Budget>.Failure("BUDGET_UPDATE_FAILED", "La mise Ã  jour du budget a Ã©chouÃ©.");
 
-                    return ServiceResult<Budget>.Success(budget, "Budget mis à jour avec succès.");
+                    return ServiceResult<Budget>.Success(budget, "Budget mis Ã  jour avec succÃ¨s.");
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Erreur UpdateBudgetAsync : {ex.Message}");
-                    return ServiceResult<Budget>.Failure("BUDGET_UNEXPECTED_ERROR", "Une erreur est survenue lors de la mise à jour du budget.");
+                    return ServiceResult<Budget>.Failure("BUDGET_UNEXPECTED_ERROR", "Une erreur est survenue lors de la mise Ã  jour du budget.");
                 }
             });
         }
@@ -167,7 +163,7 @@ namespace MoneyMate.Services.Implementations
                 try
                 {
                     if (budgetId <= 0 || userId <= 0)
-                        return ServiceResult.Failure("BUDGET_INVALID_INPUT", "Les informations demandées sont invalides.");
+                        return ServiceResult.Failure("BUDGET_INVALID_INPUT", "Les informations demandÃ©es sont invalides.");
 
                     Budget? budget = _dbContext.GetBudgetById(budgetId, userId);
                     if (budget == null)
@@ -175,9 +171,9 @@ namespace MoneyMate.Services.Implementations
 
                     int deletedRows = _dbContext.DeleteBudget(budget);
                     if (deletedRows != 1)
-                        return ServiceResult.Failure("BUDGET_DELETE_FAILED", "La suppression du budget a échoué.");
+                        return ServiceResult.Failure("BUDGET_DELETE_FAILED", "La suppression du budget a Ã©chouÃ©.");
 
-                    return ServiceResult.Success("Budget supprimé avec succès.");
+                    return ServiceResult.Success("Budget supprimÃ© avec succÃ¨s.");
                 }
                 catch (Exception ex)
                 {
@@ -197,8 +193,10 @@ namespace MoneyMate.Services.Implementations
                     if (budget == null)
                         return ServiceResult<decimal>.Failure("BUDGET_NOT_FOUND", "Budget introuvable.");
 
+                    budget.NormalizeToMonthlyPeriod();
+
                     DateTime endDate = budget.EndDate ?? DateTime.MaxValue;
-                    decimal consumedAmount = _dbContext.GetExpensesByCategory(userId, budget.CategoryId)
+                    decimal consumedAmount = _dbContext.GetExpensesByUserId(userId)
                         .Where(expense => expense.DateOperation >= budget.StartDate && expense.DateOperation <= endDate)
                         .Sum(expense => expense.Amount);
 
@@ -207,7 +205,7 @@ namespace MoneyMate.Services.Implementations
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Erreur GetConsumedAmountAsync : {ex.Message}");
-                    return ServiceResult<decimal>.Failure("BUDGET_UNEXPECTED_ERROR", "Une erreur est survenue lors du calcul du montant consommé.");
+                    return ServiceResult<decimal>.Failure("BUDGET_UNEXPECTED_ERROR", "Une erreur est survenue lors du calcul du montant consommÃ©.");
                 }
             });
         }
@@ -252,100 +250,49 @@ namespace MoneyMate.Services.Implementations
             return ServiceResult<BudgetConsumptionSummary>.Success(summary);
         }
 
-        public async Task<ServiceResult<List<Budget>>> GetBudgetsByCategoryAsync(int userId, int categoryId)
-        {
-            return await Task.Run(() =>
-            {
-                try
-                {
-                    if (userId <= 0 || categoryId <= 0)
-                        return ServiceResult<List<Budget>>.Failure("BUDGET_INVALID_INPUT", "Les informations demandées sont invalides.");
-
-                    List<Budget> budgets = _dbContext.GetBudgetsByUserId(userId)
-                        .Where(budget => budget.CategoryId == categoryId)
-                        .OrderByDescending(budget => budget.StartDate)
-                        .ThenByDescending(budget => budget.CreatedAt)
-                        .ToList();
-
-                    return ServiceResult<List<Budget>>.Success(budgets);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur GetBudgetsByCategoryAsync : {ex.Message}");
-                    return ServiceResult<List<Budget>>.Failure("BUDGET_UNEXPECTED_ERROR", "Une erreur est survenue lors du chargement des budgets.");
-                }
-            });
-        }
-
         public async Task<ServiceResult<bool>> HasActiveBudgetConflictAsync(Budget budget, int? excludedBudgetId = null)
             => await Task.Run(() => HasActiveBudgetConflictInternal(budget, excludedBudgetId));
 
-        /// <summary>
-        /// Valide les données métier d'un budget.
-        /// </summary>
         private static ServiceResult ValidateBudget(Budget budget)
         {
             if (budget.UserId <= 0)
                 return ServiceResult.Failure("BUDGET_INVALID_USER", "Utilisateur invalide.");
 
-            if (budget.CategoryId <= 0)
-                return ServiceResult.Failure("BUDGET_INVALID_CATEGORY", "Catégorie invalide.");
-
             if (!ValidationHelper.IsValidAmount(budget.Amount))
-                return ServiceResult.Failure("BUDGET_INVALID_AMOUNT", "Le montant du budget doit être strictement positif.");
+                return ServiceResult.Failure("BUDGET_INVALID_AMOUNT", "Le montant du budget doit Ãªtre strictement positif.");
 
-            if (string.IsNullOrWhiteSpace(budget.PeriodType) || !AllowedPeriodTypes.Contains(budget.PeriodType.Trim()))
-                return ServiceResult.Failure("BUDGET_INVALID_PERIOD_TYPE", "Le type de période est invalide.");
+            if (budget.StartDate.Date > DateTime.Today)
+                return ServiceResult.Failure("BUDGET_FUTURE_MONTH_NOT_ALLOWED", "Impossible de crÃ©er un budget pour un mois futur.");
 
-            if (budget.EndDate.HasValue && budget.StartDate > budget.EndDate.Value)
-                return ServiceResult.Failure("BUDGET_INVALID_PERIOD", "La période du budget est invalide.");
+            if (!string.Equals(budget.PeriodType, "Monthly", StringComparison.OrdinalIgnoreCase))
+                return ServiceResult.Failure("BUDGET_INVALID_PERIOD_TYPE", "Seuls les budgets mensuels sont autorisÃ©s.");
 
             return ServiceResult.Success();
         }
 
-        /// <summary>
-        /// Indique si deux périodes se chevauchent.
-        /// </summary>
-        private static bool PeriodsOverlap(DateTime start1, DateTime end1, DateTime start2, DateTime end2)
-            => start1 <= end2 && start2 <= end1;
-
-        /// <summary>
-        /// Vérifie si un budget actif entre en conflit avec un autre budget existant.
-        /// </summary>
         private ServiceResult<bool> HasActiveBudgetConflictInternal(Budget budget, int? excludedBudgetId = null)
         {
             try
             {
                 ArgumentNullException.ThrowIfNull(budget);
 
-                if (budget.UserId <= 0 || budget.CategoryId <= 0)
+                if (budget.UserId <= 0)
                     return ServiceResult<bool>.Failure("BUDGET_INVALID_INPUT", "Les informations du budget sont invalides.");
 
-                DateTime startDate = budget.StartDate;
-                DateTime endDate = budget.EndDate ?? DateTime.MaxValue;
+                DateTime targetMonth = new DateTime(budget.StartDate.Year, budget.StartDate.Month, 1);
 
                 bool hasConflict = _dbContext.GetBudgetsByUserId(budget.UserId)
-                    .Where(existingBudget => existingBudget.CategoryId == budget.CategoryId)
                     .Where(existingBudget => !excludedBudgetId.HasValue || existingBudget.Id != excludedBudgetId.Value)
-                    .Any(existingBudget => PeriodsOverlap(
-                        startDate,
-                        endDate,
-                        existingBudget.StartDate,
-                        existingBudget.EndDate ?? DateTime.MaxValue));
+                    .Any(existingBudget => existingBudget.StartDate.Year == targetMonth.Year &&
+                                           existingBudget.StartDate.Month == targetMonth.Month);
 
                 return ServiceResult<bool>.Success(hasConflict);
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Erreur HasActiveBudgetConflictInternal : {ex.Message}");
-                return ServiceResult<bool>.Failure("BUDGET_UNEXPECTED_ERROR", "Une erreur est survenue lors de la vérification des conflits de budget.");
+                return ServiceResult<bool>.Failure("BUDGET_UNEXPECTED_ERROR", "Une erreur est survenue lors de la vÃ©rification des conflits de budget.");
             }
-        }
-
-        private bool CategoryExistsForUser(int userId, int categoryId)
-        {
-            Category? category = _dbContext.GetCategoryById(categoryId, userId);
-            return category != null && category.IsActive;
         }
     }
 }

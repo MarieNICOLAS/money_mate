@@ -1,4 +1,3 @@
-﻿using System.Collections.ObjectModel;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.ViewModels.Forms;
@@ -6,18 +5,13 @@ using MoneyMate.ViewModels.Forms;
 namespace MoneyMate.ViewModels.Budgets;
 
 /// <summary>
-/// Formulaire de création / édition d'un budget.
+/// Formulaire de création / édition d'un budget mensuel global.
 /// </summary>
 public class BudgetFormViewModel : FormViewModelBase
 {
     private readonly IBudgetService _budgetService;
-    private readonly ICategoryService _categoryService;
     private string _amountText = string.Empty;
-    private int _selectedCategoryId;
-    private string _selectedPeriodType = "Monthly";
-    private DateTime _startDate = DateTime.Today;
-    private bool _hasEndDate;
-    private DateTime _endDate = DateTime.Today;
+    private MonthOptionViewModel? _selectedMonth;
     private bool _isActive = true;
     private DateTime _createdAt = DateTime.UtcNow;
 
@@ -30,16 +24,12 @@ public class BudgetFormViewModel : FormViewModelBase
         : base(authenticationService, dialogService, navigationService)
     {
         _budgetService = budgetService ?? throw new ArgumentNullException(nameof(budgetService));
-        _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
-        Categories = [];
-        PeriodTypes = ["Weekly", "Monthly", "Yearly"];
+        MonthOptions = BuildMonthOptions();
         Title = "Budget";
         RefreshFormState();
     }
 
-    public ObservableCollection<CategoryOptionViewModel> Categories { get; }
-
-    public IReadOnlyList<string> PeriodTypes { get; }
+    public IReadOnlyList<MonthOptionViewModel> MonthOptions { get; }
 
     public string AmountText
     {
@@ -47,34 +37,10 @@ public class BudgetFormViewModel : FormViewModelBase
         set => SetFormProperty(ref _amountText, value);
     }
 
-    public int SelectedCategoryId
+    public MonthOptionViewModel? SelectedMonth
     {
-        get => _selectedCategoryId;
-        set => SetFormProperty(ref _selectedCategoryId, value);
-    }
-
-    public string SelectedPeriodType
-    {
-        get => _selectedPeriodType;
-        set => SetFormProperty(ref _selectedPeriodType, value);
-    }
-
-    public DateTime StartDate
-    {
-        get => _startDate;
-        set => SetFormProperty(ref _startDate, value);
-    }
-
-    public bool HasEndDate
-    {
-        get => _hasEndDate;
-        set => SetFormProperty(ref _hasEndDate, value);
-    }
-
-    public DateTime EndDate
-    {
-        get => _endDate;
-        set => SetFormProperty(ref _endDate, value);
+        get => _selectedMonth;
+        set => SetFormProperty(ref _selectedMonth, value);
     }
 
     public bool IsActive
@@ -83,32 +49,19 @@ public class BudgetFormViewModel : FormViewModelBase
         set => SetFormProperty(ref _isActive, value);
     }
 
+    public int SelectedMonthNumber => SelectedMonth?.Month ?? 0;
+
+    public int SelectedYear => SelectedMonth?.Year ?? 0;
+
     protected override string EditParameterKey => NavigationParameterKeys.BudgetId;
 
-    protected override async Task LoadLookupsAsync()
-    {
-        var result = await _categoryService.GetCategoriesAsync(CurrentUserId);
-        if (!result.IsSuccess)
-        {
-            ErrorMessage = result.Message;
-            Categories.Clear();
-            return;
-        }
-
-        Categories.Clear();
-        foreach (Category category in (result.Data ?? []).OrderBy(category => category.Name))
-            Categories.Add(CategoryOptionViewModel.FromModel(category));
-    }
+    protected override string? CancelNavigationFallbackRoute => "//BudgetsOverviewPage";
 
     protected override Task InitializeForCreateAsync()
     {
         Title = "Nouveau budget";
         AmountText = string.Empty;
-        SelectedCategoryId = Categories.FirstOrDefault()?.Id ?? 0;
-        SelectedPeriodType = "Monthly";
-        StartDate = DateTime.Today;
-        HasEndDate = false;
-        EndDate = DateTime.Today;
+        SelectedMonth = MonthOptions.FirstOrDefault();
         IsActive = true;
         _createdAt = DateTime.UtcNow;
         return Task.CompletedTask;
@@ -126,11 +79,7 @@ public class BudgetFormViewModel : FormViewModelBase
         Budget budget = result.Data;
         Title = "Modifier le budget";
         AmountText = budget.Amount.ToString("0.##");
-        SelectedCategoryId = budget.CategoryId;
-        SelectedPeriodType = budget.PeriodType;
-        StartDate = budget.StartDate;
-        HasEndDate = budget.EndDate.HasValue;
-        EndDate = budget.EndDate ?? budget.StartDate;
+        SelectedMonth = MonthOptions.FirstOrDefault(option => option.Year == budget.StartDate.Year && option.Month == budget.StartDate.Month);
         IsActive = budget.IsActive;
         _createdAt = budget.CreatedAt;
     }
@@ -143,14 +92,11 @@ public class BudgetFormViewModel : FormViewModelBase
         if (!TryParseDecimalInput(AmountText, out decimal amount) || amount <= 0)
             return "Le montant du budget doit être strictement positif.";
 
-        if (SelectedCategoryId <= 0)
-            return "La catégorie est requise.";
+        if (SelectedMonth == null)
+            return "Le mois du budget est requis.";
 
-        if (string.IsNullOrWhiteSpace(SelectedPeriodType) || !PeriodTypes.Contains(SelectedPeriodType))
-            return "Le type de période est invalide.";
-
-        if (HasEndDate && StartDate > EndDate)
-            return "La période du budget est invalide.";
+        if (SelectedMonth.StartDate.Date > DateTime.Today)
+            return "Impossible de créer un budget pour un mois futur.";
 
         return string.Empty;
     }
@@ -159,20 +105,24 @@ public class BudgetFormViewModel : FormViewModelBase
     {
         _ = TryParseDecimalInput(AmountText, out decimal amount);
 
+        if (SelectedMonth == null)
+            return false;
+
         Budget budget = new()
         {
             Id = EditingEntityId,
             UserId = CurrentUserId,
-            CategoryId = SelectedCategoryId,
             Amount = amount,
-            PeriodType = SelectedPeriodType,
-            StartDate = StartDate,
-            EndDate = HasEndDate ? EndDate : null,
+            PeriodType = "Monthly",
+            StartDate = SelectedMonth.StartDate,
+            EndDate = SelectedMonth.EndDate,
             IsActive = IsActive,
             CreatedAt = _createdAt
         };
 
-        var result = IsEditMode
+        bool isUpdatingExistingBudget = EditingEntityId > 0;
+
+        var result = isUpdatingExistingBudget
             ? await _budgetService.UpdateBudgetAsync(budget)
             : await _budgetService.CreateBudgetAsync(budget);
 
@@ -193,7 +143,7 @@ public class BudgetFormViewModel : FormViewModelBase
 
         bool confirm = await DialogService.ShowConfirmationAsync(
             "Suppression",
-            "Supprimer ce budget ?",
+            "Supprimer ce budget mensuel ?",
             "Oui",
             "Non");
 
@@ -210,4 +160,33 @@ public class BudgetFormViewModel : FormViewModelBase
         await NavigationService.NavigateToAsync("//BudgetsOverviewPage");
         return true;
     }
+
+    private static IReadOnlyList<MonthOptionViewModel> BuildMonthOptions()
+    {
+        DateTime currentMonth = new(DateTime.Today.Year, DateTime.Today.Month, 1);
+
+        return Enumerable.Range(0, 12)
+            .Select(offset => currentMonth.AddMonths(-offset))
+            .Select(date => new MonthOptionViewModel(date))
+            .ToList();
+    }
+}
+
+public sealed class MonthOptionViewModel
+{
+    public MonthOptionViewModel(DateTime monthStart)
+    {
+        StartDate = new DateTime(monthStart.Year, monthStart.Month, 1);
+        EndDate = StartDate.AddMonths(1).AddDays(-1);
+    }
+
+    public int Year => StartDate.Year;
+
+    public int Month => StartDate.Month;
+
+    public DateTime StartDate { get; }
+
+    public DateTime EndDate { get; }
+
+    public string Label => StartDate.ToString("MMMM yyyy");
 }

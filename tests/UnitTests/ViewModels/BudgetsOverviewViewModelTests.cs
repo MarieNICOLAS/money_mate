@@ -1,9 +1,10 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.Services.Models;
 using MoneyMate.Services.Results;
+using MoneyMate.ViewModels;
 using MoneyMate.ViewModels.Budgets;
 
 namespace UnitTests.ViewModels;
@@ -18,8 +19,8 @@ public class BudgetsOverviewViewModelTests
         Mock<IBudgetService> budgetServiceMock = new();
         Mock<ICategoryService> categoryServiceMock = new();
 
-        Budget budget1 = new() { Id = 1, UserId = user.Id, CategoryId = 100, Amount = 100m, PeriodType = "Monthly", StartDate = DateTime.Today.AddDays(-15) };
-        Budget budget2 = new() { Id = 2, UserId = user.Id, CategoryId = 200, Amount = 200m, PeriodType = "Monthly", StartDate = DateTime.Today.AddDays(-20) };
+        Budget budget1 = new() { Id = 1, UserId = user.Id, Amount = 100m, PeriodType = "Monthly", StartDate = new DateTime(2026, 4, 1) };
+        Budget budget2 = new() { Id = 2, UserId = user.Id, Amount = 200m, PeriodType = "Monthly", StartDate = new DateTime(2026, 3, 1) };
 
         budgetServiceMock.Setup(x => x.GetBudgetsAsync(user.Id))
             .ReturnsAsync(ServiceResult<List<Budget>>.Success(new List<Budget> { budget1, budget2 }));
@@ -44,13 +45,6 @@ public class BudgetsOverviewViewModelTests
                 IsExceeded = false
             }));
 
-        categoryServiceMock.Setup(x => x.GetCategoriesAsync(user.Id))
-            .ReturnsAsync(ServiceResult<List<Category>>.Success(new List<Category>
-            {
-                new() { Id = 100, Name = "Courses", Color = "#4CAF50", Icon = "🛒", IsActive = true },
-                new() { Id = 200, Name = "Transport", Color = "#2196F3", Icon = "🚗", IsActive = true }
-            }));
-
         BudgetsOverviewViewModel viewModel = new(
             budgetServiceMock.Object,
             categoryServiceMock.Object,
@@ -66,7 +60,7 @@ public class BudgetsOverviewViewModelTests
         Assert.AreEqual(2, viewModel.ActiveBudgetsCount);
         Assert.AreEqual(1, viewModel.BudgetsAtRiskCount);
         Assert.IsTrue(viewModel.HasBudgets);
-        Assert.AreEqual("Courses", viewModel.Budgets[0].CategoryName);
+        Assert.AreEqual("avril 2026", viewModel.Budgets[0].PeriodLabel.ToLowerInvariant());
     }
 
     [TestMethod]
@@ -85,7 +79,47 @@ public class BudgetsOverviewViewModelTests
         viewModel.AddBudgetCommand.Execute(null);
         await Task.Delay(100);
 
-        navigationServiceMock.Verify(x => x.NavigateToAsync("//AddBudgetPage"), Times.Once);
+        navigationServiceMock.Verify(x => x.NavigateToAsync("AddBudgetPage"), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task ManageCategoriesCommand_NavigatesToCategoriesListPage()
+    {
+        User user = ViewModelTestHelper.CreateUser();
+        Mock<INavigationService> navigationServiceMock = ViewModelTestHelper.CreateNavigationServiceMock();
+
+        BudgetsOverviewViewModel viewModel = new(
+            new Mock<IBudgetService>().Object,
+            new Mock<ICategoryService>().Object,
+            ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
+            ViewModelTestHelper.CreateDialogServiceMock().Object,
+            navigationServiceMock.Object);
+
+        viewModel.ManageCategoriesCommand.Execute(null);
+        await Task.Delay(100);
+
+        navigationServiceMock.Verify(x => x.NavigateToAsync("//CategoriesListPage"), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task OpenEditBudgetCommand_NavigatesWithBudgetId()
+    {
+        User user = ViewModelTestHelper.CreateUser();
+        Mock<INavigationService> navigationServiceMock = ViewModelTestHelper.CreateNavigationServiceMock();
+
+        BudgetsOverviewViewModel viewModel = new(
+            new Mock<IBudgetService>().Object,
+            new Mock<ICategoryService>().Object,
+            ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
+            ViewModelTestHelper.CreateDialogServiceMock().Object,
+            navigationServiceMock.Object);
+
+        viewModel.OpenEditBudgetCommand.Execute(new BudgetOverviewItemViewModel { Id = 42, PeriodLabel = "avril 2026" });
+        await Task.Delay(100);
+
+        navigationServiceMock.Verify(
+            x => x.NavigateToAsync($"EditBudgetPage?{NavigationParameterKeys.BudgetId}=42"),
+            Times.Once);
     }
 
     [TestMethod]

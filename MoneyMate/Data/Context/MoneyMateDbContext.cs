@@ -429,11 +429,6 @@ namespace MoneyMate.Data.Context
                     userId,
                     existingCategory.Id);
 
-                database.Execute(
-                    "DELETE FROM Budgets WHERE UserId = ? AND CategoryId = ?",
-                    userId,
-                    existingCategory.Id);
-
                 deletedCategoryRows = database.Execute(
                     "DELETE FROM Categories WHERE Id = ? AND UserId = ? AND IsSystem = 0",
                     existingCategory.Id,
@@ -605,9 +600,6 @@ namespace MoneyMate.Data.Context
             if (!IsValidUserId(budget.UserId))
                 return 0;
 
-            if (!CategoryExistsForUser(budget.CategoryId, budget.UserId))
-                return 0;
-
             Database.Insert(budget);
             return budget.Id;
         }
@@ -624,9 +616,6 @@ namespace MoneyMate.Data.Context
 
             var existingBudget = GetBudgetById(budget.Id, budget.UserId);
             if (existingBudget == null)
-                return 0;
-
-            if (!CategoryExistsForUser(budget.CategoryId, budget.UserId))
                 return 0;
 
             return Database.Update(budget);

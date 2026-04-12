@@ -1,4 +1,5 @@
-﻿using MoneyMate.Services.Interfaces;
+using MoneyMate.Services.Interfaces;
+using MoneyMate.Views.Budgets;
 
 namespace MoneyMate
 {
@@ -12,6 +13,9 @@ namespace MoneyMate
             _authenticationService = authenticationService;
 
             InitializeComponent();
+
+            Routing.RegisterRoute(nameof(AddBudgetPage), typeof(AddBudgetPage));
+            Routing.RegisterRoute(nameof(EditBudgetPage), typeof(EditBudgetPage));
 
             Navigating += OnShellNavigating;
             _authenticationService.AuthenticationStateChanged += OnAuthenticationStateChanged;

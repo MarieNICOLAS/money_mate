@@ -1,4 +1,4 @@
-﻿using MoneyMate.Data.Context;
+using MoneyMate.Data.Context;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.Services.Models;
@@ -283,9 +283,6 @@ namespace MoneyMate.Services.Implementations
             });
         }
 
-        /// <summary>
-        /// Valide les données métier d'un seuil d'alerte.
-        /// </summary>
         private static ServiceResult ValidateAlertThreshold(AlertThreshold alertThreshold)
         {
             if (alertThreshold.UserId <= 0)
@@ -305,11 +302,9 @@ namespace MoneyMate.Services.Implementations
             if (!alertThreshold.BudgetId.HasValue && !alertThreshold.CategoryId.HasValue)
                 return ServiceResult.Failure("ALERT_TARGET_REQUIRED", "Le seuil d'alerte doit cibler un budget ou une catégorie.");
 
-            Budget? budget = null;
-
             if (alertThreshold.BudgetId.HasValue)
             {
-                budget = _dbContext.GetBudgetById(alertThreshold.BudgetId.Value, alertThreshold.UserId);
+                Budget? budget = _dbContext.GetBudgetById(alertThreshold.BudgetId.Value, alertThreshold.UserId);
                 if (budget == null)
                     return ServiceResult.Failure("ALERT_BUDGET_NOT_FOUND", "Le budget sélectionné est introuvable.");
             }
@@ -321,59 +316,44 @@ namespace MoneyMate.Services.Implementations
                     return ServiceResult.Failure("ALERT_CATEGORY_NOT_FOUND", "La catégorie sélectionnée est introuvable ou inactive.");
             }
 
-            if (budget != null && alertThreshold.CategoryId.HasValue && budget.CategoryId != alertThreshold.CategoryId.Value)
-                return ServiceResult.Failure("ALERT_BUDGET_CATEGORY_MISMATCH", "Le budget sélectionné ne correspond pas à la catégorie choisie.");
-
             return ServiceResult.Success();
         }
 
-        /// <summary>
-        /// Indique si une alerte a atteint son seuil de déclenchement.
-        /// </summary>
         private bool IsTriggered(int userId, AlertThreshold alertThreshold)
         {
             ServiceResult<AlertTriggerInfo> result = BuildAlertTriggerInfo(userId, alertThreshold);
             return result.IsSuccess && result.Data != null && result.Data.IsTriggered;
         }
 
-        /// <summary>
-        /// Résout le budget applicable à une alerte.
-        /// </summary>
         private Budget? ResolveBudget(int userId, AlertThreshold alertThreshold)
         {
             if (alertThreshold.BudgetId.HasValue)
                 return _dbContext.GetBudgetById(alertThreshold.BudgetId.Value, userId);
 
-            if (!alertThreshold.CategoryId.HasValue)
-                return null;
-
             DateTime now = DateTime.Now;
 
             return _dbContext.GetBudgetsByUserId(userId)
-                .Where(budget => budget.CategoryId == alertThreshold.CategoryId.Value)
-                .Where(budget => budget.StartDate <= now)
-                .Where(budget => !budget.EndDate.HasValue || budget.EndDate.Value >= now)
-                .OrderByDescending(budget => budget.StartDate)
-                .ThenByDescending(budget => budget.CreatedAt)
+                .Where(budget => budget.StartDate.Year == now.Year && budget.StartDate.Month == now.Month)
+                .OrderByDescending(budget => budget.CreatedAt)
                 .FirstOrDefault();
         }
 
-        /// <summary>
-        /// Construit l'état détaillé d'un seuil d'alerte.
-        /// </summary>
         private ServiceResult<AlertTriggerInfo> BuildAlertTriggerInfo(int userId, AlertThreshold alertThreshold)
         {
             Budget? budget = ResolveBudget(userId, alertThreshold);
             if (budget == null || budget.Amount <= 0)
                 return ServiceResult<AlertTriggerInfo>.Failure("ALERT_BUDGET_NOT_FOUND", "Aucun budget compatible n'a été trouvé pour ce seuil d'alerte.");
 
-            int categoryId = alertThreshold.CategoryId ?? budget.CategoryId;
+            budget.NormalizeToMonthlyPeriod();
             DateTime endDate = budget.EndDate ?? DateTime.MaxValue;
 
-            decimal totalExpenses = _dbContext.GetExpensesByCategory(userId, categoryId)
-                .Where(expense => expense.DateOperation >= budget.StartDate && expense.DateOperation <= endDate)
-                .Sum(expense => expense.Amount);
+            IEnumerable<Expense> expenses = _dbContext.GetExpensesByUserId(userId)
+                .Where(expense => expense.DateOperation >= budget.StartDate && expense.DateOperation <= endDate);
 
+            if (alertThreshold.CategoryId.HasValue)
+                expenses = expenses.Where(expense => expense.CategoryId == alertThreshold.CategoryId.Value);
+
+            decimal totalExpenses = expenses.Sum(expense => expense.Amount);
             decimal percentage = budget.CalculateBudgetPercentage(totalExpenses);
 
             AlertTriggerInfo triggerInfo = new()

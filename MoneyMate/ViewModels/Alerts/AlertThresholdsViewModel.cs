@@ -217,12 +217,7 @@ public sealed class AlertThresholdItemViewModel
         IReadOnlyDictionary<int, Category> categoriesById)
     {
         if (alertThreshold.BudgetId.HasValue && budgetsById.TryGetValue(alertThreshold.BudgetId.Value, out Budget? budget))
-        {
-            if (categoriesById.TryGetValue(budget.CategoryId, out Category? category))
-                return $"Budget • {category.Name}";
-
-            return $"Budget #{budget.Id}";
-        }
+            return $"Budget • {budget.MonthLabel}";
 
         if (alertThreshold.CategoryId.HasValue && categoriesById.TryGetValue(alertThreshold.CategoryId.Value, out Category? targetCategory))
             return $"Catégorie • {targetCategory.Name}";

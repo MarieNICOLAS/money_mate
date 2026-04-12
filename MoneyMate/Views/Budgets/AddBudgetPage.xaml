@@ -6,11 +6,81 @@
                 Title="Ajouter un Budget"
                 UseAuthenticatedFooter="True">
     <views:BasePage.PageContent>
-        <VerticalStackLayout Spacing="20" Padding="30">
-            <Label
-                Text="Ajouter un Budget"
-                Style="{StaticResource PageTitle}"
-                HorizontalOptions="Center" />
-        </VerticalStackLayout>
+        <ScrollView>
+            <VerticalStackLayout Style="{StaticResource MainContainer}" Spacing="18">
+                <Label Text="Nouveau budget"
+                       Style="{StaticResource PageTitle}"
+                       Margin="0,8,0,0" />
+
+                <Border Style="{StaticResource CardFrame}" Margin="0,0,0,8">
+                    <VerticalStackLayout Spacing="16">
+                        <Label Text="Parametres du budget"
+                               Style="{StaticResource SectionTitle}" />
+
+                        <Label Text="Montant"
+                               Style="{StaticResource FormLabel}" />
+                        <Border Style="{StaticResource InputContainer}">
+                            <Entry Text="{Binding AmountText, Mode=TwoWay}"
+                                   Keyboard="Numeric"
+                                   Placeholder="0,00"
+                                   Style="{StaticResource EntryForm}" />
+                        </Border>
+
+                        <Label Text="Mois du budget"
+                               Style="{StaticResource FormLabel}" />
+                        <Border Style="{StaticResource InputContainer}">
+                            <Picker ItemsSource="{Binding MonthOptions}"
+                                    ItemDisplayBinding="{Binding Label}"
+                                    SelectedItem="{Binding SelectedMonth, Mode=TwoWay}"
+                                    Title="Choisissez un mois" />
+                        </Border>
+
+                        <Label Text="Seuls le mois actuel et les mois precedents sont disponibles."
+                               TextColor="{StaticResource Secondary}"
+                               FontSize="13" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Style="{StaticResource CardFrame}">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Etat"
+                               Style="{StaticResource SectionTitle}" />
+
+                        <Grid ColumnDefinitions="Auto,*"
+                              ColumnSpacing="12">
+                            <Switch IsToggled="{Binding IsActive, Mode=TwoWay}" />
+                            <Label Grid.Column="1"
+                                   Text="Activer ce budget des maintenant"
+                                   VerticalTextAlignment="Center"
+                                   TextColor="{StaticResource TextDark}" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Label Text="{Binding ValidationMessage}"
+                       IsVisible="{Binding HasValidationErrors}"
+                       TextColor="{StaticResource Error}"
+                       FontAttributes="Bold" />
+
+                <Label Text="{Binding ErrorMessage}"
+                       IsVisible="{Binding HasError}"
+                       TextColor="{StaticResource Error}"
+                       FontAttributes="Bold" />
+
+                <Grid ColumnDefinitions="*,*"
+                      ColumnSpacing="12"
+                      Margin="0,8,0,0">
+                    <Button Grid.Column="0"
+                            Text="Annuler"
+                            Command="{Binding CancelCommand}"
+                            Style="{StaticResource OutlineButton}" />
+                    <Button Grid.Column="1"
+                            Text="Enregistrer"
+                            Command="{Binding SaveCommand}"
+                            IsEnabled="{Binding CanSave}"
+                            Style="{StaticResource PrimaryButton}" />
+                </Grid>
+            </VerticalStackLayout>
+        </ScrollView>
     </views:BasePage.PageContent>
 </views:BasePage>

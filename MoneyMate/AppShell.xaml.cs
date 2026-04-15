@@ -1,21 +1,27 @@
-using MoneyMate.Services.Interfaces;
+﻿using MoneyMate.Services.Interfaces;
 using MoneyMate.Views.Budgets;
+using System.Diagnostics;
 
 namespace MoneyMate
 {
     public partial class AppShell : Shell
     {
         private readonly IAuthenticationService _authenticationService;
-        private bool _isRedirectingToLogin;
+        private readonly SemaphoreSlim _navigationLock = new(1, 1);
+
+        private bool _isInitialized;
+        private bool _isRedirecting;
+
+        private const string DashboardRoute = "//DashboardPage";
+        private const string LoginRoute = "//LoginPage";
+        private const string PublicEntryRoute = "//MainPage";
 
         public AppShell(IAuthenticationService authenticationService)
         {
-            _authenticationService = authenticationService;
+            _authenticationService = authenticationService ?? throw new ArgumentNullException(nameof(authenticationService));
 
             InitializeComponent();
-
-            Routing.RegisterRoute(nameof(AddBudgetPage), typeof(AddBudgetPage));
-            Routing.RegisterRoute(nameof(EditBudgetPage), typeof(EditBudgetPage));
+            RegisterRoutes();
 
             Navigating += OnShellNavigating;
             _authenticationService.AuthenticationStateChanged += OnAuthenticationStateChanged;
@@ -23,34 +29,34 @@ namespace MoneyMate
             UpdateFlyoutItemsVisibility();
         }
 
-        /// <summary>
-        /// Initialise la navigation Shell à partir de l'état courant de session.
-        /// </summary>
-        public void InitializeForCurrentSession()
+        private static void RegisterRoutes()
         {
+            Routing.RegisterRoute(nameof(AddBudgetPage), typeof(AddBudgetPage));
+            Routing.RegisterRoute(nameof(EditBudgetPage), typeof(EditBudgetPage));
+        }
+
+        public async Task InitializeForCurrentSessionAsync()
+        {
+            if (_isInitialized)
+                return;
+
+            _isInitialized = true;
+
             UpdateFlyoutItemsVisibility();
 
             string targetRoute = _authenticationService.IsAuthenticated
-                ? "//DashboardPage"
-                : "//MainPage";
+                ? DashboardRoute
+                : PublicEntryRoute;
 
-            Dispatcher.Dispatch(async () =>
-            {
-                _isRedirectingToLogin = true;
-                try
-                {
-                    await GoToAsync(targetRoute);
-                }
-                finally
-                {
-                    _isRedirectingToLogin = false;
-                }
-            });
+            await NavigateSafelyAsync(targetRoute);
         }
 
-        private void OnAuthenticationStateChanged(object? sender, EventArgs e)
+        public Task NavigateToPublicEntryAsync()
+            => NavigateSafelyAsync(PublicEntryRoute);
+
+        private async void OnAuthenticationStateChanged(object? sender, EventArgs e)
         {
-            Dispatcher.Dispatch(async () =>
+            try
             {
                 UpdateFlyoutItemsVisibility();
 
@@ -61,55 +67,94 @@ namespace MoneyMate
                 if (_authenticationService.CanAccessRoute(currentRoute))
                     return;
 
-                _isRedirectingToLogin = true;
-                try
-                {
-                    await GoToAsync("//LoginPage");
-                }
-                finally
-                {
-                    _isRedirectingToLogin = false;
-                }
-            });
+                await NavigateSafelyAsync(LoginRoute);
+            }
+            catch (Exception ex)
+            {
+#if DEBUG
+                Debug.WriteLine($"[AUTH STATE CHANGED] {ex}");
+#endif
+            }
         }
 
-        private void OnShellNavigating(object? sender, ShellNavigatingEventArgs e)
+        private async void OnShellNavigating(object? sender, ShellNavigatingEventArgs e)
         {
-            if (_isRedirectingToLogin)
-                return;
-
-            string targetRoute = GetRouteFromLocation(e.Target.Location.OriginalString);
-            if (string.IsNullOrWhiteSpace(targetRoute) || _authenticationService.CanAccessRoute(targetRoute))
-                return;
-
-            e.Cancel();
-
-            Dispatcher.Dispatch(async () =>
+            try
             {
-                _isRedirectingToLogin = true;
-                try
-                {
-                    if (_authenticationService.IsAuthenticated)
-                    {
-                        await Current.DisplayAlert(
-                            "Accès refusé",
-                            "Votre rôle actuel ne permet pas d'accéder à cette page.",
-                            "OK");
-                    }
-                    else
-                    {
-                        await Current.DisplayAlert(
-                            "Session requise",
-                            "Vous devez être connecté pour accéder à cette page.",
-                            "OK");
+                if (_isRedirecting)
+                    return;
 
-                        await GoToAsync("//LoginPage");
-                    }
-                }
-                finally
+                string targetRoute = GetRouteFromLocation(e.Target.Location.OriginalString);
+
+                if (string.IsNullOrWhiteSpace(targetRoute))
+                    return;
+
+                if (_authenticationService.CanAccessRoute(targetRoute))
+                    return;
+
+                e.Cancel();
+
+                if (_authenticationService.IsAuthenticated)
                 {
-                    _isRedirectingToLogin = false;
+                    await ShowAlertAsync(
+                        "Accès refusé",
+                        "Votre rôle actuel ne permet pas d'accéder à cette page.");
+                    return;
                 }
+
+                await ShowAlertAsync(
+                    "Session requise",
+                    "Vous devez être connecté pour accéder à cette page.");
+
+                await NavigateSafelyAsync(LoginRoute);
+            }
+            catch (Exception ex)
+            {
+#if DEBUG
+                Debug.WriteLine($"[SHELL NAVIGATING] {ex}");
+#endif
+            }
+        }
+
+        private async Task NavigateSafelyAsync(string route)
+        {
+            if (string.IsNullOrWhiteSpace(route))
+                return;
+
+            await _navigationLock.WaitAsync();
+
+            try
+            {
+                if (_isRedirecting)
+                    return;
+
+                string currentRoute = GetCurrentRoute();
+                string normalizedTarget = NormalizeRoute(route);
+
+                if (string.Equals(currentRoute, normalizedTarget, StringComparison.OrdinalIgnoreCase))
+                    return;
+
+                _isRedirecting = true;
+
+                await MainThread.InvokeOnMainThreadAsync(async () =>
+                {
+                    await GoToAsync(route);
+                });
+            }
+            finally
+            {
+                _isRedirecting = false;
+                _navigationLock.Release();
+            }
+        }
+
+        private async Task ShowAlertAsync(string title, string message)
+        {
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                Page? page = Current?.CurrentPage ?? Shell.Current?.CurrentPage;
+                if (page is not null)
+                    await page.DisplayAlert(title, message, "OK");
             });
         }
 
@@ -134,7 +179,7 @@ namespace MoneyMate
                 .OfType<FlyoutItem>()
                 .FirstOrDefault(item => string.Equals(item.Title, title, StringComparison.Ordinal));
 
-            if (flyoutItem != null)
+            if (flyoutItem is not null)
                 flyoutItem.FlyoutItemIsVisible = isVisible;
         }
 
@@ -147,11 +192,15 @@ namespace MoneyMate
                 return string.Empty;
 
             string route = location.Split('?', '#')[0].Trim('/');
+
             if (string.IsNullOrWhiteSpace(route))
                 return string.Empty;
 
             string[] segments = route.Split('/', StringSplitOptions.RemoveEmptyEntries);
             return segments.Length == 0 ? string.Empty : segments[^1];
         }
+
+        private static string NormalizeRoute(string route)
+            => route.Trim().Trim('/').Split('/').LastOrDefault() ?? string.Empty;
     }
 }

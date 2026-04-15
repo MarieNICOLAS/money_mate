@@ -1,6 +1,7 @@
 ﻿using MoneyMate.Data.Context;
 using MoneyMate.Helpers;
 using MoneyMate.Models;
+using MoneyMate.Services.Common;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.Services.Models;
 using MoneyMate.Services.Results;
@@ -24,44 +25,57 @@ namespace MoneyMate.Services.Implementations
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         }
 
-        public async Task<ServiceResult<List<Expense>>> GetExpensesAsync(int userId)
+        public Task<ServiceResult<List<Expense>>> GetExpensesAsync(int userId)
         {
-            return await Task.Run(() =>
-            {
-                try
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
                 {
                     if (userId <= 0)
-                        return ServiceResult<List<Expense>>.Failure("EXPENSE_INVALID_USER", "Utilisateur invalide.");
+                        return ServiceResult<List<Expense>>.Failure(
+                            "EXPENSE_INVALID_USER",
+                            ServiceMessages.InvalidUser);
 
                     List<Expense> expenses = _dbContext.GetExpensesByUserId(userId);
                     return ServiceResult<List<Expense>>.Success(expenses);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur GetExpensesAsync : {ex.Message}");
-                    return ServiceResult<List<Expense>>.Failure("EXPENSE_UNEXPECTED_ERROR", "Une erreur est survenue lors du chargement des dépenses.");
-                }
-            });
+                },
+                operationName: nameof(GetExpensesAsync),
+                fallbackErrorCode: "EXPENSE_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors du chargement des dépenses.");
         }
 
-        public async Task<ServiceResult<List<Expense>>> SearchExpensesAsync(ExpenseFilter filter)
+        public Task<ServiceResult<List<Expense>>> SearchExpensesAsync(ExpenseFilter filter)
         {
-            return await Task.Run(() =>
-            {
-                try
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
                 {
                     ArgumentNullException.ThrowIfNull(filter);
 
                     if (filter.UserId <= 0)
-                        return ServiceResult<List<Expense>>.Failure("EXPENSE_INVALID_USER", "Utilisateur invalide.");
+                        return ServiceResult<List<Expense>>.Failure(
+                            "EXPENSE_INVALID_USER",
+                            ServiceMessages.InvalidUser);
 
-                    if (filter.StartDate.HasValue && filter.EndDate.HasValue && filter.StartDate.Value > filter.EndDate.Value)
-                        return ServiceResult<List<Expense>>.Failure("EXPENSE_INVALID_PERIOD", "La période demandée est invalide.");
+                    if (filter.StartDate.HasValue &&
+                        filter.EndDate.HasValue &&
+                        filter.StartDate.Value > filter.EndDate.Value)
+                    {
+                        return ServiceResult<List<Expense>>.Failure(
+                            "EXPENSE_INVALID_PERIOD",
+                            "La période demandée est invalide.");
+                    }
 
-                    if (filter.MinAmount.HasValue && filter.MaxAmount.HasValue && filter.MinAmount.Value > filter.MaxAmount.Value)
-                        return ServiceResult<List<Expense>>.Failure("EXPENSE_INVALID_AMOUNT_RANGE", "La plage de montants demandée est invalide.");
+                    if (filter.MinAmount.HasValue &&
+                        filter.MaxAmount.HasValue &&
+                        filter.MinAmount.Value > filter.MaxAmount.Value)
+                    {
+                        return ServiceResult<List<Expense>>.Failure(
+                            "EXPENSE_INVALID_AMOUNT_RANGE",
+                            "La plage de montants demandée est invalide.");
+                    }
 
-                    IEnumerable<Expense> expenses = ApplyExpenseFilter(_dbContext.GetExpensesByUserId(filter.UserId), filter);
+                    IEnumerable<Expense> expenses = ApplyExpenseFilter(
+                        _dbContext.GetExpensesByUserId(filter.UserId),
+                        filter);
 
                     if (filter.Skip > 0)
                         expenses = expenses.Skip(filter.Skip);
@@ -70,189 +84,219 @@ namespace MoneyMate.Services.Implementations
                         expenses = expenses.Take(filter.Take);
 
                     return ServiceResult<List<Expense>>.Success(expenses.ToList());
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur SearchExpensesAsync : {ex.Message}");
-                    return ServiceResult<List<Expense>>.Failure("EXPENSE_UNEXPECTED_ERROR", "Une erreur est survenue lors de la recherche des dépenses.");
-                }
-            });
+                },
+                operationName: nameof(SearchExpensesAsync),
+                fallbackErrorCode: "EXPENSE_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors de la recherche des dépenses.");
         }
 
-        public async Task<ServiceResult<List<Expense>>> GetExpensesByCategoryAsync(int userId, int categoryId)
+        public Task<ServiceResult<List<Expense>>> GetExpensesByCategoryAsync(int userId, int categoryId)
         {
-            return await Task.Run(() =>
-            {
-                try
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
                 {
                     if (userId <= 0 || categoryId <= 0)
-                        return ServiceResult<List<Expense>>.Failure("EXPENSE_INVALID_INPUT", "Les informations demandées sont invalides.");
+                        return ServiceResult<List<Expense>>.Failure(
+                            "EXPENSE_INVALID_INPUT",
+                            ServiceMessages.InvalidInput);
 
                     List<Expense> expenses = _dbContext.GetExpensesByCategory(userId, categoryId);
                     return ServiceResult<List<Expense>>.Success(expenses);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur GetExpensesByCategoryAsync : {ex.Message}");
-                    return ServiceResult<List<Expense>>.Failure("EXPENSE_UNEXPECTED_ERROR", "Une erreur est survenue lors du chargement des dépenses.");
-                }
-            });
+                },
+                operationName: nameof(GetExpensesByCategoryAsync),
+                fallbackErrorCode: "EXPENSE_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors du chargement des dépenses.");
         }
 
-        public async Task<ServiceResult<List<Expense>>> GetExpensesByPeriodAsync(int userId, DateTime startDate, DateTime endDate)
+        public Task<ServiceResult<List<Expense>>> GetExpensesByPeriodAsync(int userId, DateTime startDate, DateTime endDate)
         {
-            return await Task.Run(() =>
-            {
-                try
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
                 {
                     if (userId <= 0 || startDate > endDate)
-                        return ServiceResult<List<Expense>>.Failure("EXPENSE_INVALID_INPUT", "La période demandée est invalide.");
+                        return ServiceResult<List<Expense>>.Failure(
+                            "EXPENSE_INVALID_INPUT",
+                            "La période demandée est invalide.");
 
                     List<Expense> expenses = _dbContext.GetExpensesByUserId(userId)
                         .Where(expense => expense.DateOperation >= startDate && expense.DateOperation <= endDate)
                         .ToList();
 
                     return ServiceResult<List<Expense>>.Success(expenses);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur GetExpensesByPeriodAsync : {ex.Message}");
-                    return ServiceResult<List<Expense>>.Failure("EXPENSE_UNEXPECTED_ERROR", "Une erreur est survenue lors du chargement des dépenses.");
-                }
-            });
+                },
+                operationName: nameof(GetExpensesByPeriodAsync),
+                fallbackErrorCode: "EXPENSE_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors du chargement des dépenses.");
         }
 
-        public async Task<ServiceResult<Expense>> GetExpenseByIdAsync(int expenseId, int userId)
+        public Task<ServiceResult<Expense>> GetExpenseByIdAsync(int expenseId, int userId)
         {
-            return await Task.Run(() =>
-            {
-                try
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
                 {
                     if (expenseId <= 0 || userId <= 0)
-                        return ServiceResult<Expense>.Failure("EXPENSE_INVALID_INPUT", "Les informations demandées sont invalides.");
+                        return ServiceResult<Expense>.Failure(
+                            "EXPENSE_INVALID_INPUT",
+                            ServiceMessages.InvalidInput);
 
                     Expense? expense = _dbContext.GetExpenseById(expenseId, userId);
-                    if (expense == null)
-                        return ServiceResult<Expense>.Failure("EXPENSE_NOT_FOUND", "Dépense introuvable.");
+                    if (expense is null)
+                        return ServiceResult<Expense>.Failure(
+                            "EXPENSE_NOT_FOUND",
+                            "Dépense introuvable.");
 
                     return ServiceResult<Expense>.Success(expense);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur GetExpenseByIdAsync : {ex.Message}");
-                    return ServiceResult<Expense>.Failure("EXPENSE_UNEXPECTED_ERROR", "Une erreur est survenue lors du chargement de la dépense.");
-                }
-            });
+                },
+                operationName: nameof(GetExpenseByIdAsync),
+                fallbackErrorCode: "EXPENSE_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors du chargement de la dépense.");
         }
 
-        public async Task<ServiceResult<Expense>> CreateExpenseAsync(Expense expense)
+        public Task<ServiceResult<Expense>> CreateExpenseAsync(Expense expense)
         {
-            return await Task.Run(() =>
-            {
-                try
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
                 {
                     ArgumentNullException.ThrowIfNull(expense);
 
                     ServiceResult validationResult = ValidateExpense(expense);
                     if (!validationResult.IsSuccess)
-                        return ServiceResult<Expense>.Failure(validationResult.ErrorCode, validationResult.Message);
+                        return ServiceResult<Expense>.Failure(
+                            validationResult.ErrorCode,
+                            validationResult.Message);
 
                     if (!CategoryExistsForUser(expense.UserId, expense.CategoryId))
-                        return ServiceResult<Expense>.Failure("EXPENSE_CATEGORY_NOT_FOUND", "La catégorie sélectionnée est introuvable ou inactive.");
+                    {
+                        return ServiceResult<Expense>.Failure(
+                            "EXPENSE_CATEGORY_NOT_FOUND",
+                            "La catégorie sélectionnée est introuvable ou inactive.");
+                    }
 
                     expense.Note = expense.Note?.Trim() ?? string.Empty;
 
                     int expenseId = _dbContext.InsertExpense(expense);
                     if (expenseId <= 0)
-                        return ServiceResult<Expense>.Failure("EXPENSE_CREATE_FAILED", "Impossible de créer la dépense.");
+                    {
+                        return ServiceResult<Expense>.Failure(
+                            "EXPENSE_CREATE_FAILED",
+                            "Impossible de créer la dépense.");
+                    }
 
                     expense.Id = expenseId;
                     return ServiceResult<Expense>.Success(expense, "Dépense créée avec succès.");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur CreateExpenseAsync : {ex.Message}");
-                    return ServiceResult<Expense>.Failure("EXPENSE_UNEXPECTED_ERROR", "Une erreur est survenue lors de la création de la dépense.");
-                }
-            });
+                },
+                operationName: nameof(CreateExpenseAsync),
+                fallbackErrorCode: "EXPENSE_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors de la création de la dépense.");
         }
 
-        public async Task<ServiceResult<Expense>> UpdateExpenseAsync(Expense expense)
+        public Task<ServiceResult<Expense>> UpdateExpenseAsync(Expense expense)
         {
-            return await Task.Run(() =>
-            {
-                try
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
                 {
                     ArgumentNullException.ThrowIfNull(expense);
 
                     if (expense.Id <= 0)
-                        return ServiceResult<Expense>.Failure("EXPENSE_INVALID_ID", "La dépense à modifier est invalide.");
+                    {
+                        return ServiceResult<Expense>.Failure(
+                            "EXPENSE_INVALID_ID",
+                            "La dépense à modifier est invalide.");
+                    }
 
                     ServiceResult validationResult = ValidateExpense(expense);
                     if (!validationResult.IsSuccess)
-                        return ServiceResult<Expense>.Failure(validationResult.ErrorCode, validationResult.Message);
+                    {
+                        return ServiceResult<Expense>.Failure(
+                            validationResult.ErrorCode,
+                            validationResult.Message);
+                    }
 
                     Expense? existingExpense = _dbContext.GetExpenseById(expense.Id, expense.UserId);
-                    if (existingExpense == null)
-                        return ServiceResult<Expense>.Failure("EXPENSE_NOT_FOUND", "Dépense introuvable.");
+                    if (existingExpense is null)
+                    {
+                        return ServiceResult<Expense>.Failure(
+                            "EXPENSE_NOT_FOUND",
+                            "Dépense introuvable.");
+                    }
 
                     if (!CategoryExistsForUser(expense.UserId, expense.CategoryId))
-                        return ServiceResult<Expense>.Failure("EXPENSE_CATEGORY_NOT_FOUND", "La catégorie sélectionnée est introuvable ou inactive.");
+                    {
+                        return ServiceResult<Expense>.Failure(
+                            "EXPENSE_CATEGORY_NOT_FOUND",
+                            "La catégorie sélectionnée est introuvable ou inactive.");
+                    }
 
                     expense.Note = expense.Note?.Trim() ?? string.Empty;
 
                     int updatedRows = _dbContext.UpdateExpense(expense);
                     if (updatedRows != 1)
-                        return ServiceResult<Expense>.Failure("EXPENSE_UPDATE_FAILED", "La mise à jour de la dépense a échoué.");
+                    {
+                        return ServiceResult<Expense>.Failure(
+                            "EXPENSE_UPDATE_FAILED",
+                            "La mise à jour de la dépense a échoué.");
+                    }
 
                     return ServiceResult<Expense>.Success(expense, "Dépense mise à jour avec succès.");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur UpdateExpenseAsync : {ex.Message}");
-                    return ServiceResult<Expense>.Failure("EXPENSE_UNEXPECTED_ERROR", "Une erreur est survenue lors de la mise à jour de la dépense.");
-                }
-            });
+                },
+                operationName: nameof(UpdateExpenseAsync),
+                fallbackErrorCode: "EXPENSE_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors de la mise à jour de la dépense.");
         }
 
-        public async Task<ServiceResult> DeleteExpenseAsync(int expenseId, int userId)
+        public Task<ServiceResult> DeleteExpenseAsync(int expenseId, int userId)
         {
-            return await Task.Run(() =>
-            {
-                try
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
                 {
                     if (expenseId <= 0 || userId <= 0)
-                        return ServiceResult.Failure("EXPENSE_INVALID_INPUT", "Les informations demandées sont invalides.");
+                        return ServiceResult.Failure(
+                            "EXPENSE_INVALID_INPUT",
+                            ServiceMessages.InvalidInput);
 
                     Expense? expense = _dbContext.GetExpenseById(expenseId, userId);
-                    if (expense == null)
-                        return ServiceResult.Failure("EXPENSE_NOT_FOUND", "Dépense introuvable.");
+                    if (expense is null)
+                        return ServiceResult.Failure(
+                            "EXPENSE_NOT_FOUND",
+                            "Dépense introuvable.");
 
                     int deletedRows = _dbContext.DeleteExpense(expense);
                     if (deletedRows != 1)
-                        return ServiceResult.Failure("EXPENSE_DELETE_FAILED", "La suppression de la dépense a échoué.");
+                    {
+                        return ServiceResult.Failure(
+                            "EXPENSE_DELETE_FAILED",
+                            "La suppression de la dépense a échoué.");
+                    }
 
                     return ServiceResult.Success("Dépense supprimée avec succès.");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur DeleteExpenseAsync : {ex.Message}");
-                    return ServiceResult.Failure("EXPENSE_UNEXPECTED_ERROR", "Une erreur est survenue lors de la suppression de la dépense.");
-                }
-            });
+                },
+                operationName: nameof(DeleteExpenseAsync),
+                fallbackErrorCode: "EXPENSE_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors de la suppression de la dépense.");
         }
 
-        public async Task<ServiceResult<decimal>> GetTotalExpensesAsync(int userId, DateTime? startDate = null, DateTime? endDate = null, int? categoryId = null)
+        public Task<ServiceResult<decimal>> GetTotalExpensesAsync(
+            int userId,
+            DateTime? startDate = null,
+            DateTime? endDate = null,
+            int? categoryId = null)
         {
-            return await Task.Run(() =>
-            {
-                try
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
                 {
                     if (userId <= 0)
-                        return ServiceResult<decimal>.Failure("EXPENSE_INVALID_USER", "Utilisateur invalide.");
+                        return ServiceResult<decimal>.Failure(
+                            "EXPENSE_INVALID_USER",
+                            ServiceMessages.InvalidUser);
 
-                    if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
-                        return ServiceResult<decimal>.Failure("EXPENSE_INVALID_PERIOD", "La période demandée est invalide.");
+                    if (startDate.HasValue &&
+                        endDate.HasValue &&
+                        startDate.Value > endDate.Value)
+                    {
+                        return ServiceResult<decimal>.Failure(
+                            "EXPENSE_INVALID_PERIOD",
+                            "La période demandée est invalide.");
+                    }
 
                     IEnumerable<Expense> expenses = ApplyExpenseFilter(
                         _dbContext.GetExpensesByUserId(userId),
@@ -266,26 +310,35 @@ namespace MoneyMate.Services.Implementations
 
                     decimal total = expenses.Sum(expense => expense.Amount);
                     return ServiceResult<decimal>.Success(total);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur GetTotalExpensesAsync : {ex.Message}");
-                    return ServiceResult<decimal>.Failure("EXPENSE_UNEXPECTED_ERROR", "Une erreur est survenue lors du calcul des dépenses.");
-                }
-            });
+                },
+                operationName: nameof(GetTotalExpensesAsync),
+                fallbackErrorCode: "EXPENSE_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors du calcul des dépenses.");
         }
 
-        public async Task<ServiceResult<int>> GetExpensesCountAsync(int userId, DateTime? startDate = null, DateTime? endDate = null, int? categoryId = null, bool? isFixedCharge = null)
+        public Task<ServiceResult<int>> GetExpensesCountAsync(
+            int userId,
+            DateTime? startDate = null,
+            DateTime? endDate = null,
+            int? categoryId = null,
+            bool? isFixedCharge = null)
         {
-            return await Task.Run(() =>
-            {
-                try
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
                 {
                     if (userId <= 0)
-                        return ServiceResult<int>.Failure("EXPENSE_INVALID_USER", "Utilisateur invalide.");
+                        return ServiceResult<int>.Failure(
+                            "EXPENSE_INVALID_USER",
+                            ServiceMessages.InvalidUser);
 
-                    if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
-                        return ServiceResult<int>.Failure("EXPENSE_INVALID_PERIOD", "La période demandée est invalide.");
+                    if (startDate.HasValue &&
+                        endDate.HasValue &&
+                        startDate.Value > endDate.Value)
+                    {
+                        return ServiceResult<int>.Failure(
+                            "EXPENSE_INVALID_PERIOD",
+                            "La période demandée est invalide.");
+                    }
 
                     int count = ApplyExpenseFilter(
                             _dbContext.GetExpensesByUserId(userId),
@@ -300,29 +353,33 @@ namespace MoneyMate.Services.Implementations
                         .Count();
 
                     return ServiceResult<int>.Success(count);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur GetExpensesCountAsync : {ex.Message}");
-                    return ServiceResult<int>.Failure("EXPENSE_UNEXPECTED_ERROR", "Une erreur est survenue lors du calcul du nombre de dépenses.");
-                }
-            });
+                },
+                operationName: nameof(GetExpensesCountAsync),
+                fallbackErrorCode: "EXPENSE_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors du calcul du nombre de dépenses.");
         }
 
-        public async Task<ServiceResult<Expense>> DuplicateExpenseAsync(int expenseId, int userId, DateTime? newDate = null)
+        public Task<ServiceResult<Expense>> DuplicateExpenseAsync(int expenseId, int userId, DateTime? newDate = null)
         {
-            return await Task.Run(async () =>
-            {
-                try
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
                 {
                     if (expenseId <= 0 || userId <= 0)
-                        return ServiceResult<Expense>.Failure("EXPENSE_INVALID_INPUT", "Les informations demandées sont invalides.");
+                    {
+                        return ServiceResult<Expense>.Failure(
+                            "EXPENSE_INVALID_INPUT",
+                            ServiceMessages.InvalidInput);
+                    }
 
                     Expense? existingExpense = _dbContext.GetExpenseById(expenseId, userId);
-                    if (existingExpense == null)
-                        return ServiceResult<Expense>.Failure("EXPENSE_NOT_FOUND", "Dépense introuvable.");
+                    if (existingExpense is null)
+                    {
+                        return ServiceResult<Expense>.Failure(
+                            "EXPENSE_NOT_FOUND",
+                            "Dépense introuvable.");
+                    }
 
-                    var duplicatedExpense = new Expense
+                    Expense duplicatedExpense = new()
                     {
                         UserId = existingExpense.UserId,
                         CategoryId = existingExpense.CategoryId,
@@ -332,23 +389,43 @@ namespace MoneyMate.Services.Implementations
                         DateOperation = newDate ?? DateTime.Now
                     };
 
-                    return await CreateExpenseAsync(duplicatedExpense);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur DuplicateExpenseAsync : {ex.Message}");
-                    return ServiceResult<Expense>.Failure("EXPENSE_UNEXPECTED_ERROR", "Une erreur est survenue lors de la duplication de la dépense.");
-                }
-            });
+                    ServiceResult validationResult = ValidateExpense(duplicatedExpense);
+                    if (!validationResult.IsSuccess)
+                    {
+                        return ServiceResult<Expense>.Failure(
+                            validationResult.ErrorCode,
+                            validationResult.Message);
+                    }
+
+                    if (!CategoryExistsForUser(duplicatedExpense.UserId, duplicatedExpense.CategoryId))
+                    {
+                        return ServiceResult<Expense>.Failure(
+                            "EXPENSE_CATEGORY_NOT_FOUND",
+                            "La catégorie sélectionnée est introuvable ou inactive.");
+                    }
+
+                    duplicatedExpense.Note = duplicatedExpense.Note?.Trim() ?? string.Empty;
+
+                    int duplicatedExpenseId = _dbContext.InsertExpense(duplicatedExpense);
+                    if (duplicatedExpenseId <= 0)
+                    {
+                        return ServiceResult<Expense>.Failure(
+                            "EXPENSE_DUPLICATE_FAILED",
+                            "Impossible de dupliquer la dépense.");
+                    }
+
+                    duplicatedExpense.Id = duplicatedExpenseId;
+                    return ServiceResult<Expense>.Success(duplicatedExpense, "Dépense dupliquée avec succès.");
+                },
+                operationName: nameof(DuplicateExpenseAsync),
+                fallbackErrorCode: "EXPENSE_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors de la duplication de la dépense.");
         }
 
-        /// <summary>
-        /// Valide les données métier d'une dépense.
-        /// </summary>
         private static ServiceResult ValidateExpense(Expense expense)
         {
             if (expense.UserId <= 0)
-                return ServiceResult.Failure("EXPENSE_INVALID_USER", "Utilisateur invalide.");
+                return ServiceResult.Failure("EXPENSE_INVALID_USER", ServiceMessages.InvalidUser);
 
             if (expense.CategoryId <= 0)
                 return ServiceResult.Failure("EXPENSE_INVALID_CATEGORY", "Catégorie invalide.");
@@ -362,9 +439,6 @@ namespace MoneyMate.Services.Implementations
             return ServiceResult.Success();
         }
 
-        /// <summary>
-        /// Applique les critères d'un filtre sur une collection de dépenses.
-        /// </summary>
         private static IEnumerable<Expense> ApplyExpenseFilter(IEnumerable<Expense> expenses, ExpenseFilter filter)
         {
             if (filter.CategoryId.HasValue && filter.CategoryId.Value > 0)
@@ -388,7 +462,9 @@ namespace MoneyMate.Services.Implementations
             if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
             {
                 string searchTerm = filter.SearchTerm.Trim();
-                expenses = expenses.Where(expense => expense.Note.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+                expenses = expenses.Where(expense =>
+                    !string.IsNullOrWhiteSpace(expense.Note) &&
+                    expense.Note.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
             }
 
             return expenses;
@@ -397,7 +473,7 @@ namespace MoneyMate.Services.Implementations
         private bool CategoryExistsForUser(int userId, int categoryId)
         {
             Category? category = _dbContext.GetCategoryById(categoryId, userId);
-            return category != null && category.IsActive;
+            return category is not null && category.IsActive;
         }
     }
 }

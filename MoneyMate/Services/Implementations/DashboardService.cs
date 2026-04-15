@@ -1,5 +1,6 @@
-using MoneyMate.Data.Context;
+﻿using MoneyMate.Data.Context;
 using MoneyMate.Models;
+using MoneyMate.Services.Common;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.Services.Models;
 using MoneyMate.Services.Results;
@@ -8,9 +9,12 @@ namespace MoneyMate.Services.Implementations
 {
     /// <summary>
     /// Implémentation du service métier pour l'alimentation du tableau de bord.
+    /// Version optimisée pour limiter les relectures SQLite.
     /// </summary>
     public class DashboardService : IDashboardService
     {
+        private const decimal BudgetAtRiskThreshold = 80m;
+
         private readonly IMoneyMateDbContext _dbContext;
 
         public DashboardService()
@@ -23,102 +27,128 @@ namespace MoneyMate.Services.Implementations
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         }
 
-        public async Task<ServiceResult<DashboardSummary>> GetDashboardSummaryAsync(int userId)
+        public Task<ServiceResult<DashboardSummary>> GetDashboardSummaryAsync(int userId)
         {
-            return await Task.Run(() =>
-            {
-                try
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
                 {
                     if (userId <= 0)
-                        return ServiceResult<DashboardSummary>.Failure("DASHBOARD_INVALID_USER", "Utilisateur invalide.");
+                    {
+                        return ServiceResult<DashboardSummary>.Failure(
+                            "DASHBOARD_INVALID_USER",
+                            ServiceMessages.InvalidUser);
+                    }
 
                     DateTime now = DateTime.Now;
                     DateTime monthStart = new(now.Year, now.Month, 1);
                     DateTime nextMonthStart = monthStart.AddMonths(1);
                     DateTime previousMonthStart = monthStart.AddMonths(-1);
 
-                    List<Expense> userExpenses = _dbContext.GetExpensesByUserId(userId);
+                    List<Expense> allExpenses = _dbContext.GetExpensesByUserId(userId);
+                    List<Budget> budgets = _dbContext.GetBudgetsByUserId(userId);
+                    List<AlertThreshold> alertThresholds = _dbContext.GetAlertThresholdsByUserId(userId);
+                    int activeFixedChargesCount = _dbContext.GetActiveFixedChargesCountByUserId(userId);
 
-                    List<Expense> monthlyExpenses = userExpenses
+                    foreach (Budget budget in budgets)
+                        budget.NormalizeToMonthlyPeriod();
+
+                    List<Expense> currentMonthExpenses = allExpenses
                         .Where(expense => expense.DateOperation >= monthStart && expense.DateOperation < nextMonthStart)
                         .ToList();
 
-                    decimal currentMonthExpenses = monthlyExpenses.Sum(expense => expense.Amount);
-
-                    decimal previousMonthExpenses = userExpenses
+                    List<Expense> previousMonthExpenses = allExpenses
                         .Where(expense => expense.DateOperation >= previousMonthStart && expense.DateOperation < monthStart)
-                        .Sum(expense => expense.Amount);
+                        .ToList();
 
-                    List<Budget> budgets = _dbContext.GetBudgetsByUserId(userId);
-                    List<AlertThreshold> alertThresholds = _dbContext.GetAlertThresholdsByUserId(userId);
-                    int budgetsAtRiskCount = budgets.Count(budget => IsBudgetAtRisk(userId, budget));
-                    int triggeredAlertsCount = alertThresholds.Count(alertThreshold => IsAlertTriggered(userId, alertThreshold));
-                    ServiceResult<List<DashboardCategorySpending>> topCategoriesResult = GetTopSpendingCategoriesInternal(userId, 5, monthStart, nextMonthStart);
+                    decimal currentMonthExpensesAmount = currentMonthExpenses.Sum(expense => expense.Amount);
+                    decimal previousMonthExpensesAmount = previousMonthExpenses.Sum(expense => expense.Amount);
+
+                    Dictionary<int, string> categoriesById = _dbContext.GetCategoriesByUserId(userId)
+                        .ToDictionary(category => category.Id, category => category.Name);
+
+                    List<DashboardCategorySpending> topCategories = BuildTopCategories(
+                        currentMonthExpenses,
+                        categoriesById,
+                        topCount: 5);
+
+                    int budgetsAtRiskCount = budgets.Count(budget =>
+                        IsBudgetAtRisk(budget, allExpenses));
+
+                    int triggeredAlertsCount = alertThresholds.Count(alertThreshold =>
+                        IsAlertTriggered(alertThreshold, budgets, allExpenses, now));
 
                     DashboardSummary summary = new()
                     {
-                        CurrentMonthExpenses = currentMonthExpenses,
-                        CurrentMonthExpensesCount = monthlyExpenses.Count,
-                        PreviousMonthExpenses = previousMonthExpenses,
-                        ExpensesDeltaFromPreviousMonth = currentMonthExpenses - previousMonthExpenses,
+                        CurrentMonthExpenses = currentMonthExpensesAmount,
+                        CurrentMonthExpensesCount = currentMonthExpenses.Count,
+                        PreviousMonthExpenses = previousMonthExpensesAmount,
+                        ExpensesDeltaFromPreviousMonth = currentMonthExpensesAmount - previousMonthExpensesAmount,
                         ActiveBudgetsCount = budgets.Count,
-                        ActiveFixedChargesCount = _dbContext.GetFixedChargesByUserId(userId).Count,
+                        ActiveFixedChargesCount = activeFixedChargesCount,
                         ActiveAlertsCount = alertThresholds.Count,
                         TriggeredAlertsCount = triggeredAlertsCount,
                         BudgetsAtRiskCount = budgetsAtRiskCount,
-                        TopCategories = topCategoriesResult.IsSuccess && topCategoriesResult.Data != null
-                            ? topCategoriesResult.Data
-                            : []
+                        TopCategories = topCategories
                     };
 
                     return ServiceResult<DashboardSummary>.Success(summary);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur GetDashboardSummaryAsync : {ex.Message}");
-                    return ServiceResult<DashboardSummary>.Failure("DASHBOARD_UNEXPECTED_ERROR", "Une erreur est survenue lors du chargement du tableau de bord.");
-                }
-            });
+                },
+                operationName: nameof(GetDashboardSummaryAsync),
+                fallbackErrorCode: "DASHBOARD_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors du chargement du tableau de bord.");
         }
 
-        public async Task<ServiceResult<List<DashboardCategorySpending>>> GetTopSpendingCategoriesAsync(int userId, int topCount = 5)
+        public Task<ServiceResult<List<DashboardCategorySpending>>> GetTopSpendingCategoriesAsync(int userId, int topCount = 5)
         {
-            return await Task.Run(() =>
-            {
-                try
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
                 {
                     if (userId <= 0)
-                        return ServiceResult<List<DashboardCategorySpending>>.Failure("DASHBOARD_INVALID_USER", "Utilisateur invalide.");
+                    {
+                        return ServiceResult<List<DashboardCategorySpending>>.Failure(
+                            "DASHBOARD_INVALID_USER",
+                            ServiceMessages.InvalidUser);
+                    }
+
+                    if (topCount <= 0)
+                        return ServiceResult<List<DashboardCategorySpending>>.Success([]);
 
                     DateTime now = DateTime.Now;
                     DateTime monthStart = new(now.Year, now.Month, 1);
                     DateTime nextMonthStart = monthStart.AddMonths(1);
 
-                    return GetTopSpendingCategoriesInternal(userId, topCount, monthStart, nextMonthStart);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur GetTopSpendingCategoriesAsync : {ex.Message}");
-                    return ServiceResult<List<DashboardCategorySpending>>.Failure("DASHBOARD_UNEXPECTED_ERROR", "Une erreur est survenue lors du chargement des catégories du tableau de bord.");
-                }
-            });
+                    List<Expense> currentMonthExpenses = _dbContext.GetExpensesByUserId(userId)
+                        .Where(expense => expense.DateOperation >= monthStart && expense.DateOperation < nextMonthStart)
+                        .ToList();
+
+                    Dictionary<int, string> categoriesById = _dbContext.GetCategoriesByUserId(userId)
+                        .ToDictionary(category => category.Id, category => category.Name);
+
+                    List<DashboardCategorySpending> categories = BuildTopCategories(
+                        currentMonthExpenses,
+                        categoriesById,
+                        topCount);
+
+                    return ServiceResult<List<DashboardCategorySpending>>.Success(categories);
+                },
+                operationName: nameof(GetTopSpendingCategoriesAsync),
+                fallbackErrorCode: "DASHBOARD_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors du chargement des catégories du tableau de bord.");
         }
 
-        private ServiceResult<List<DashboardCategorySpending>> GetTopSpendingCategoriesInternal(int userId, int topCount, DateTime startDate, DateTime endDate)
+        private static List<DashboardCategorySpending> BuildTopCategories(
+            IEnumerable<Expense> expenses,
+            IReadOnlyDictionary<int, string> categoriesById,
+            int topCount)
         {
-            if (topCount <= 0)
-                return ServiceResult<List<DashboardCategorySpending>>.Success([]);
-
-            Dictionary<int, string> categoriesById = _dbContext.GetCategoriesByUserId(userId)
-                .ToDictionary(category => category.Id, category => category.Name);
-
-            List<DashboardCategorySpending> categories = _dbContext.GetExpensesByUserId(userId)
-                .Where(expense => expense.DateOperation >= startDate && expense.DateOperation < endDate)
+            return expenses
                 .GroupBy(expense => expense.CategoryId)
                 .Select(group => new DashboardCategorySpending
                 {
                     CategoryId = group.Key,
-                    CategoryName = categoriesById.TryGetValue(group.Key, out string? categoryName) ? categoryName : "Catégorie inconnue",
+                    CategoryName = categoriesById.TryGetValue(group.Key, out string? categoryName)
+                        ? categoryName
+                        : "Catégorie inconnue",
                     TotalAmount = group.Sum(expense => expense.Amount),
                     ExpensesCount = group.Count()
                 })
@@ -126,54 +156,62 @@ namespace MoneyMate.Services.Implementations
                 .ThenByDescending(item => item.ExpensesCount)
                 .Take(topCount)
                 .ToList();
-
-            return ServiceResult<List<DashboardCategorySpending>>.Success(categories);
         }
 
-        private bool IsBudgetAtRisk(int userId, Budget budget)
+        private static bool IsBudgetAtRisk(Budget budget, IEnumerable<Expense> allExpenses)
         {
             if (budget.Amount <= 0)
                 return false;
 
-            budget.NormalizeToMonthlyPeriod();
-
             DateTime endDate = budget.EndDate ?? DateTime.MaxValue;
-            decimal consumedAmount = _dbContext.GetExpensesByUserId(userId)
+
+            decimal consumedAmount = allExpenses
                 .Where(expense => expense.DateOperation >= budget.StartDate && expense.DateOperation <= endDate)
                 .Sum(expense => expense.Amount);
 
-            return budget.CalculateBudgetPercentage(consumedAmount) >= 80m;
+            return budget.CalculateBudgetPercentage(consumedAmount) >= BudgetAtRiskThreshold;
         }
 
-        private bool IsAlertTriggered(int userId, AlertThreshold alertThreshold)
+        private static bool IsAlertTriggered(
+            AlertThreshold alertThreshold,
+            IReadOnlyList<Budget> budgets,
+            IEnumerable<Expense> allExpenses,
+            DateTime referenceDate)
         {
-            Budget? budget = ResolveBudget(userId, alertThreshold);
-            if (budget == null || budget.Amount <= 0)
+            Budget? budget = ResolveBudget(alertThreshold, budgets, referenceDate);
+
+            if (budget is null || budget.Amount <= 0)
                 return false;
 
-            budget.NormalizeToMonthlyPeriod();
             DateTime endDate = budget.EndDate ?? DateTime.MaxValue;
 
-            IEnumerable<Expense> expenses = _dbContext.GetExpensesByUserId(userId)
+            IEnumerable<Expense> scopedExpenses = allExpenses
                 .Where(expense => expense.DateOperation >= budget.StartDate && expense.DateOperation <= endDate);
 
             if (alertThreshold.CategoryId.HasValue)
-                expenses = expenses.Where(expense => expense.CategoryId == alertThreshold.CategoryId.Value);
+            {
+                int categoryId = alertThreshold.CategoryId.Value;
+                scopedExpenses = scopedExpenses.Where(expense => expense.CategoryId == categoryId);
+            }
 
-            decimal consumedAmount = expenses.Sum(expense => expense.Amount);
+            decimal consumedAmount = scopedExpenses.Sum(expense => expense.Amount);
 
             return budget.CalculateBudgetPercentage(consumedAmount) >= alertThreshold.ThresholdPercentage;
         }
 
-        private Budget? ResolveBudget(int userId, AlertThreshold alertThreshold)
+        private static Budget? ResolveBudget(
+            AlertThreshold alertThreshold,
+            IReadOnlyList<Budget> budgets,
+            DateTime referenceDate)
         {
             if (alertThreshold.BudgetId.HasValue)
-                return _dbContext.GetBudgetById(alertThreshold.BudgetId.Value, userId);
+            {
+                int budgetId = alertThreshold.BudgetId.Value;
+                return budgets.FirstOrDefault(budget => budget.Id == budgetId);
+            }
 
-            DateTime now = DateTime.Now;
-
-            return _dbContext.GetBudgetsByUserId(userId)
-                .Where(budget => budget.StartDate.Year == now.Year && budget.StartDate.Month == now.Month)
+            return budgets
+                .Where(budget => budget.StartDate.Year == referenceDate.Year && budget.StartDate.Month == referenceDate.Month)
                 .OrderByDescending(budget => budget.CreatedAt)
                 .FirstOrDefault();
         }

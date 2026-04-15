@@ -2,45 +2,63 @@
 
 namespace MoneyMate.Services.Implementations
 {
-    /// <summary>
-    /// Implémentation MAUI du service de navigation basé sur Shell.
-    /// </summary>
     public class NavigationService : INavigationService
     {
-        /// <summary>
-        /// Navigue vers une route spécifiée.
-        /// </summary>
+        private readonly SemaphoreSlim _navigationLock = new(1, 1);
+
         public Task NavigateToAsync(string route)
-            => Shell.Current.GoToAsync(route);
+        {
+            if (string.IsNullOrWhiteSpace(route))
+                throw new ArgumentException("La route de navigation est requise.", nameof(route));
 
-        /// <summary>
-        /// Navigue vers une route avec paramètres.
-        /// </summary>
+            return ExecuteShellNavigationAsync(() => Shell.Current!.GoToAsync(route));
+        }
+
         public Task NavigateToAsync(string route, Dictionary<string, object> parameters)
-            => Shell.Current.GoToAsync(route, parameters);
+        {
+            if (string.IsNullOrWhiteSpace(route))
+                throw new ArgumentException("La route de navigation est requise.", nameof(route));
 
-        /// <summary>
-        /// Retour en arrière.
-        /// </summary>
+            parameters ??= [];
+
+            return ExecuteShellNavigationAsync(() => Shell.Current!.GoToAsync(route, parameters));
+        }
+
         public Task GoBackAsync()
-            => Shell.Current.GoToAsync("..");
+            => ExecuteShellNavigationAsync(() => Shell.Current!.GoToAsync(".."));
 
-        /// <summary>
-        /// Navigue vers la route principale authentifiée.
-        /// </summary>
         public Task NavigateToMainAsync()
-            => Shell.Current.GoToAsync("//DashboardPage");
+            => ExecuteShellNavigationAsync(() => Shell.Current!.GoToAsync("//DashboardPage"));
 
-        /// <summary>
-        /// Affiche une page modale via Shell.
-        /// </summary>
         public Task PresentModalAsync(string route)
-            => Shell.Current.GoToAsync(route);
+        {
+            if (string.IsNullOrWhiteSpace(route))
+                throw new ArgumentException("La route de navigation est requise.", nameof(route));
 
-        /// <summary>
-        /// Ferme la page modale actuelle.
-        /// </summary>
+            return ExecuteShellNavigationAsync(() => Shell.Current!.GoToAsync(route));
+        }
+
         public Task DismissModalAsync()
-            => Shell.Current.GoToAsync("..");
+            => ExecuteShellNavigationAsync(() => Shell.Current!.GoToAsync(".."));
+
+        private async Task ExecuteShellNavigationAsync(Func<Task> navigationAction)
+        {
+            await _navigationLock.WaitAsync();
+
+            try
+            {
+                await MainThread.InvokeOnMainThreadAsync(async () =>
+                {
+                    if (Shell.Current is null)
+                        throw new InvalidOperationException("Shell.Current est indisponible.");
+
+                    await navigationAction();
+                });
+            }
+            finally
+            {
+                _navigationLock.Release();
+            }
+        }
     }
 }

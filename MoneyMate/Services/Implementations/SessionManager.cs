@@ -5,9 +5,6 @@ using MoneyMate.Services.Security;
 
 namespace MoneyMate.Services.Implementations
 {
-    /// <summary>
-    /// Gère l'état de session utilisateur, sa persistance locale et les permissions d'accès.
-    /// </summary>
     public class SessionManager : ISessionManager
     {
         private const string RememberMeKey = "remember_me";
@@ -45,64 +42,68 @@ namespace MoneyMate.Services.Implementations
             ["CalendarPage"] = [UserRoles.User, UserRoles.Admin]
         };
 
-        private readonly MoneyMateDbContext _dbContext;
+        private readonly IMoneyMateDbContext _dbContext;
+        private readonly SemaphoreSlim _sessionLock = new(1, 1);
+
         private User? _currentUser;
 
         public SessionManager()
+            : this(DatabaseService.Instance)
         {
-            _dbContext = DatabaseService.Instance;
         }
 
-        /// <summary>
-        /// Événement déclenché lors d'un changement de session.
-        /// </summary>
+        public SessionManager(IMoneyMateDbContext dbContext)
+        {
+            _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        }
+
         public event EventHandler? SessionChanged;
 
-        /// <summary>
-        /// Utilisateur actuellement connecté.
-        /// </summary>
         public User? CurrentUser => _currentUser;
 
-        /// <summary>
-        /// Indique si une session authentifiée est active.
-        /// </summary>
-        public bool IsAuthenticated => _currentUser != null;
+        public bool IsAuthenticated => _currentUser is not null;
 
-        /// <summary>
-        /// Restaure une session persistée si disponible.
-        /// </summary>
-        public bool RestoreSession()
+        public async Task<bool> RestoreSessionAsync(CancellationToken cancellationToken = default)
         {
-            if (!Preferences.Get(RememberMeKey, false))
-            {
-                ClearTransientSessionData();
-                return false;
-            }
+            await _sessionLock.WaitAsync(cancellationToken);
 
-            int userId = Preferences.Get(SessionUserIdKey, 0);
-            if (userId <= 0)
+            try
             {
-                ClearSession();
-                return false;
-            }
+                if (!Preferences.Get(RememberMeKey, false))
+                {
+                    ClearTransientSessionData();
+                    return false;
+                }
 
-            User? user = _dbContext.GetUserById(userId);
-            if (user == null || !user.IsActive)
+                int userId = Preferences.Get(SessionUserIdKey, 0);
+                if (userId <= 0)
+                {
+                    ClearSession();
+                    return false;
+                }
+
+                User? user = await Task.Run(() => _dbContext.GetUserById(userId), cancellationToken);
+
+                if (user is null || !user.IsActive)
+                {
+                    ClearSession();
+                    return false;
+                }
+
+                _currentUser = user;
+                OnSessionChanged();
+                return true;
+            }
+            finally
             {
-                ClearSession();
-                return false;
+                _sessionLock.Release();
             }
-
-            _currentUser = user;
-            OnSessionChanged();
-            return true;
         }
 
-        /// <summary>
-        /// Démarre une nouvelle session utilisateur.
-        /// </summary>
         public void StartSession(User user, bool rememberSession)
         {
+            ArgumentNullException.ThrowIfNull(user);
+
             _currentUser = user;
 
             if (rememberSession)
@@ -113,17 +114,18 @@ namespace MoneyMate.Services.Implementations
             }
             else
             {
-                ClearTransientSessionData();
+                Preferences.Remove(SessionUserIdKey);
+                Preferences.Set(RememberMeKey, false);
+                Preferences.Set(RememberedEmailKey, user.Email);
             }
 
             OnSessionChanged();
         }
 
-        /// <summary>
-        /// Met à jour l'utilisateur courant en mémoire.
-        /// </summary>
         public void UpdateCurrentUser(User user)
         {
+            ArgumentNullException.ThrowIfNull(user);
+
             _currentUser = user;
 
             if (Preferences.Get(RememberMeKey, false))
@@ -135,9 +137,6 @@ namespace MoneyMate.Services.Implementations
             OnSessionChanged();
         }
 
-        /// <summary>
-        /// Termine la session courante.
-        /// </summary>
         public void ClearSession(bool clearPersistentSession = true)
         {
             _currentUser = null;
@@ -156,41 +155,32 @@ namespace MoneyMate.Services.Implementations
             OnSessionChanged();
         }
 
-        /// <summary>
-        /// Retourne l'email mémorisé pour pré-remplissage de la connexion.
-        /// </summary>
         public string GetRememberedEmail()
             => Preferences.Get(RememberedEmailKey, string.Empty);
 
-        /// <summary>
-        /// Indique si la persistance de session est activée.
-        /// </summary>
         public bool GetRememberMePreference()
             => Preferences.Get(RememberMeKey, false);
 
-        /// <summary>
-        /// Vérifie si l'utilisateur courant possède au moins un des rôles demandés.
-        /// </summary>
         public bool HasRole(params string[] roles)
         {
-            if (_currentUser == null || roles == null || roles.Length == 0)
+            if (_currentUser is null || roles is null || roles.Length == 0)
                 return false;
 
-            return roles.Any(role => string.Equals(_currentUser.Role, role, StringComparison.OrdinalIgnoreCase));
+            return roles.Any(role =>
+                string.Equals(_currentUser.Role, role, StringComparison.OrdinalIgnoreCase));
         }
 
-        /// <summary>
-        /// Vérifie si la session courante peut accéder à une route donnée.
-        /// </summary>
         public bool CanAccessRoute(string route)
         {
             if (string.IsNullOrWhiteSpace(route))
                 return false;
 
-            if (PublicRoutes.Contains(route))
+            string normalizedRoute = NormalizeRoute(route);
+
+            if (PublicRoutes.Contains(normalizedRoute))
                 return true;
 
-            if (!RoutePermissions.TryGetValue(route, out string[]? allowedRoles))
+            if (!RoutePermissions.TryGetValue(normalizedRoute, out string[]? allowedRoles))
                 return true;
 
             if (!IsAuthenticated)
@@ -199,9 +189,9 @@ namespace MoneyMate.Services.Implementations
             return HasRole(allowedRoles);
         }
 
-        /// <summary>
-        /// Nettoie les données de session temporaires sans toucher au reste des préférences.
-        /// </summary>
+        private static string NormalizeRoute(string route)
+            => route.Trim().Trim('/').Split('/').LastOrDefault() ?? string.Empty;
+
         private static void ClearTransientSessionData()
         {
             Preferences.Remove(RememberedEmailKey);
@@ -209,9 +199,6 @@ namespace MoneyMate.Services.Implementations
             Preferences.Set(RememberMeKey, false);
         }
 
-        /// <summary>
-        /// Déclenche l'événement de changement de session.
-        /// </summary>
         private void OnSessionChanged()
             => SessionChanged?.Invoke(this, EventArgs.Empty);
     }

@@ -8,10 +8,14 @@ namespace MoneyMate.ViewModels.Dashboard
 {
     /// <summary>
     /// ViewModel du tableau de bord alimenté par le service métier.
+    /// Optimisé pour éviter les chargements concurrents et les refresh inutiles.
     /// </summary>
     public class DashboardViewModel : AuthenticatedViewModelBase
     {
         private readonly IDashboardService _dashboardService;
+        private readonly SemaphoreSlim _loadLock = new(1, 1);
+
+        private bool _hasLoadedOnce;
         private string _userName = string.Empty;
         private string _currentMonthExpensesDisplay = "0,00 €";
         private string _expensesCountDisplay = "0";
@@ -30,23 +34,23 @@ namespace MoneyMate.ViewModels.Dashboard
             : base(authenticationService, dialogService, navigationService)
         {
             _dashboardService = dashboardService ?? throw new ArgumentNullException(nameof(dashboardService));
-            Title = "Tableau de Bord";
 
+            Title = "Tableau de Bord";
             TopCategories = new ObservableCollection<DashboardTopCategoryItemViewModel>();
 
-            LogoutCommand = new Command(async () => await LogoutAsync());
-            RefreshCommand = new Command(async () => await LoadAsync());
-            GoHomeCommand = new Command(async () => await NavigationService.NavigateToAsync("//DashboardPage"));
-            GoCalendarCommand = new Command(async () => await NavigationService.NavigateToAsync("//CalendarPage"));
-            GoQuickAddExpenseCommand = new Command(async () => await NavigationService.NavigateToAsync("//QuickAddExpensePage"));
-            GoBudgetCommand = new Command(async () => await NavigationService.NavigateToAsync("//BudgetsOverviewPage"));
-            GoProfileCommand = new Command(async () => await NavigationService.NavigateToAsync("//ProfilePage"));
+            LogoutCommand = new Command(async () => await LogoutAsync(), () => !IsBusy);
+            RefreshCommand = new Command(async () => await RefreshAsync(), () => !IsBusy);
+            GoHomeCommand = new Command(async () => await NavigationService.NavigateToAsync("//DashboardPage"), () => !IsBusy);
+            GoCalendarCommand = new Command(async () => await NavigationService.NavigateToAsync("//CalendarPage"), () => !IsBusy);
+            GoQuickAddExpenseCommand = new Command(async () => await NavigationService.NavigateToAsync("//QuickAddExpensePage"), () => !IsBusy);
+            GoBudgetCommand = new Command(async () => await NavigationService.NavigateToAsync("//BudgetsOverviewPage"), () => !IsBusy);
+            GoProfileCommand = new Command(async () => await NavigationService.NavigateToAsync("//ProfilePage"), () => !IsBusy);
         }
 
         public string UserName
         {
             get => _userName;
-            set => SetProperty(ref _userName, value);
+            private set => SetProperty(ref _userName, value);
         }
 
         public string CurrentMonthExpensesDisplay
@@ -102,39 +106,84 @@ namespace MoneyMate.ViewModels.Dashboard
         public ObservableCollection<DashboardTopCategoryItemViewModel> TopCategories { get; }
 
         public ICommand LogoutCommand { get; }
-
         public ICommand RefreshCommand { get; }
-
         public ICommand GoHomeCommand { get; }
-
         public ICommand GoCalendarCommand { get; }
-
         public ICommand GoQuickAddExpenseCommand { get; }
-
         public ICommand GoBudgetCommand { get; }
-
         public ICommand GoProfileCommand { get; }
 
+        /// <summary>
+        /// Charge le dashboard seulement s'il n'a pas encore été chargé.
+        /// Idéal pour OnAppearing.
+        /// </summary>
+        public async Task EnsureLoadedAsync()
+        {
+            if (_hasLoadedOnce)
+                return;
+
+            await LoadInternalAsync(forceRefresh: false);
+        }
+
+        /// <summary>
+        /// Recharge explicitement le dashboard.
+        /// Idéal pour le bouton Actualiser.
+        /// </summary>
+        public async Task RefreshAsync()
+        {
+            await LoadInternalAsync(forceRefresh: true);
+        }
+
+        /// <summary>
+        /// Compatibilité avec l'existant.
+        /// </summary>
         public async Task LoadAsync()
         {
-            await ExecuteBusyActionAsync(async () =>
+            await EnsureLoadedAsync();
+        }
+
+        private async Task LoadInternalAsync(bool forceRefresh)
+        {
+            if (!forceRefresh && _hasLoadedOnce)
+                return;
+
+            if (!await _loadLock.WaitAsync(0))
+                return;
+
+            try
             {
-                if (!EnsureCurrentUser())
-                    return;
-
-                UserName = CurrentUser?.Email ?? "Utilisateur";
-
-                var summaryResult = await _dashboardService.GetDashboardSummaryAsync(CurrentUserId);
-                if (!summaryResult.IsSuccess || summaryResult.Data == null)
+                await ExecuteBusyActionAsync(async () =>
                 {
-                    ErrorMessage = summaryResult.Message;
-                    TopCategories.Clear();
-                    OnPropertyChanged(nameof(HasTopCategories));
-                    return;
-                }
+                    if (!EnsureCurrentUser())
+                    {
+                        ClearDashboardData();
+                        return;
+                    }
 
-                ApplySummary(summaryResult.Data);
-            }, "Une erreur est survenue lors du chargement du tableau de bord.");
+                    UserName = CurrentUser?.Email ?? "Utilisateur";
+
+                    var summaryResult = await _dashboardService.GetDashboardSummaryAsync(CurrentUserId);
+
+                    if (!summaryResult.IsSuccess || summaryResult.Data is null)
+                    {
+                        ErrorMessage = string.IsNullOrWhiteSpace(summaryResult.Message)
+                            ? "Impossible de charger le tableau de bord."
+                            : summaryResult.Message;
+
+                        ClearDashboardData();
+                        return;
+                    }
+
+                    ApplySummary(summaryResult.Data);
+                    _hasLoadedOnce = true;
+                    ErrorMessage = string.Empty;
+                }, "Une erreur est survenue lors du chargement du tableau de bord.");
+            }
+            finally
+            {
+                _loadLock.Release();
+                RefreshCommandState();
+            }
         }
 
         private void ApplySummary(DashboardSummary summary)
@@ -151,6 +200,7 @@ namespace MoneyMate.ViewModels.Dashboard
             PreviousMonthDeltaDisplay = CurrencyHelper.FormatSigned(summary.ExpensesDeltaFromPreviousMonth, devise);
 
             TopCategories.Clear();
+
             foreach (DashboardCategorySpending category in summary.TopCategories.OrderByDescending(item => item.TotalAmount))
             {
                 TopCategories.Add(new DashboardTopCategoryItemViewModel
@@ -162,6 +212,21 @@ namespace MoneyMate.ViewModels.Dashboard
                 });
             }
 
+            OnPropertyChanged(nameof(HasTopCategories));
+        }
+
+        private void ClearDashboardData()
+        {
+            CurrentMonthExpensesDisplay = CurrencyHelper.Format(0, CurrentDevise);
+            ExpensesCountDisplay = "0";
+            ActiveBudgetsDisplay = "0";
+            ActiveFixedChargesDisplay = "0";
+            ActiveAlertsDisplay = "0";
+            TriggeredAlertsDisplay = "0";
+            BudgetsAtRiskDisplay = "0";
+            PreviousMonthDeltaDisplay = CurrencyHelper.FormatSigned(0, CurrentDevise);
+
+            TopCategories.Clear();
             OnPropertyChanged(nameof(HasTopCategories));
         }
 
@@ -177,20 +242,37 @@ namespace MoneyMate.ViewModels.Dashboard
                 return;
 
             await AuthenticationService.LogoutAsync();
+            _hasLoadedOnce = false;
+            ClearDashboardData();
             await NavigationService.NavigateToAsync("//MainPage");
+        }
+
+        protected override void OnPropertyChanged(string? propertyName = null)
+        {
+            base.OnPropertyChanged(propertyName);
+
+            if (propertyName == nameof(IsBusy))
+                RefreshCommandState();
+        }
+
+        private void RefreshCommandState()
+        {
+            (LogoutCommand as Command)?.ChangeCanExecute();
+            (RefreshCommand as Command)?.ChangeCanExecute();
+            (GoHomeCommand as Command)?.ChangeCanExecute();
+            (GoCalendarCommand as Command)?.ChangeCanExecute();
+            (GoQuickAddExpenseCommand as Command)?.ChangeCanExecute();
+            (GoBudgetCommand as Command)?.ChangeCanExecute();
+            (GoProfileCommand as Command)?.ChangeCanExecute();
         }
     }
 
     public sealed class DashboardTopCategoryItemViewModel
     {
         public string CategoryName { get; init; } = string.Empty;
-
         public decimal TotalAmount { get; init; }
-
         public int ExpensesCount { get; init; }
-
         public string Devise { get; init; } = "EUR";
-
         public string ExpensesCountText => $"{ExpensesCount} dépense(s)";
     }
 }

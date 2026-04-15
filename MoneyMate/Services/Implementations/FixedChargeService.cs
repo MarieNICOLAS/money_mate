@@ -1,6 +1,7 @@
 ﻿using MoneyMate.Data.Context;
 using MoneyMate.Helpers;
 using MoneyMate.Models;
+using MoneyMate.Services.Common;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.Services.Results;
 
@@ -30,38 +31,41 @@ namespace MoneyMate.Services.Implementations
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         }
 
-        public async Task<ServiceResult<List<FixedCharge>>> GetFixedChargesAsync(int userId)
+        public Task<ServiceResult<List<FixedCharge>>> GetFixedChargesAsync(int userId)
         {
-            return await Task.Run(() =>
-            {
-                try
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
                 {
                     if (userId <= 0)
-                        return ServiceResult<List<FixedCharge>>.Failure("FIXED_CHARGE_INVALID_USER", "Utilisateur invalide.");
+                        return ServiceResult<List<FixedCharge>>.Failure(
+                            "FIXED_CHARGE_INVALID_USER",
+                            ServiceMessages.InvalidUser);
 
                     List<FixedCharge> fixedCharges = _dbContext.GetFixedChargesByUserId(userId);
                     return ServiceResult<List<FixedCharge>>.Success(fixedCharges);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur GetFixedChargesAsync : {ex.Message}");
-                    return ServiceResult<List<FixedCharge>>.Failure("FIXED_CHARGE_UNEXPECTED_ERROR", "Une erreur est survenue lors du chargement des charges fixes.");
-                }
-            });
+                },
+                operationName: nameof(GetFixedChargesAsync),
+                fallbackErrorCode: "FIXED_CHARGE_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors du chargement des charges fixes.");
         }
 
-        public async Task<ServiceResult<FixedCharge>> SetFixedChargeActiveStateAsync(int fixedChargeId, int userId, bool isActive)
+        public Task<ServiceResult<FixedCharge>> SetFixedChargeActiveStateAsync(int fixedChargeId, int userId, bool isActive)
         {
-            return await Task.Run(() =>
-            {
-                try
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
                 {
                     if (fixedChargeId <= 0 || userId <= 0)
-                        return ServiceResult<FixedCharge>.Failure("FIXED_CHARGE_INVALID_INPUT", "Les informations demandées sont invalides.");
+                        return ServiceResult<FixedCharge>.Failure(
+                            "FIXED_CHARGE_INVALID_INPUT",
+                            ServiceMessages.InvalidInput);
 
                     FixedCharge? fixedCharge = _dbContext.GetFixedChargeById(fixedChargeId, userId);
-                    if (fixedCharge == null)
-                        return ServiceResult<FixedCharge>.Failure("FIXED_CHARGE_NOT_FOUND", "Charge fixe introuvable.");
+                    if (fixedCharge is null)
+                    {
+                        return ServiceResult<FixedCharge>.Failure(
+                            "FIXED_CHARGE_NOT_FOUND",
+                            "Charge fixe introuvable.");
+                    }
 
                     if (fixedCharge.IsActive == isActive)
                         return ServiceResult<FixedCharge>.Success(fixedCharge);
@@ -70,32 +74,40 @@ namespace MoneyMate.Services.Implementations
 
                     int updatedRows = _dbContext.UpdateFixedCharge(fixedCharge);
                     if (updatedRows != 1)
-                        return ServiceResult<FixedCharge>.Failure("FIXED_CHARGE_UPDATE_FAILED", "La mise à jour de la charge fixe a échoué.");
+                    {
+                        return ServiceResult<FixedCharge>.Failure(
+                            "FIXED_CHARGE_UPDATE_FAILED",
+                            "La mise à jour de la charge fixe a échoué.");
+                    }
 
-                    return ServiceResult<FixedCharge>.Success(fixedCharge, isActive
-                        ? "Charge fixe activée avec succès."
-                        : "Charge fixe désactivée avec succès.");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur SetFixedChargeActiveStateAsync : {ex.Message}");
-                    return ServiceResult<FixedCharge>.Failure("FIXED_CHARGE_UNEXPECTED_ERROR", "Une erreur est survenue lors de la mise à jour de la charge fixe.");
-                }
-            });
+                    return ServiceResult<FixedCharge>.Success(
+                        fixedCharge,
+                        isActive
+                            ? "Charge fixe activée avec succès."
+                            : "Charge fixe désactivée avec succès.");
+                },
+                operationName: nameof(SetFixedChargeActiveStateAsync),
+                fallbackErrorCode: "FIXED_CHARGE_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors de la mise à jour de la charge fixe.");
         }
 
-        public async Task<ServiceResult<List<Expense>>> GenerateExpensesUntilAsync(int userId, DateTime untilDate)
+        public Task<ServiceResult<List<Expense>>> GenerateExpensesUntilAsync(int userId, DateTime untilDate)
         {
-            return await Task.Run(() =>
-            {
-                try
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
                 {
                     if (userId <= 0)
-                        return ServiceResult<List<Expense>>.Failure("FIXED_CHARGE_INVALID_USER", "Utilisateur invalide.");
+                        return ServiceResult<List<Expense>>.Failure(
+                            "FIXED_CHARGE_INVALID_USER",
+                            ServiceMessages.InvalidUser);
 
                     DateTime generationLimit = untilDate.Date;
                     if (generationLimit < DateTime.Now.Date)
-                        return ServiceResult<List<Expense>>.Failure("FIXED_CHARGE_INVALID_DATE", "La date limite de génération est invalide.");
+                    {
+                        return ServiceResult<List<Expense>>.Failure(
+                            "FIXED_CHARGE_INVALID_DATE",
+                            "La date limite de génération est invalide.");
+                    }
 
                     List<FixedCharge> fixedCharges = _dbContext.GetFixedChargesByUserId(userId)
                         .Where(fixedCharge => fixedCharge.IsActive && fixedCharge.AutoCreateExpense)
@@ -111,16 +123,16 @@ namespace MoneyMate.Services.Implementations
                         foreach (DateTime occurrence in EnumerateOccurrences(fixedCharge, generationLimit))
                         {
                             bool alreadyGenerated = existingExpenses.Any(expense =>
-                                expense.CategoryId == fixedCharge.CategoryId
-                                && expense.IsFixedCharge
-                                && expense.DateOperation.Date == occurrence.Date
-                                && expense.Amount == fixedCharge.Amount
-                                && string.Equals(expense.Note, fixedCharge.Name, StringComparison.OrdinalIgnoreCase));
+                                expense.CategoryId == fixedCharge.CategoryId &&
+                                expense.IsFixedCharge &&
+                                expense.DateOperation.Date == occurrence.Date &&
+                                expense.Amount == fixedCharge.Amount &&
+                                string.Equals(expense.Note, fixedCharge.Name, StringComparison.OrdinalIgnoreCase));
 
                             if (alreadyGenerated)
                                 continue;
 
-                            var expense = new Expense
+                            Expense expense = new()
                             {
                                 UserId = fixedCharge.UserId,
                                 CategoryId = fixedCharge.CategoryId,
@@ -140,50 +152,56 @@ namespace MoneyMate.Services.Implementations
                         }
                     }
 
-                    return ServiceResult<List<Expense>>.Success(generatedExpenses, "Génération des dépenses récurrentes terminée.");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur GenerateExpensesUntilAsync : {ex.Message}");
-                    return ServiceResult<List<Expense>>.Failure("FIXED_CHARGE_UNEXPECTED_ERROR", "Une erreur est survenue lors de la génération des dépenses récurrentes.");
-                }
-            });
+                    return ServiceResult<List<Expense>>.Success(
+                        generatedExpenses,
+                        "Génération des dépenses récurrentes terminée.");
+                },
+                operationName: nameof(GenerateExpensesUntilAsync),
+                fallbackErrorCode: "FIXED_CHARGE_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors de la génération des dépenses récurrentes.");
         }
 
-        public async Task<ServiceResult<FixedCharge>> GetFixedChargeByIdAsync(int fixedChargeId, int userId)
+        public Task<ServiceResult<FixedCharge>> GetFixedChargeByIdAsync(int fixedChargeId, int userId)
         {
-            return await Task.Run(() =>
-            {
-                try
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
                 {
                     if (fixedChargeId <= 0 || userId <= 0)
-                        return ServiceResult<FixedCharge>.Failure("FIXED_CHARGE_INVALID_INPUT", "Les informations demandées sont invalides.");
+                        return ServiceResult<FixedCharge>.Failure(
+                            "FIXED_CHARGE_INVALID_INPUT",
+                            ServiceMessages.InvalidInput);
 
                     FixedCharge? fixedCharge = _dbContext.GetFixedChargeById(fixedChargeId, userId);
-                    if (fixedCharge == null)
-                        return ServiceResult<FixedCharge>.Failure("FIXED_CHARGE_NOT_FOUND", "Charge fixe introuvable.");
+                    if (fixedCharge is null)
+                    {
+                        return ServiceResult<FixedCharge>.Failure(
+                            "FIXED_CHARGE_NOT_FOUND",
+                            "Charge fixe introuvable.");
+                    }
 
                     return ServiceResult<FixedCharge>.Success(fixedCharge);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur GetFixedChargeByIdAsync : {ex.Message}");
-                    return ServiceResult<FixedCharge>.Failure("FIXED_CHARGE_UNEXPECTED_ERROR", "Une erreur est survenue lors du chargement de la charge fixe.");
-                }
-            });
+                },
+                operationName: nameof(GetFixedChargeByIdAsync),
+                fallbackErrorCode: "FIXED_CHARGE_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors du chargement de la charge fixe.");
         }
 
-        public async Task<ServiceResult<List<FixedCharge>>> GetUpcomingFixedChargesAsync(int userId, DateTime untilDate)
+        public Task<ServiceResult<List<FixedCharge>>> GetUpcomingFixedChargesAsync(int userId, DateTime untilDate)
         {
-            return await Task.Run(() =>
-            {
-                try
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
                 {
                     if (userId <= 0)
-                        return ServiceResult<List<FixedCharge>>.Failure("FIXED_CHARGE_INVALID_USER", "Utilisateur invalide.");
+                        return ServiceResult<List<FixedCharge>>.Failure(
+                            "FIXED_CHARGE_INVALID_USER",
+                            ServiceMessages.InvalidUser);
 
                     if (untilDate < DateTime.Now.Date)
-                        return ServiceResult<List<FixedCharge>>.Failure("FIXED_CHARGE_INVALID_DATE", "La date de recherche est invalide.");
+                    {
+                        return ServiceResult<List<FixedCharge>>.Failure(
+                            "FIXED_CHARGE_INVALID_DATE",
+                            "La date de recherche est invalide.");
+                    }
 
                     List<FixedCharge> fixedCharges = _dbContext.GetFixedChargesByUserId(userId)
                         .Where(fixedCharge => fixedCharge.IsActive)
@@ -192,29 +210,33 @@ namespace MoneyMate.Services.Implementations
                         .ToList();
 
                     return ServiceResult<List<FixedCharge>>.Success(fixedCharges);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur GetUpcomingFixedChargesAsync : {ex.Message}");
-                    return ServiceResult<List<FixedCharge>>.Failure("FIXED_CHARGE_UNEXPECTED_ERROR", "Une erreur est survenue lors du chargement des prochaines charges fixes.");
-                }
-            });
+                },
+                operationName: nameof(GetUpcomingFixedChargesAsync),
+                fallbackErrorCode: "FIXED_CHARGE_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors du chargement des prochaines charges fixes.");
         }
 
-        public async Task<ServiceResult<FixedCharge>> CreateFixedChargeAsync(FixedCharge fixedCharge)
+        public Task<ServiceResult<FixedCharge>> CreateFixedChargeAsync(FixedCharge fixedCharge)
         {
-            return await Task.Run(() =>
-            {
-                try
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
                 {
                     ArgumentNullException.ThrowIfNull(fixedCharge);
 
                     ServiceResult validationResult = ValidateFixedCharge(fixedCharge);
                     if (!validationResult.IsSuccess)
-                        return ServiceResult<FixedCharge>.Failure(validationResult.ErrorCode, validationResult.Message);
+                    {
+                        return ServiceResult<FixedCharge>.Failure(
+                            validationResult.ErrorCode,
+                            validationResult.Message);
+                    }
 
                     if (!CategoryExistsForUser(fixedCharge.UserId, fixedCharge.CategoryId))
-                        return ServiceResult<FixedCharge>.Failure("FIXED_CHARGE_CATEGORY_NOT_FOUND", "La catégorie sélectionnée est introuvable ou inactive.");
+                    {
+                        return ServiceResult<FixedCharge>.Failure(
+                            "FIXED_CHARGE_CATEGORY_NOT_FOUND",
+                            "La catégorie sélectionnée est introuvable ou inactive.");
+                    }
 
                     fixedCharge.Name = fixedCharge.Name.Trim();
                     fixedCharge.Description = fixedCharge.Description?.Trim() ?? string.Empty;
@@ -224,40 +246,56 @@ namespace MoneyMate.Services.Implementations
 
                     int fixedChargeId = _dbContext.InsertFixedCharge(fixedCharge);
                     if (fixedChargeId <= 0)
-                        return ServiceResult<FixedCharge>.Failure("FIXED_CHARGE_CREATE_FAILED", "Impossible de créer la charge fixe.");
+                    {
+                        return ServiceResult<FixedCharge>.Failure(
+                            "FIXED_CHARGE_CREATE_FAILED",
+                            "Impossible de créer la charge fixe.");
+                    }
 
                     fixedCharge.Id = fixedChargeId;
                     return ServiceResult<FixedCharge>.Success(fixedCharge, "Charge fixe créée avec succès.");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur CreateFixedChargeAsync : {ex.Message}");
-                    return ServiceResult<FixedCharge>.Failure("FIXED_CHARGE_UNEXPECTED_ERROR", "Une erreur est survenue lors de la création de la charge fixe.");
-                }
-            });
+                },
+                operationName: nameof(CreateFixedChargeAsync),
+                fallbackErrorCode: "FIXED_CHARGE_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors de la création de la charge fixe.");
         }
 
-        public async Task<ServiceResult<FixedCharge>> UpdateFixedChargeAsync(FixedCharge fixedCharge)
+        public Task<ServiceResult<FixedCharge>> UpdateFixedChargeAsync(FixedCharge fixedCharge)
         {
-            return await Task.Run(() =>
-            {
-                try
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
                 {
                     ArgumentNullException.ThrowIfNull(fixedCharge);
 
                     if (fixedCharge.Id <= 0)
-                        return ServiceResult<FixedCharge>.Failure("FIXED_CHARGE_INVALID_ID", "La charge fixe à modifier est invalide.");
+                    {
+                        return ServiceResult<FixedCharge>.Failure(
+                            "FIXED_CHARGE_INVALID_ID",
+                            "La charge fixe à modifier est invalide.");
+                    }
 
                     ServiceResult validationResult = ValidateFixedCharge(fixedCharge);
                     if (!validationResult.IsSuccess)
-                        return ServiceResult<FixedCharge>.Failure(validationResult.ErrorCode, validationResult.Message);
+                    {
+                        return ServiceResult<FixedCharge>.Failure(
+                            validationResult.ErrorCode,
+                            validationResult.Message);
+                    }
 
                     FixedCharge? existingFixedCharge = _dbContext.GetFixedChargeById(fixedCharge.Id, fixedCharge.UserId);
-                    if (existingFixedCharge == null)
-                        return ServiceResult<FixedCharge>.Failure("FIXED_CHARGE_NOT_FOUND", "Charge fixe introuvable.");
+                    if (existingFixedCharge is null)
+                    {
+                        return ServiceResult<FixedCharge>.Failure(
+                            "FIXED_CHARGE_NOT_FOUND",
+                            "Charge fixe introuvable.");
+                    }
 
                     if (!CategoryExistsForUser(fixedCharge.UserId, fixedCharge.CategoryId))
-                        return ServiceResult<FixedCharge>.Failure("FIXED_CHARGE_CATEGORY_NOT_FOUND", "La catégorie sélectionnée est introuvable ou inactive.");
+                    {
+                        return ServiceResult<FixedCharge>.Failure(
+                            "FIXED_CHARGE_CATEGORY_NOT_FOUND",
+                            "La catégorie sélectionnée est introuvable ou inactive.");
+                    }
 
                     fixedCharge.Name = fixedCharge.Name.Trim();
                     fixedCharge.Description = fixedCharge.Description?.Trim() ?? string.Empty;
@@ -265,52 +303,56 @@ namespace MoneyMate.Services.Implementations
 
                     int updatedRows = _dbContext.UpdateFixedCharge(fixedCharge);
                     if (updatedRows != 1)
-                        return ServiceResult<FixedCharge>.Failure("FIXED_CHARGE_UPDATE_FAILED", "La mise à jour de la charge fixe a échoué.");
+                    {
+                        return ServiceResult<FixedCharge>.Failure(
+                            "FIXED_CHARGE_UPDATE_FAILED",
+                            "La mise à jour de la charge fixe a échoué.");
+                    }
 
                     return ServiceResult<FixedCharge>.Success(fixedCharge, "Charge fixe mise à jour avec succès.");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur UpdateFixedChargeAsync : {ex.Message}");
-                    return ServiceResult<FixedCharge>.Failure("FIXED_CHARGE_UNEXPECTED_ERROR", "Une erreur est survenue lors de la mise à jour de la charge fixe.");
-                }
-            });
+                },
+                operationName: nameof(UpdateFixedChargeAsync),
+                fallbackErrorCode: "FIXED_CHARGE_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors de la mise à jour de la charge fixe.");
         }
 
-        public async Task<ServiceResult> DeleteFixedChargeAsync(int fixedChargeId, int userId)
+        public Task<ServiceResult> DeleteFixedChargeAsync(int fixedChargeId, int userId)
         {
-            return await Task.Run(() =>
-            {
-                try
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
                 {
                     if (fixedChargeId <= 0 || userId <= 0)
-                        return ServiceResult.Failure("FIXED_CHARGE_INVALID_INPUT", "Les informations demandées sont invalides.");
+                        return ServiceResult.Failure(
+                            "FIXED_CHARGE_INVALID_INPUT",
+                            ServiceMessages.InvalidInput);
 
                     FixedCharge? fixedCharge = _dbContext.GetFixedChargeById(fixedChargeId, userId);
-                    if (fixedCharge == null)
-                        return ServiceResult.Failure("FIXED_CHARGE_NOT_FOUND", "Charge fixe introuvable.");
+                    if (fixedCharge is null)
+                    {
+                        return ServiceResult.Failure(
+                            "FIXED_CHARGE_NOT_FOUND",
+                            "Charge fixe introuvable.");
+                    }
 
                     int deletedRows = _dbContext.DeleteFixedCharge(fixedCharge);
                     if (deletedRows != 1)
-                        return ServiceResult.Failure("FIXED_CHARGE_DELETE_FAILED", "La suppression de la charge fixe a échoué.");
+                    {
+                        return ServiceResult.Failure(
+                            "FIXED_CHARGE_DELETE_FAILED",
+                            "La suppression de la charge fixe a échoué.");
+                    }
 
                     return ServiceResult.Success("Charge fixe supprimée avec succès.");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur DeleteFixedChargeAsync : {ex.Message}");
-                    return ServiceResult.Failure("FIXED_CHARGE_UNEXPECTED_ERROR", "Une erreur est survenue lors de la suppression de la charge fixe.");
-                }
-            });
+                },
+                operationName: nameof(DeleteFixedChargeAsync),
+                fallbackErrorCode: "FIXED_CHARGE_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors de la suppression de la charge fixe.");
         }
 
-        /// <summary>
-        /// Valide les données métier d'une charge fixe.
-        /// </summary>
         private static ServiceResult ValidateFixedCharge(FixedCharge fixedCharge)
         {
             if (fixedCharge.UserId <= 0)
-                return ServiceResult.Failure("FIXED_CHARGE_INVALID_USER", "Utilisateur invalide.");
+                return ServiceResult.Failure("FIXED_CHARGE_INVALID_USER", ServiceMessages.InvalidUser);
 
             if (string.IsNullOrWhiteSpace(fixedCharge.Name))
                 return ServiceResult.Failure("FIXED_CHARGE_NAME_REQUIRED", "Le nom de la charge fixe est requis.");
@@ -322,7 +364,9 @@ namespace MoneyMate.Services.Implementations
                 return ServiceResult.Failure("FIXED_CHARGE_INVALID_AMOUNT", "Le montant doit être strictement positif.");
 
             if (string.IsNullOrWhiteSpace(fixedCharge.Frequency) || !AllowedFrequencies.Contains(fixedCharge.Frequency.Trim()))
+            {
                 return ServiceResult.Failure("FIXED_CHARGE_INVALID_FREQUENCY", "La fréquence de récurrence est invalide.");
+            }
 
             if (fixedCharge.DayOfMonth < 1 || fixedCharge.DayOfMonth > 31)
                 return ServiceResult.Failure("FIXED_CHARGE_INVALID_DAY", "Le jour du mois doit être compris entre 1 et 31.");
@@ -333,9 +377,6 @@ namespace MoneyMate.Services.Implementations
             return ServiceResult.Success();
         }
 
-        /// <summary>
-        /// Retourne les occurrences attendues d'une charge fixe jusqu'à une date donnée.
-        /// </summary>
         private static IEnumerable<DateTime> EnumerateOccurrences(FixedCharge fixedCharge, DateTime untilDate)
         {
             DateTime occurrence = fixedCharge.StartDate.Date;
@@ -359,7 +400,7 @@ namespace MoneyMate.Services.Implementations
         private bool CategoryExistsForUser(int userId, int categoryId)
         {
             Category? category = _dbContext.GetCategoryById(categoryId, userId);
-            return category != null && category.IsActive;
+            return category is not null && category.IsActive;
         }
     }
 }

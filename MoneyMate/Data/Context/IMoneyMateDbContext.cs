@@ -5,8 +5,15 @@ namespace MoneyMate.Data.Context
     /// <summary>
     /// Contrat minimal du contexte de données pour les services métier.
     /// </summary>
-    public interface IMoneyMateDbContext
+    public interface IMoneyMateDbContext : IDisposable
     {
+        List<User> GetUsers();
+        User? GetUserById(int id);
+        User? GetUserByEmail(string email);
+        int InsertUser(User user);
+        int UpdateUser(User user);
+
+        List<Category> GetCategories();
         List<Category> GetCategoriesByUserId(int userId);
         List<Category> GetCustomCategoriesByUserId(int userId);
         Category? GetCategoryById(int id);
@@ -36,6 +43,7 @@ namespace MoneyMate.Data.Context
         int InsertFixedCharge(FixedCharge fixedCharge);
         int UpdateFixedCharge(FixedCharge fixedCharge);
         int DeleteFixedCharge(FixedCharge fixedCharge);
+        int GetActiveFixedChargesCountByUserId(int userId);
 
         List<AlertThreshold> GetAlertThresholdsByUserId(int userId);
         AlertThreshold? GetAlertThresholdById(int id);
@@ -44,10 +52,6 @@ namespace MoneyMate.Data.Context
         int UpdateAlertThreshold(AlertThreshold alertThreshold);
         int DeleteAlertThreshold(AlertThreshold alertThreshold);
 
-        User? GetUserById(int id);
-        User? GetUserByEmail(string email);
-        int InsertUser(User user);
-        int UpdateUser(User user);
         void DeleteAllUserData(int userId);
         void Close();
     }

@@ -4,18 +4,25 @@ namespace MoneyMate.Views.Dashboard
 {
     public partial class DashboardPage : BasePage
     {
-        private DashboardViewModel ViewModel => (DashboardViewModel)BindingContext;
+        private readonly DashboardViewModel _viewModel;
+        private bool _hasAppearedOnce;
 
         public DashboardPage(DashboardViewModel viewModel)
         {
-            SetViewModel(viewModel);
+            _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+            SetViewModel(_viewModel);
             InitializeComponent();
         }
 
-        protected override void OnAppearing()
+        protected override async void OnAppearing()
         {
             base.OnAppearing();
-            _ = ViewModel.LoadAsync();
+
+            if (!_hasAppearedOnce)
+            {
+                _hasAppearedOnce = true;
+                await _viewModel.EnsureLoadedAsync();
+            }
         }
     }
 }

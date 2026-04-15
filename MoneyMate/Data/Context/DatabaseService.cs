@@ -1,45 +1,50 @@
 ﻿namespace MoneyMate.Data.Context
 {
     /// <summary>
-    /// Service de configuration de la base de donn�es
-    /// G�re l'initialisation et la configuration SQLite
+    /// Service de configuration de la base SQLite.
+    /// Fournit une instance singleton partagée du contexte.
     /// </summary>
     public static class DatabaseService
     {
-        private static MoneyMateDbContext? _instance;
-        private static readonly object _lock = new();
+        private static readonly object SyncRoot = new();
+        private static IMoneyMateDbContext? _instance;
 
         /// <summary>
-        /// Obtient l'instance singleton du contexte de base de donn�es
+        /// Instance singleton du contexte de base de données.
         /// </summary>
-        public static MoneyMateDbContext Instance
+        public static IMoneyMateDbContext Instance
         {
             get
             {
-                if (_instance == null)
+                if (_instance is not null)
+                    return _instance;
+
+                lock (SyncRoot)
                 {
-                    lock (_lock)
-                    {
-                        if (_instance == null)
-                        {
-                            // Utilisation du dossier AppData\Local de l'utilisateur
-                            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                            var dbPath = Path.Combine(localAppData, "MoneyMate.db3");
-                            _instance = new MoneyMateDbContext(dbPath);
-                        }
-                    }
+                    if (_instance is not null)
+                        return _instance;
+
+                    string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                    string dbPath = Path.Combine(localAppData, "MoneyMate.db3");
+
+                    _instance = new Data.Context.MoneyMateDbContext(dbPath);
+                    return _instance;
                 }
-                return _instance;
             }
         }
 
         /// <summary>
-        /// Ferme la connexion � la base de donn�es
+        /// Ferme explicitement la connexion SQLite.
         /// </summary>
         public static void CloseConnection()
         {
-            _instance?.Close();
-            _instance = null;
+            lock (SyncRoot)
+            {
+                if (_instance is IDisposable disposable)
+                    disposable.Dispose();
+
+                _instance = null;
+            }
         }
     }
 }

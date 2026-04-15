@@ -10,6 +10,7 @@ using MoneyMate.ViewModels.Dashboard;
 using MoneyMate.ViewModels.Expenses;
 using MoneyMate.ViewModels.FixedCharges;
 using MoneyMate.ViewModels.Profile;
+using MoneyMate.Views;
 using MoneyMate.Views.Alerts;
 using MoneyMate.Views.Auth;
 using MoneyMate.Views.Budgets;
@@ -27,7 +28,7 @@ namespace MoneyMate
         {
             SQLitePCL.Batteries_V2.Init();
 
-            var builder = MauiApp.CreateBuilder();
+            MauiAppBuilder builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
                 .UseMauiCommunityToolkit()
@@ -42,7 +43,6 @@ namespace MoneyMate
                     fonts.AddFont("FunnelDisplay-VariableFont_wght.ttf", "FunnelDisplay");
                 });
 
-            // ── Services ──────────────────────────────────────────────────
             builder.Services.AddSingleton<IDialogService, DialogService>();
             builder.Services.AddSingleton<INavigationService, NavigationService>();
             builder.Services.AddSingleton<ISessionManager, SessionManager>();
@@ -55,7 +55,6 @@ namespace MoneyMate
             builder.Services.AddSingleton<IDashboardService, DashboardService>();
             builder.Services.AddSingleton<AppShell>();
 
-            // ── ViewModels ────────────────────────────────────────────────
             builder.Services.AddTransient<LoginViewModel>();
             builder.Services.AddTransient<RegisterViewModel>();
             builder.Services.AddTransient<DashboardViewModel>();
@@ -72,7 +71,7 @@ namespace MoneyMate
             builder.Services.AddTransient<ChangePasswordViewModel>();
             builder.Services.AddTransient<DeleteAccountViewModel>();
 
-            // ── Pages ─────────────────────────────────────────────────────
+            builder.Services.AddTransient<MainPage>();
             builder.Services.AddTransient<LoginPage>();
             builder.Services.AddTransient<RegisterPage>();
             builder.Services.AddTransient<DashboardPage>();

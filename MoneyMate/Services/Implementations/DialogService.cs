@@ -3,37 +3,70 @@
 namespace MoneyMate.Services.Implementations
 {
     /// <summary>
-    /// Implémentation MAUI du service de dialogue pour les ViewModels.
+    /// Implémentation MAUI du service de dialogue.
+    /// Garantit l'exécution sur le thread principal et une résolution fiable de la page active.
     /// </summary>
     public class DialogService : IDialogService
     {
-        /// <summary>
-        /// Affiche une alerte simple.
-        /// </summary>
-        public Task ShowAlertAsync(string title, string message, string cancel)
+        public async Task ShowAlertAsync(string title, string message, string cancel)
         {
-            Page? page = ResolveCurrentPage();
-            return page?.DisplayAlert(title, message, cancel) ?? Task.CompletedTask;
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                Page? page = ResolveCurrentPage();
+                if (page is null)
+                    return;
+
+                await page.DisplayAlert(title, message, cancel);
+            });
         }
 
-        /// <summary>
-        /// Affiche une boîte de confirmation.
-        /// </summary>
-        public Task<bool> ShowConfirmationAsync(string title, string message, string accept, string cancel)
+        public async Task<bool> ShowConfirmationAsync(string title, string message, string accept, string cancel)
         {
-            Page? page = ResolveCurrentPage();
-            return page?.DisplayAlert(title, message, accept, cancel) ?? Task.FromResult(false);
+            return await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                Page? page = ResolveCurrentPage();
+                if (page is null)
+                    return false;
+
+                return await page.DisplayAlert(title, message, accept, cancel);
+            });
         }
 
-        /// <summary>
-        /// Récupère la page active de l'application.
-        /// </summary>
         private static Page? ResolveCurrentPage()
         {
-            if (Shell.Current?.CurrentPage != null)
-                return Shell.Current.CurrentPage;
+            if (Shell.Current?.CurrentPage is Page shellCurrentPage)
+                return shellCurrentPage;
 
-            return Application.Current?.Windows.FirstOrDefault()?.Page;
+            Window? activeWindow = Application.Current?
+                .Windows
+                .FirstOrDefault(window => window.Page is not null);
+
+            if (activeWindow?.Page is null)
+                return null;
+
+            return ResolveVisiblePage(activeWindow.Page);
+        }
+
+        private static Page? ResolveVisiblePage(Page page)
+        {
+            return page switch
+            {
+                NavigationPage navigationPage => navigationPage.CurrentPage is null
+                    ? navigationPage
+                    : ResolveVisiblePage(navigationPage.CurrentPage),
+
+                FlyoutPage flyoutPage => flyoutPage.Detail is null
+                    ? flyoutPage
+                    : ResolveVisiblePage(flyoutPage.Detail),
+
+                TabbedPage tabbedPage => tabbedPage.CurrentPage is null
+                    ? tabbedPage
+                    : ResolveVisiblePage(tabbedPage.CurrentPage),
+
+                Shell shell when shell.CurrentPage is not null => shell.CurrentPage,
+
+                _ => page
+            };
         }
     }
 }

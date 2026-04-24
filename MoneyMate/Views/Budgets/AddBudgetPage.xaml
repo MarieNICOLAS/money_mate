@@ -1,17 +1,15 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
+                xmlns:viewModels="clr-namespace:MoneyMate.ViewModels.Budgets"
                 x:Class="MoneyMate.Views.Budgets.AddBudgetPage"
-                Title="Ajouter un Budget"
+                x:DataType="viewModels:BudgetFormViewModel"
+                Title="Nouveau budget"
                 UseAuthenticatedFooter="True">
     <views:BasePage.PageContent>
         <ScrollView>
             <VerticalStackLayout Style="{StaticResource MainContainer}" Spacing="18">
-                <Label Text="Nouveau budget"
-                       Style="{StaticResource PageTitle}"
-                       Margin="0,8,0,0" />
-
                 <Border Style="{StaticResource CardFrame}" Margin="0,0,0,8">
                     <VerticalStackLayout Spacing="16">
                         <Label Text="Parametres du budget"

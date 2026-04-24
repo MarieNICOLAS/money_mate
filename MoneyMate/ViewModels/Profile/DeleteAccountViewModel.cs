@@ -66,7 +66,7 @@ namespace MoneyMate.ViewModels.Profile
             _authService = authService;
             _dialogService = dialogService;
             _navigationService = navigationService;
-            Title = "Supprimer le compte";
+            Title = "Supprimer mon compte";
 
             DeleteAccountCommand = new Command(async () => await DeleteAccountAsync(), CanDelete);
             CancelCommand        = new Command(async () => await _navigationService.NavigateToAsync(AppRoutes.Profile));

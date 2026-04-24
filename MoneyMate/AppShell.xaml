@@ -14,8 +14,8 @@
         <ShellContent Title="Accueil" ContentTemplate="{DataTemplate local:MainPage}" Route="MainPage" />
     </FlyoutItem>
 
-    <FlyoutItem x:Name="DashboardFlyoutItem" Title="Tableau de Bord" FlyoutItemIsVisible="False">
-        <ShellContent Title="Dashboard" ContentTemplate="{DataTemplate dashboard:DashboardPage}" Route="DashboardPage" />
+    <FlyoutItem x:Name="DashboardFlyoutItem" Title="Tableau de bord" FlyoutItemIsVisible="False">
+        <ShellContent Title="Tableau de bord" ContentTemplate="{DataTemplate dashboard:DashboardPage}" Route="DashboardPage" />
     </FlyoutItem>
 
     <FlyoutItem x:Name="LoginFlyoutItem" Title="Connexion" FlyoutItemIsVisible="False">

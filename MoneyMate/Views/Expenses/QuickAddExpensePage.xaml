@@ -1,17 +1,15 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
+                xmlns:viewModels="clr-namespace:MoneyMate.ViewModels.Expenses"
                 x:Class="MoneyMate.Views.Expenses.QuickAddExpensePage"
+                x:DataType="viewModels:QuickAddExpenseViewModel"
                 Title="Ajout rapide"
                 UseAuthenticatedFooter="True">
     <views:BasePage.PageContent>
         <ScrollView>
             <VerticalStackLayout Style="{StaticResource MainContainer}" Spacing="18">
-                <Label Text="Ajout rapide"
-                       Style="{StaticResource PageTitle}"
-                       Margin="0,8,0,0" />
-
                 <Border Style="{StaticResource CardFrame}" Margin="0,0,0,8">
                     <VerticalStackLayout Spacing="16">
                         <Label Text="Pour les opérations du quotidien, avec le moins de friction possible."
@@ -69,7 +67,7 @@
                             Style="{StaticResource OutlineButton}"
                             HorizontalOptions="FillAndExpand"
                             Command="{Binding CancelCommand}" />
-                    <Button Text="Ajouter"
+                    <Button Text="Enregistrer"
                             Style="{StaticResource PrimaryButton}"
                             HorizontalOptions="FillAndExpand"
                             Command="{Binding SaveCommand}" />

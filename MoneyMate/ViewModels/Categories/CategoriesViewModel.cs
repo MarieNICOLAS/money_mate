@@ -202,6 +202,8 @@ public sealed class CategoryItemViewModel
 
     public string ToggleActionText => IsActive ? "Désactiver" : "Activer";
 
+    public string ToggleActionIcon => IsActive ? "\uE9F5" : "\uE9F6";
+
     public static CategoryItemViewModel FromModel(Category category)
     {
         ArgumentNullException.ThrowIfNull(category);

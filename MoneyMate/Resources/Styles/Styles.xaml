@@ -196,6 +196,32 @@
         </Setter>
     </Style>
 
+    <Style x:Key="IconButton" TargetType="Button">
+        <Setter Property="FontFamily" Value="MaterialIcons" />
+        <Setter Property="FontSize" Value="22" />
+        <Setter Property="WidthRequest" Value="44" />
+        <Setter Property="HeightRequest" Value="44" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="CornerRadius" Value="22" />
+        <Setter Property="BackgroundColor" Value="#E8EEF3" />
+        <Setter Property="TextColor" Value="{StaticResource TextDark}" />
+    </Style>
+
+    <Style x:Key="PrimaryIconButton" TargetType="Button" BasedOn="{StaticResource IconButton}">
+        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+        <Setter Property="TextColor" Value="{StaticResource TextLight}" />
+    </Style>
+
+    <Style x:Key="AccentIconButton" TargetType="Button" BasedOn="{StaticResource IconButton}">
+        <Setter Property="BackgroundColor" Value="{StaticResource Accent}" />
+        <Setter Property="TextColor" Value="{StaticResource TextLight}" />
+    </Style>
+
+    <Style x:Key="DangerIconButton" TargetType="Button" BasedOn="{StaticResource IconButton}">
+        <Setter Property="BackgroundColor" Value="#FFF0F0" />
+        <Setter Property="TextColor" Value="{StaticResource Error}" />
+    </Style>
+
     <!-- Conteneur de champ -->
     <Style x:Key="InputContainer" TargetType="Border">
         <Setter Property="Stroke" Value="Transparent" />

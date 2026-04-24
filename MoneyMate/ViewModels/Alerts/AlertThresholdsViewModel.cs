@@ -184,6 +184,8 @@ public sealed class AlertThresholdItemViewModel
 
     public string ToggleActionText => IsActive ? "Désactiver" : "Activer";
 
+    public string ToggleActionIcon => IsActive ? "\uE9F5" : "\uE9F6";
+
     public bool HasMessage => !string.IsNullOrWhiteSpace(Message);
 
     public static AlertThresholdItemViewModel FromData(

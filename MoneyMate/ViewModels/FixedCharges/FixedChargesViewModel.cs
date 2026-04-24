@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Microsoft.Maui.Graphics;
+using MoneyMate.Configuration;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 
@@ -30,7 +31,9 @@ public class FixedChargesViewModel : AuthenticatedViewModelBase
         FixedCharges = [];
 
         RefreshCommand = new Command(async () => await LoadAsync());
+        AddFixedChargeCommand = new Command(async () => await NavigationService.NavigateToAsync(AppRoutes.AddFixedCharge));
         GenerateExpensesCommand = new Command(async () => await GenerateExpensesAsync());
+        EditFixedChargeCommand = new Command<FixedChargeItemViewModel>(async fixedCharge => await EditFixedChargeAsync(fixedCharge));
         ToggleFixedChargeActiveCommand = new Command<FixedChargeItemViewModel>(async fixedCharge => await ToggleFixedChargeActiveAsync(fixedCharge));
     }
 
@@ -38,7 +41,11 @@ public class FixedChargesViewModel : AuthenticatedViewModelBase
 
     public ICommand RefreshCommand { get; }
 
+    public ICommand AddFixedChargeCommand { get; }
+
     public ICommand GenerateExpensesCommand { get; }
+
+    public ICommand EditFixedChargeCommand { get; }
 
     public ICommand ToggleFixedChargeActiveCommand { get; }
 
@@ -54,6 +61,19 @@ public class FixedChargesViewModel : AuthenticatedViewModelBase
     {
         get => _projectedMonthlyAmount;
         private set => SetProperty(ref _projectedMonthlyAmount, value);
+    }
+
+    private async Task EditFixedChargeAsync(FixedChargeItemViewModel? fixedCharge)
+    {
+        if (fixedCharge == null)
+            return;
+
+        await NavigationService.NavigateToAsync(
+            AppRoutes.EditFixedCharge,
+            new Dictionary<string, object>
+            {
+                [NavigationParameterKeys.FixedChargeId] = fixedCharge.Id
+            });
     }
 
     public async Task LoadAsync()
@@ -193,6 +213,8 @@ public sealed class FixedChargeItemViewModel
     public bool IsUpcoming => NextOccurrenceDate.Date <= DateTime.Now.Date.AddDays(30);
 
     public string ToggleActionText => IsActive ? "Désactiver" : "Activer";
+
+    public string ToggleActionIcon => IsActive ? "\uE9F5" : "\uE9F6";
 
     public static FixedChargeItemViewModel FromModel(FixedCharge fixedCharge, IReadOnlyDictionary<int, Category> categoriesById, string devise)
     {

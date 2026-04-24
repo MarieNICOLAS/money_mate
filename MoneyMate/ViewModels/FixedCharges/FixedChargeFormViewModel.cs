@@ -67,7 +67,17 @@ public class FixedChargeFormViewModel : FormViewModelBase
     public int SelectedCategoryId
     {
         get => _selectedCategoryId;
-        set => SetFormProperty(ref _selectedCategoryId, value);
+        set
+        {
+            if (SetFormProperty(ref _selectedCategoryId, value))
+                OnPropertyChanged(nameof(SelectedCategory));
+        }
+    }
+
+    public CategoryOptionViewModel? SelectedCategory
+    {
+        get => Categories.FirstOrDefault(category => category.Id == SelectedCategoryId);
+        set => SelectedCategoryId = value?.Id ?? 0;
     }
 
     public string SelectedFrequency
@@ -113,6 +123,8 @@ public class FixedChargeFormViewModel : FormViewModelBase
     }
 
     protected override string EditParameterKey => NavigationParameterKeys.FixedChargeId;
+
+    protected override string? CancelNavigationFallbackRoute => AppRoutes.FixedCharges;
 
     protected override async Task LoadLookupsAsync()
     {

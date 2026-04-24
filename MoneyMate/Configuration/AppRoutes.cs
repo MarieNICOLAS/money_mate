@@ -21,6 +21,8 @@
         public const string AddCategory = "AddCategoryPage";
         public const string EditCategory = "EditCategoryPage";
         public const string FixedCharges = "FixedChargesPage";
+        public const string AddFixedCharge = "AddFixedChargePage";
+        public const string EditFixedCharge = "EditFixedChargePage";
         public const string AlertThreshold = "AlertThresholdPage";
         public const string AddBudget = "AddBudgetPage";
         public const string EditBudget = "EditBudgetPage";

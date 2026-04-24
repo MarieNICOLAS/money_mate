@@ -38,7 +38,7 @@ public class DashboardViewModel : AuthenticatedViewModelBase
     {
         _dashboardService = dashboardService ?? throw new ArgumentNullException(nameof(dashboardService));
 
-        Title = "Tableau de Bord";
+        Title = "Tableau de bord";
         TopCategories = [];
         RecentTransactions = [];
         TopCategorySegments = [];

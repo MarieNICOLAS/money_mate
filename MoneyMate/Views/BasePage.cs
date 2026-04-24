@@ -4,6 +4,7 @@ using MoneyMate.Configuration;
 using MoneyMate.Infrastructure;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.ViewModels;
+using System.ComponentModel;
 
 namespace MoneyMate.Views
 {
@@ -21,8 +22,10 @@ namespace MoneyMate.Views
         };
 
         private readonly Header _header = new();
+        private readonly AuthenticatedHeader _authenticatedHeader = new();
         private readonly Footer _footer = new();
         private readonly AuthenticatedFooter _authenticatedFooter;
+        private BaseViewModel? _trackedViewModel;
 
         /// <summary>
         /// Contenu central de la page (entre le header et le footer).
@@ -45,7 +48,7 @@ namespace MoneyMate.Views
                 typeof(bool),
                 typeof(BasePage),
                 true,
-                propertyChanged: (b, _, n) => ((BasePage)b)._header.IsVisible = (bool)n);
+                propertyChanged: (b, _, _) => ((BasePage)b).UpdateLayoutState());
 
         /// <summary>
         /// Affiche ou masque le footer public.
@@ -56,7 +59,7 @@ namespace MoneyMate.Views
                 typeof(bool),
                 typeof(BasePage),
                 true,
-                propertyChanged: (b, _, _) => ((BasePage)b).UpdateFooterVisibility());
+                propertyChanged: (b, _, _) => ((BasePage)b).UpdateLayoutState());
 
         /// <summary>
         /// Affiche la navbar des pages authentifiées à la place du footer public.
@@ -67,7 +70,15 @@ namespace MoneyMate.Views
                 typeof(bool),
                 typeof(BasePage),
                 false,
-                propertyChanged: (b, _, _) => ((BasePage)b).UpdateFooterVisibility());
+                propertyChanged: (b, _, _) => ((BasePage)b).UpdateLayoutState());
+
+        public static readonly BindableProperty ShowAuthenticatedBackButtonProperty =
+            BindableProperty.Create(
+                nameof(ShowAuthenticatedBackButton),
+                typeof(bool),
+                typeof(BasePage),
+                true,
+                propertyChanged: (b, _, _) => ((BasePage)b).UpdateLayoutState());
 
         public View? PageContent
         {
@@ -91,6 +102,12 @@ namespace MoneyMate.Views
         {
             get => (bool)GetValue(UseAuthenticatedFooterProperty);
             set => SetValue(UseAuthenticatedFooterProperty, value);
+        }
+
+        public bool ShowAuthenticatedBackButton
+        {
+            get => (bool)GetValue(ShowAuthenticatedBackButtonProperty);
+            set => SetValue(ShowAuthenticatedBackButtonProperty, value);
         }
 
         protected ICommand GoHomeCommand { get; }
@@ -138,17 +155,42 @@ namespace MoneyMate.Views
             };
 
             Grid.SetRow(_header, 0);
+            Grid.SetRow(_authenticatedHeader, 0);
             Grid.SetRow(_contentSlot, 1);
             Grid.SetRow(_footer, 2);
             Grid.SetRow(_authenticatedFooter, 2);
 
             grid.Children.Add(_header);
+            grid.Children.Add(_authenticatedHeader);
             grid.Children.Add(_contentSlot);
             grid.Children.Add(_footer);
             grid.Children.Add(_authenticatedFooter);
 
             Content = grid;
-            UpdateFooterVisibility();
+            UpdateLayoutState();
+        }
+
+        protected override void OnBindingContextChanged()
+        {
+            base.OnBindingContextChanged();
+
+            if (_trackedViewModel != null)
+                _trackedViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+
+            _trackedViewModel = BindingContext as BaseViewModel;
+
+            if (_trackedViewModel != null)
+                _trackedViewModel.PropertyChanged += OnViewModelPropertyChanged;
+
+            UpdateAuthenticatedHeaderTitle();
+        }
+
+        protected override void OnPropertyChanged(string? propertyName = null)
+        {
+            base.OnPropertyChanged(propertyName);
+
+            if (propertyName == nameof(Title))
+                UpdateAuthenticatedHeaderTitle();
         }
 
         /// <summary>
@@ -159,10 +201,26 @@ namespace MoneyMate.Views
             BindingContext = viewModel;
         }
 
-        private void UpdateFooterVisibility()
+        private void UpdateLayoutState()
         {
+            _authenticatedHeader.IsVisible = UseAuthenticatedFooter;
+            _authenticatedHeader.ShowBackButton = UseAuthenticatedFooter && ShowAuthenticatedBackButton;
             _authenticatedFooter.IsVisible = UseAuthenticatedFooter;
+            _header.IsVisible = !UseAuthenticatedFooter && ShowHeader;
             _footer.IsVisible = !UseAuthenticatedFooter && ShowFooter;
+            UpdateAuthenticatedHeaderTitle();
+        }
+
+        private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(BaseViewModel.Title))
+                MainThread.BeginInvokeOnMainThread(UpdateAuthenticatedHeaderTitle);
+        }
+
+        private void UpdateAuthenticatedHeaderTitle()
+        {
+            string title = _trackedViewModel?.Title;
+            _authenticatedHeader.PageTitle = string.IsNullOrWhiteSpace(title) ? Title : title;
         }
 
         private static async Task NavigateToAsync(string route)

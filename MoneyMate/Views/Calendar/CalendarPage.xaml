@@ -13,16 +13,14 @@
             <VerticalStackLayout Spacing="20" Padding="24">
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                     <VerticalStackLayout Grid.Column="0" Spacing="4">
-                        <Label Text="Calendrier"
-                               Style="{StaticResource PageTitle}" />
                         <Label Text="Visualisez vos dépenses et charges fixes mois par mois."
                                TextColor="{StaticResource Secondary}" />
                     </VerticalStackLayout>
                     <Button Grid.Column="1"
-                            Text="Actualiser"
+                            Text="{StaticResource IconRefresh}"
                             Command="{Binding RefreshCommand}"
-                            BackgroundColor="{StaticResource Primary}"
-                            TextColor="White" />
+                            Style="{StaticResource PrimaryIconButton}"
+                            SemanticProperties.Description="Actualiser le calendrier" />
                 </Grid>
 
                 <Border Padding="16" StrokeThickness="0" BackgroundColor="#F3F8FC">
@@ -32,7 +30,8 @@
                     <VerticalStackLayout Spacing="12">
                         <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
                             <Button Grid.Column="0"
-                                    Text="←"
+                                    Text="{StaticResource IconBack}"
+                                    FontFamily="MaterialIcons"
                                     Command="{Binding PreviousMonthCommand}"
                                     BackgroundColor="White"
                                     TextColor="{StaticResource TextDark}" />
@@ -46,7 +45,9 @@
                                        HorizontalTextAlignment="Center" />
                             </VerticalStackLayout>
                             <Button Grid.Column="2"
-                                    Text="→"
+                                    Text="{StaticResource IconBack}"
+                                    FontFamily="MaterialIcons"
+                                    Rotation="180"
                                     Command="{Binding NextMonthCommand}"
                                     BackgroundColor="White"
                                     TextColor="{StaticResource TextDark}" />

@@ -4,8 +4,10 @@
                 xmlns:views="clr-namespace:MoneyMate.Views"
                 xmlns:components="clr-namespace:MoneyMate.Components"
                 xmlns:converters="clr-namespace:MoneyMate.Converters"
+                 xmlns:viewModels="clr-namespace:MoneyMate.ViewModels.Categories"
                 x:Class="MoneyMate.Views.Categories.AddCategoryPage"
                 x:Name="Page"
+                 x:DataType="viewModels:CategoryFormViewModel"
                 Title="Nouvelle catégorie"
                 UseAuthenticatedFooter="True">
 
@@ -20,10 +22,6 @@
             <VerticalStackLayout Style="{StaticResource MainContainer}">
 
                 <VerticalStackLayout Spacing="4">
-                    <Label Text="{Binding Title}"
-                           Style="{StaticResource PageTitle}"
-                           Margin="0" />
-
                     <Label Text="Créez une catégorie personnalisée pour mieux organiser vos dépenses."
                            Style="{StaticResource BodyText}"
                            TextColor="{StaticResource Secondary}" />
@@ -124,7 +122,7 @@
                                             Stroke="#D6E1EA"
                                             StrokeThickness="2">
                                         <Border.StrokeShape>
-                                            <RoundRectangle CornerRadius="18" />
+                                            <RoundRectangle CornerRadius="20" />
                                         </Border.StrokeShape>
                                         <Border.GestureRecognizers>
                                             <TapGestureRecognizer
@@ -132,12 +130,12 @@
                                                 CommandParameter="{Binding .}" />
                                         </Border.GestureRecognizers>
 
-                                        <Border WidthRequest="32"
-                                                HeightRequest="32"
+                                        <Border WidthRequest="34"
+                                                HeightRequest="34"
                                                 BackgroundColor="{Binding ., Converter={StaticResource HexToColorConverter}}"
                                                 StrokeThickness="0">
                                             <Border.StrokeShape>
-                                                <RoundRectangle CornerRadius="16" />
+                                                <RoundRectangle CornerRadius="17" />
                                             </Border.StrokeShape>
                                         </Border>
                                     </Border>

@@ -161,6 +161,48 @@
                             </VerticalStackLayout>
                         </Grid>
 
+                        <Grid ColumnDefinitions="Auto,*"
+                              ColumnSpacing="12"
+                              VerticalOptions="Center">
+                            <Switch IsToggled="{Binding EnableCategoryAlert}"
+                                    OnColor="{StaticResource Accent}" />
+                            <VerticalStackLayout Grid.Column="1"
+                                                 Spacing="2">
+                                <Label Text="Alerte de catégorie"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource TextDark}" />
+                                <Label Text="Optionnel : alerte quand cette catégorie atteint un pourcentage défini."
+                                       Style="{StaticResource CaptionText}"
+                                       TextColor="{StaticResource Secondary}" />
+                            </VerticalStackLayout>
+                        </Grid>
+
+                        <VerticalStackLayout Spacing="12"
+                                             IsVisible="{Binding EnableCategoryAlert}">
+                            <Label Text="Seuil (%)"
+                                   Style="{StaticResource FormLabel}" />
+                            <Border Style="{StaticResource InputContainer}">
+                                <Entry Text="{Binding CategoryAlertThresholdPercentageText}"
+                                       Placeholder="80"
+                                       Style="{StaticResource EntryForm}"
+                                       Keyboard="Numeric"
+                                       ClearButtonVisibility="WhileEditing" />
+                            </Border>
+
+                            <Label Text="Message"
+                                   Style="{StaticResource FormLabel}" />
+                            <Border Style="{StaticResource InputContainer}">
+                                <Editor Text="{Binding CategoryAlertMessage}"
+                                        Placeholder="Message optionnel"
+                                        TextColor="{StaticResource TextDark}"
+                                        PlaceholderColor="{StaticResource Secondary}"
+                                        BackgroundColor="Transparent"
+                                        FontSize="15"
+                                        AutoSize="TextChanges"
+                                        MinimumHeightRequest="80" />
+                            </Border>
+                        </VerticalStackLayout>
+
                         <Label Text="{Binding ValidationMessage}"
                                IsVisible="{Binding HasValidationErrors}"
                                TextColor="{StaticResource Error}"

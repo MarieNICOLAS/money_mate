@@ -39,6 +39,7 @@ namespace MoneyMate.Services.Implementations
             ["AddBudgetPage"] = [UserRoles.User, UserRoles.Admin],
             ["EditBudgetPage"] = [UserRoles.User, UserRoles.Admin],
             ["AlertThresholdPage"] = [UserRoles.User, UserRoles.Admin],
+            ["FixedChargesPage"] = [UserRoles.User, UserRoles.Admin],
             ["CalendarPage"] = [UserRoles.User, UserRoles.Admin]
         };
 

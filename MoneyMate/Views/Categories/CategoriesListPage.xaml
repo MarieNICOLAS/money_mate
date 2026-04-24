@@ -12,6 +12,12 @@
     <views:BasePage.PageContent>
         <ScrollView>
             <VerticalStackLayout Spacing="20" Padding="24">
+                <Label Text="{Binding Source={x:Reference Page}, Path=Title}"
+                       FontSize="24"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextDark}"
+                       HorizontalOptions="Start" />
+
                 <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
                     <VerticalStackLayout Grid.Column="0" Spacing="4">
                         <Label Text="Organisez vos dépenses avec vos catégories système et personnalisées." TextColor="{StaticResource Secondary}" />
@@ -33,37 +39,29 @@
                        TextColor="#E57373"
                        FontAttributes="Bold" />
 
-                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
-                    <Border Grid.Column="0" Padding="16" StrokeThickness="0" BackgroundColor="#F3F8FC">
-                        <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="14" />
-                        </Border.StrokeShape>
-                        <VerticalStackLayout Spacing="4">
-                            <Label Text="Actives" TextColor="{StaticResource Secondary}" />
-                            <Label Text="{Binding ActiveCategoriesCount}" FontSize="24" FontAttributes="Bold" />
-                        </VerticalStackLayout>
-                    </Border>
+                <Border Padding="14,10"
+                        Stroke="#D6E1EA"
+                        StrokeThickness="1"
+                        BackgroundColor="White">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="14" />
+                    </Border.StrokeShape>
 
-                    <Border Grid.Column="1" Padding="16" StrokeThickness="0" BackgroundColor="#EEF7EE">
-                        <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="14" />
-                        </Border.StrokeShape>
-                        <VerticalStackLayout Spacing="4">
-                            <Label Text="Personnalisées" TextColor="{StaticResource Secondary}" />
-                            <Label Text="{Binding CustomCategoriesCount}" FontSize="24" FontAttributes="Bold" />
-                        </VerticalStackLayout>
-                    </Border>
+                    <Grid RowDefinitions="Auto,Auto"
+                          ColumnDefinitions="*"
+                          RowSpacing="6">
+                        <Label Text="Trier la liste"
+                               TextColor="{StaticResource Secondary}"
+                               FontAttributes="Bold" />
 
-                    <Border Grid.Column="2" Padding="16" StrokeThickness="0" BackgroundColor="#FFF6E9">
-                        <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="14" />
-                        </Border.StrokeShape>
-                        <VerticalStackLayout Spacing="4">
-                            <Label Text="Inactives" TextColor="{StaticResource Secondary}" />
-                            <Label Text="{Binding InactiveCategoriesCount}" FontSize="24" FontAttributes="Bold" />
-                        </VerticalStackLayout>
-                    </Border>
-                </Grid>
+                        <Picker Grid.Row="1"
+                                Title="Choisir un tri"
+                                ItemsSource="{Binding SortOptions}"
+                                SelectedItem="{Binding SelectedSortOption}"
+                                TextColor="{StaticResource TextDark}"
+                                TitleColor="{StaticResource Secondary}" />
+                    </Grid>
+                </Border>
 
                 <CollectionView ItemsSource="{Binding Categories}"
                                 IsVisible="{Binding HasCategories}">
@@ -74,49 +72,69 @@
                                     <RoundRectangle CornerRadius="14" />
                                 </Border.StrokeShape>
 
-                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="12">
+                                <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="12">
                                     <components:CategoryBadge Grid.Row="0" Grid.Column="0"
-                                                              CategoryName="{Binding Name}"
                                                               CategoryIcon="{Binding Icon}"
                                                               CategoryColor="{Binding CategoryColor}" />
 
                                     <VerticalStackLayout Grid.Row="0"
                                                          Grid.Column="1"
                                                          Grid.RowSpan="3"
+                                                         Spacing="6"
+                                                         VerticalOptions="Center">
+                                        <Label Text="{Binding Name}"
+                                               FontSize="18"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource TextDark}"
+                                               LineBreakMode="TailTruncation" />
+
+                                        <Label Text="{Binding Description}"
+                                               IsVisible="{Binding HasDescription}"
+                                               TextColor="{StaticResource Secondary}"
+                                               LineBreakMode="TailTruncation"
+                                               MaxLines="2" />
+
+                                        <HorizontalStackLayout Spacing="16">
+                                            <Label Text="{Binding TypeText}" TextColor="{StaticResource Secondary}" />
+                                            <Label Text="{Binding StatusText}" TextColor="{StaticResource Secondary}" />
+                                            <Label Text="{Binding AlertThresholdText}"
+                                                   TextColor="{StaticResource Secondary}"
+                                                   IsVisible="{Binding HasAlertThreshold}" />
+                                        </HorizontalStackLayout>
+                                    </VerticalStackLayout>
+
+                                    <VerticalStackLayout Grid.Row="0"
+                                                         Grid.Column="2"
+                                                         Grid.RowSpan="3"
                                                          Spacing="8"
                                                          HorizontalOptions="End">
 
                                         <Button Text="{StaticResource IconEdit}"
-                                                Command="{Binding Source={x:Reference Page}, Path=BindingContext.EditCategoryCommand}"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type views:BasePage}}, Path=BindingContext.EditCategoryCommand}"
                                                 CommandParameter="{Binding .}"
                                                 IsVisible="{Binding CanEdit}"
                                                 Style="{StaticResource IconButton}"
                                                 SemanticProperties.Description="Modifier la catégorie" />
 
-                                        <Button Text="{Binding ToggleActionIcon}"
-                                                Command="{Binding Source={x:Reference Page}, Path=BindingContext.ToggleCategoryActiveCommand}"
+                                        <Button Text="{Binding ToggleActionText}"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type views:BasePage}}, Path=BindingContext.ToggleCategoryActiveCommand}"
                                                 CommandParameter="{Binding .}"
                                                 IsVisible="{Binding CanToggleActive}"
                                                 Style="{StaticResource PrimaryIconButton}"
+                                                FontFamily="OpenSansRegular"
+                                                FontSize="11"
+                                                WidthRequest="72"
+                                                HeightRequest="36"
+                                                CornerRadius="18"
                                                 SemanticProperties.Description="Activer ou désactiver la catégorie" />
 
                                         <Button Text="{StaticResource IconDelete}"
-                                                Command="{Binding Source={x:Reference Page}, Path=BindingContext.DeleteCategoryCommand}"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type views:BasePage}}, Path=BindingContext.DeleteCategoryCommand}"
                                                 CommandParameter="{Binding .}"
                                                 IsVisible="{Binding CanDelete}"
                                                 Style="{StaticResource DangerIconButton}"
                                                 SemanticProperties.Description="Supprimer la catégorie" />
                                     </VerticalStackLayout>
-
-                                    <Label Grid.Row="1" Grid.Column="0"
-                                           Text="{Binding Description}"
-                                           IsVisible="{Binding HasDescription}"
-                                           TextColor="{StaticResource Secondary}" />
-
-                                    <HorizontalStackLayout Grid.Row="2" Grid.Column="0" Spacing="16">
-                                        <Label Text="{Binding TypeText}" TextColor="{StaticResource Secondary}" />
-                                        <Label Text="{Binding StatusText}" TextColor="{StaticResource Secondary}" />
-                                    </HorizontalStackLayout>
                                 </Grid>
                             </Border>
                         </DataTemplate>

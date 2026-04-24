@@ -12,12 +12,16 @@ namespace MoneyMate.ViewModels.Expenses;
 /// </summary>
 public class ExpensesListViewModel : AuthenticatedViewModelBase
 {
+    private const string BudgetRequiredMessage = "Créez d’abord un budget avant d’ajouter une dépense.";
+
     private readonly IExpenseService _expenseService;
+    private readonly IBudgetService _budgetService;
     private readonly ICategoryService _categoryService;
     private decimal _totalExpenses;
 
     public ExpensesListViewModel(
         IExpenseService expenseService,
+        IBudgetService budgetService,
         ICategoryService categoryService,
         IAuthenticationService authenticationService,
         IDialogService dialogService,
@@ -25,14 +29,15 @@ public class ExpensesListViewModel : AuthenticatedViewModelBase
         : base(authenticationService, dialogService, navigationService)
     {
         _expenseService = expenseService ?? throw new ArgumentNullException(nameof(expenseService));
+        _budgetService = budgetService ?? throw new ArgumentNullException(nameof(budgetService));
         _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
 
         Title = "Mes dépenses";
         Expenses = [];
 
         RefreshCommand = new Command(async () => await LoadAsync());
-        AddExpenseCommand = new Command(async () => await NavigationService.NavigateToAsync(AppRoutes.AddExpense));
-        QuickAddExpenseCommand = new Command(async () => await NavigationService.NavigateToAsync(AppRoutes.QuickAddExpense));
+        AddExpenseCommand = new Command(async () => await NavigateToExpenseCreationAsync(AppRoutes.AddExpense));
+        QuickAddExpenseCommand = new Command(async () => await NavigateToExpenseCreationAsync(AppRoutes.QuickAddExpense));
         OpenExpenseDetailsCommand = new Command<ExpenseItemViewModel>(async expense => await OpenExpenseDetailsAsync(expense));
     }
 
@@ -116,6 +121,28 @@ public class ExpensesListViewModel : AuthenticatedViewModelBase
         {
             [NavigationParameterKeys.ExpenseId] = expense.Id
         });
+    }
+
+    private async Task NavigateToExpenseCreationAsync(string route)
+    {
+        if (!EnsureCurrentUser())
+            return;
+
+        var result = await _budgetService.GetBudgetsAsync(CurrentUserId);
+        if (!result.IsSuccess)
+        {
+            await DialogService.ShowAlertAsync("Budget", result.Message, "OK");
+            return;
+        }
+
+        bool hasActiveBudget = (result.Data ?? []).Any(budget => budget.IsActive);
+        if (!hasActiveBudget)
+        {
+            await DialogService.ShowAlertAsync("Budget requis", BudgetRequiredMessage, "OK");
+            return;
+        }
+
+        await NavigationService.NavigateToAsync(route);
     }
 }
 

@@ -4,12 +4,19 @@
                 xmlns:views="clr-namespace:MoneyMate.Views"
                 xmlns:viewModels="clr-namespace:MoneyMate.ViewModels.FixedCharges"
                 x:Class="MoneyMate.Views.FixedCharges.EditFixedChargePage"
+                x:Name="Page"
                 x:DataType="viewModels:FixedChargeFormViewModel"
                 Title="Modifier la charge fixe"
                 UseAuthenticatedFooter="True">
     <views:BasePage.PageContent>
         <ScrollView>
             <VerticalStackLayout Style="{StaticResource MainContainer}" Spacing="18">
+                <Label Text="{Binding Source={x:Reference Page}, Path=Title}"
+                       FontSize="24"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextDark}"
+                       HorizontalOptions="Start" />
+
                 <Border Style="{StaticResource CardFrame}" Margin="0,0,0,8">
                     <VerticalStackLayout Spacing="16">
                         <Label Text="Mettez à jour votre charge récurrente sans alourdir le parcours mobile."

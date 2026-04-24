@@ -4,12 +4,25 @@
                 xmlns:views="clr-namespace:MoneyMate.Views"
                 xmlns:viewModels="clr-namespace:MoneyMate.ViewModels.Expenses"
                 x:Class="MoneyMate.Views.Expenses.QuickAddExpensePage"
+                x:Name="Page"
                 x:DataType="viewModels:QuickAddExpenseViewModel"
                 Title="Ajout rapide"
                 UseAuthenticatedFooter="True">
     <views:BasePage.PageContent>
         <ScrollView>
             <VerticalStackLayout Style="{StaticResource MainContainer}" Spacing="18">
+                <VerticalStackLayout Spacing="6">
+                <Label Text="{Binding Source={x:Reference Page}, Path=Title}"
+                           FontSize="24"
+                           FontAttributes="Bold"
+                       TextColor="{StaticResource TextDark}"
+                           HorizontalOptions="Start" />
+                    <Label Text="{Binding BudgetRequirementMessage}"
+                           IsVisible="{Binding HasValidationErrors}"
+                           FontSize="13"
+                           TextColor="{StaticResource Error}" />
+                </VerticalStackLayout>
+
                 <Border Style="{StaticResource CardFrame}" Margin="0,0,0,8">
                     <VerticalStackLayout Spacing="16">
                         <Label Text="Pour les opérations du quotidien, avec le moins de friction possible."

@@ -20,6 +20,11 @@
     <views:BasePage.PageContent>
         <ScrollView>
             <VerticalStackLayout Style="{StaticResource MainContainer}">
+                <Label Text="{Binding Source={x:Reference Page}, Path=Title}"
+                       FontSize="24"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextDark}"
+                       HorizontalOptions="Start" />
 
                 <VerticalStackLayout Spacing="4">
                     <Label Text="Modifiez une catégorie personnalisée existante."
@@ -78,17 +83,24 @@
                         <Label Text="Icône"
                                Style="{StaticResource FormLabel}" />
 
+                        <Border Style="{StaticResource InputContainer}">
+                            <Entry Text="{Binding Icon}"
+                                   Placeholder="Ex. 💰"
+                                   Style="{StaticResource EntryForm}"
+                                   ClearButtonVisibility="WhileEditing" />
+                        </Border>
+
                         <FlexLayout BindableLayout.ItemsSource="{Binding AvailableIcons}"
                                     Direction="Row"
                                     Wrap="Wrap"
                                     JustifyContent="Start"
                                     AlignItems="Start">
                             <BindableLayout.ItemTemplate>
-                                <DataTemplate>
+                                <DataTemplate x:DataType="x:String">
                                     <Border Padding="8"
                                             Margin="4"
                                             BackgroundColor="#F3F8FC"
-                                            StrokeThickness="1"
+                                            StrokeThickness="2"
                                             Stroke="#D6E1EA">
                                         <Border.StrokeShape>
                                             <RoundRectangle CornerRadius="14" />
@@ -117,7 +129,7 @@
                                     JustifyContent="Start"
                                     AlignItems="Start">
                             <BindableLayout.ItemTemplate>
-                                <DataTemplate>
+                                <DataTemplate x:DataType="x:String">
                                     <Border Padding="4"
                                             Margin="4"
                                             Stroke="#D6E1EA"

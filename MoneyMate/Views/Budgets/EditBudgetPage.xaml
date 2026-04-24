@@ -4,12 +4,19 @@
                 xmlns:views="clr-namespace:MoneyMate.Views"
                 xmlns:viewModels="clr-namespace:MoneyMate.ViewModels.Budgets"
                 x:Class="MoneyMate.Views.Budgets.EditBudgetPage"
+                x:Name="Page"
                 x:DataType="viewModels:BudgetFormViewModel"
                 Title="Modifier le budget"
                 UseAuthenticatedFooter="True">
     <views:BasePage.PageContent>
         <ScrollView>
             <VerticalStackLayout Style="{StaticResource MainContainer}" Spacing="18">
+                <Label Text="{Binding Source={x:Reference Page}, Path=Title}"
+                       FontSize="24"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextDark}"
+                       HorizontalOptions="Start" />
+
                 <Border Style="{StaticResource CardFrame}" Margin="0,0,0,8">
                     <VerticalStackLayout Spacing="16">
                         <Label Text="Parametres du budget"

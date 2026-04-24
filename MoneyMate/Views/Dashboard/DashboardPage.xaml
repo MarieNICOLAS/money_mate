@@ -5,6 +5,7 @@
                 xmlns:components="clr-namespace:MoneyMate.Components"
                 xmlns:viewModels="clr-namespace:MoneyMate.ViewModels.Dashboard"
                 x:Class="MoneyMate.Views.Dashboard.DashboardPage"
+                x:Name="Page"
                 x:DataType="viewModels:DashboardViewModel"
                 Title="Tableau de bord"
                 ShowFooter="False"
@@ -15,13 +16,19 @@
             <ScrollView>
                 <VerticalStackLayout Spacing="20" Padding="24,20,24,32">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                        <VerticalStackLayout Grid.Column="0" Spacing="4">
-                            <Label Text="Bonjour"
-                                   TextColor="{StaticResource Secondary}" />
-                            <Label Text="{Binding UserName}"
+                        <VerticalStackLayout Grid.Column="0" Spacing="6">
+                            <Label Text="{Binding Source={x:Reference Page}, Path=Title}"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextDark}"
+                                   HorizontalOptions="Start" />
+                            <Label Text="{Binding GreetingText}"
                                    FontSize="24"
                                    FontAttributes="Bold"
                                    TextColor="{StaticResource TextDark}" />
+                            <Label Text="{Binding TodayDisplay}"
+                                   FontSize="13"
+                                   TextColor="{StaticResource Secondary}" />
                             <Label Text="Voici la synthèse actuelle de vos finances." TextColor="{StaticResource Secondary}" />
                         </VerticalStackLayout>
                         <Button Grid.Column="1"
@@ -46,16 +53,6 @@
                         </Border.StrokeShape>
 
                         <VerticalStackLayout Spacing="16">
-                            <VerticalStackLayout Spacing="6">
-                                <Label Text="Budget du mois"
-                                       TextColor="{StaticResource Secondary}"
-                                       FontAttributes="Bold" />
-                                <Label Text="{Binding CurrentMonthBudgetDisplay}"
-                                       FontSize="22"
-                                       FontAttributes="Bold"
-                                       TextColor="{StaticResource Primary}" />
-                            </VerticalStackLayout>
-
                             <Grid HorizontalOptions="Center"
                                   VerticalOptions="Center">
                                 <components:DonutChartView Segments="{Binding TopCategorySegments}"
@@ -74,6 +71,21 @@
                                            FontAttributes="Bold"
                                            TextColor="{StaticResource Accent}" />
                                 </VerticalStackLayout>
+
+                                 <VerticalStackLayout HorizontalOptions="End"
+                                                      VerticalOptions="End"
+                                                      Margin="0,0,4,4"
+                                                      Spacing="1">
+                                     <Label Text="Budget du mois"
+                                            FontSize="12"
+                                            HorizontalTextAlignment="End"
+                                            TextColor="{StaticResource Secondary}" />
+                                     <Label Text="{Binding CurrentMonthBudgetDisplay}"
+                                            FontSize="14"
+                                            FontAttributes="Bold"
+                                            HorizontalTextAlignment="End"
+                                            TextColor="{StaticResource Primary}" />
+                                 </VerticalStackLayout>
                             </Grid>
 
                             <VerticalStackLayout Spacing="10"
@@ -130,8 +142,8 @@
 
                     <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
                         <Button Grid.Column="0"
-                                Text="Calendrier"
-                                Command="{Binding OpenCalendarCommand}"
+                                Text="Catégories"
+                                Command="{Binding OpenCategoriesCommand}"
                                 BackgroundColor="#F3F8FC"
                                 TextColor="{StaticResource TextDark}" />
                         <Button Grid.Column="1"

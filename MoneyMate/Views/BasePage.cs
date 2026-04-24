@@ -110,6 +110,8 @@ namespace MoneyMate.Views
             set => SetValue(ShowAuthenticatedBackButtonProperty, value);
         }
 
+        public string PageTitle => string.IsNullOrWhiteSpace(Title) ? _trackedViewModel?.Title ?? string.Empty : Title;
+
         protected ICommand GoHomeCommand { get; }
 
         protected ICommand GoCalendarCommand { get; }
@@ -182,6 +184,7 @@ namespace MoneyMate.Views
             if (_trackedViewModel != null)
                 _trackedViewModel.PropertyChanged += OnViewModelPropertyChanged;
 
+            OnPropertyChanged(nameof(PageTitle));
             UpdateAuthenticatedHeaderTitle();
         }
 
@@ -190,7 +193,16 @@ namespace MoneyMate.Views
             base.OnPropertyChanged(propertyName);
 
             if (propertyName == nameof(Title))
+            {
+                OnPropertyChanged(nameof(PageTitle));
                 UpdateAuthenticatedHeaderTitle();
+            }
+        }
+
+        protected override void OnNavigatedTo(NavigatedToEventArgs args)
+        {
+            base.OnNavigatedTo(args);
+            UpdateAuthenticatedHeaderTitle();
         }
 
         /// <summary>
@@ -214,7 +226,13 @@ namespace MoneyMate.Views
         private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(BaseViewModel.Title))
-                MainThread.BeginInvokeOnMainThread(UpdateAuthenticatedHeaderTitle);
+            {
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    OnPropertyChanged(nameof(PageTitle));
+                    UpdateAuthenticatedHeaderTitle();
+                });
+            }
         }
 
         private void UpdateAuthenticatedHeaderTitle()

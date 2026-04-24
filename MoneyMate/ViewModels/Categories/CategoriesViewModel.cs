@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Windows.Input;
 using Microsoft.Maui.Graphics;
 using MoneyMate.Configuration;
@@ -13,15 +14,22 @@ namespace MoneyMate.ViewModels.Categories;
 public class CategoriesViewModel : AuthenticatedViewModelBase
 {
     private readonly ICategoryService _categoryService;
+    private readonly IAlertThresholdService _alertThresholdService;
+    private string _selectedSortOption = SortAlphabetical;
+
+    private const string SortAlphabetical = "Alphabétique";
+    private const string SortAlertThreshold = "Alerte %";
 
     public CategoriesViewModel(
         ICategoryService categoryService,
+        IAlertThresholdService alertThresholdService,
         IAuthenticationService authenticationService,
         IDialogService dialogService,
         INavigationService navigationService)
         : base(authenticationService, dialogService, navigationService)
     {
         _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
+        _alertThresholdService = alertThresholdService ?? throw new ArgumentNullException(nameof(alertThresholdService));
 
         Title = "Catégories";
         Categories = [];
@@ -34,6 +42,18 @@ public class CategoriesViewModel : AuthenticatedViewModelBase
     }
 
     public ObservableCollection<CategoryItemViewModel> Categories { get; }
+
+    public ReadOnlyCollection<string> SortOptions { get; } = new([SortAlphabetical, SortAlertThreshold]);
+
+    public string SelectedSortOption
+    {
+        get => _selectedSortOption;
+        set
+        {
+            if (SetProperty(ref _selectedSortOption, value))
+                ApplySorting();
+        }
+    }
 
     public ICommand RefreshCommand { get; }
 
@@ -75,18 +95,33 @@ public class CategoriesViewModel : AuthenticatedViewModelBase
                 return;
             }
 
-            IEnumerable<Category> orderedCategories = (activeCategoriesResult.Data ?? [])
+            Dictionary<int, AlertThreshold> categoryAlerts = [];
+            var alertThresholdsResult = await _alertThresholdService.GetAlertThresholdsAsync(CurrentUserId);
+            if (alertThresholdsResult.IsSuccess)
+            {
+                categoryAlerts = (alertThresholdsResult.Data ?? [])
+                    .Where(alert => alert.CategoryId.HasValue && !alert.BudgetId.HasValue && alert.IsActive)
+                    .GroupBy(alert => alert.CategoryId!.Value)
+                    .ToDictionary(group => group.Key, group => group.OrderByDescending(alert => alert.ThresholdPercentage).First());
+            }
+
+            List<CategoryItemViewModel> categoryItems = (activeCategoriesResult.Data ?? [])
                 .Concat(inactiveCategoriesResult.Data ?? [])
                 .GroupBy(category => category.Id)
                 .Select(group => group.First())
-                .OrderByDescending(category => category.IsActive)
-                .ThenByDescending(category => category.IsSystem)
-                .ThenBy(category => category.DisplayOrder)
-                .ThenBy(category => category.Name);
+                .Select(category => CategoryItemViewModel.FromModel(
+                    category,
+                    categoryAlerts.TryGetValue(category.Id, out AlertThreshold? alertThreshold)
+                        ? alertThreshold
+                        : null))
+                .ToList();
 
             Categories.Clear();
-            foreach (Category category in orderedCategories)
-                Categories.Add(CategoryItemViewModel.FromModel(category));
+            foreach (CategoryItemViewModel category in OrderCategories(categoryItems))
+            {
+                category.PropertyChanged += OnCategoryItemPropertyChanged;
+                Categories.Add(category);
+            }
 
             RefreshState();
         }, "Une erreur est survenue lors du chargement des catégories.");
@@ -166,14 +201,51 @@ public class CategoriesViewModel : AuthenticatedViewModelBase
         OnPropertyChanged(nameof(InactiveCategoriesCount));
         OnPropertyChanged(nameof(HasCategories));
     }
+
+    private void ApplySorting()
+    {
+        if (Categories.Count <= 1)
+            return;
+
+        List<CategoryItemViewModel> orderedCategories = OrderCategories(Categories).ToList();
+        for (int index = 0; index < orderedCategories.Count; index++)
+        {
+            CategoryItemViewModel category = orderedCategories[index];
+            int currentIndex = Categories.IndexOf(category);
+            if (currentIndex != index)
+                Categories.Move(currentIndex, index);
+        }
+    }
+
+    private IEnumerable<CategoryItemViewModel> OrderCategories(IEnumerable<CategoryItemViewModel> categories)
+    {
+        IOrderedEnumerable<CategoryItemViewModel> orderedCategories = SelectedSortOption == SortAlertThreshold
+            ? categories
+                .OrderByDescending(category => category.HasAlertThreshold)
+                .ThenByDescending(category => category.AlertThresholdPercentage ?? decimal.MinValue)
+            : categories
+                .OrderBy(category => category.Name, StringComparer.CurrentCultureIgnoreCase);
+
+        return orderedCategories
+            .ThenByDescending(category => category.IsActive)
+            .ThenByDescending(category => category.IsSystem)
+            .ThenBy(category => category.DisplayName, StringComparer.CurrentCultureIgnoreCase);
+    }
+
+    private void OnCategoryItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(CategoryItemViewModel.IsActive))
+            RefreshState();
+    }
 }
 
 /// <summary>
 /// Représentation UI d'une catégorie.
 /// </summary>
-public sealed class CategoryItemViewModel
+public sealed class CategoryItemViewModel : INotifyPropertyChanged
 {
     private static readonly Color DefaultColor = Color.FromArgb("#6B7A8F");
+    private bool _isActive;
 
     public int Id { get; init; }
 
@@ -187,7 +259,21 @@ public sealed class CategoryItemViewModel
 
     public bool IsSystem { get; init; }
 
-    public bool IsActive { get; init; }
+    public bool IsActive
+    {
+        get => _isActive;
+        init => _isActive = value;
+    }
+
+    public decimal? AlertThresholdPercentage { get; init; }
+
+    public bool HasAlertThreshold => AlertThresholdPercentage.HasValue;
+
+    public string AlertThresholdText => HasAlertThreshold
+        ? $"Alerte {AlertThresholdPercentage:0.##}%"
+        : "Aucune alerte";
+
+    public string DisplayName => Name ?? string.Empty;
 
     public bool CanManage => !IsSystem;
     public bool CanEdit => !IsSystem;
@@ -200,11 +286,13 @@ public sealed class CategoryItemViewModel
 
     public string StatusText => IsActive ? "Active" : "Inactive";
 
-    public string ToggleActionText => IsActive ? "Désactiver" : "Activer";
+    public string ToggleActionText => IsActive ? "Off" : "On";
 
     public string ToggleActionIcon => IsActive ? "\uE9F5" : "\uE9F6";
 
-    public static CategoryItemViewModel FromModel(Category category)
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public static CategoryItemViewModel FromModel(Category category, AlertThreshold? alertThreshold = null)
     {
         ArgumentNullException.ThrowIfNull(category);
 
@@ -216,7 +304,8 @@ public sealed class CategoryItemViewModel
             Icon = string.IsNullOrWhiteSpace(category.Icon) ? "💰" : category.Icon,
             CategoryColor = TryCreateColor(category.Color),
             IsSystem = category.IsSystem,
-            IsActive = category.IsActive
+            IsActive = category.IsActive,
+            AlertThresholdPercentage = alertThreshold?.ThresholdPercentage
         };
     }
 

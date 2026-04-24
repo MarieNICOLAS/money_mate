@@ -5,12 +5,19 @@
                 xmlns:components="clr-namespace:MoneyMate.Components"
                 xmlns:viewModels="clr-namespace:MoneyMate.ViewModels.Calendar"
                 x:Class="MoneyMate.Views.Calendar.CalendarPage"
+                x:Name="Page"
                 x:DataType="viewModels:CalendarViewModel"
                 Title="Calendrier"
                 UseAuthenticatedFooter="True">
     <views:BasePage.PageContent>
         <ScrollView>
             <VerticalStackLayout Spacing="20" Padding="24">
+                <Label Text="{Binding Source={x:Reference Page}, Path=Title}"
+                       FontSize="24"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextDark}"
+                       HorizontalOptions="Start" />
+
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                     <VerticalStackLayout Grid.Column="0" Spacing="4">
                         <Label Text="Visualisez vos dépenses et charges fixes mois par mois."

@@ -4,6 +4,7 @@
                 xmlns:views="clr-namespace:MoneyMate.Views"
                 xmlns:viewModels="clr-namespace:MoneyMate.ViewModels.Profile"
                 x:Class="MoneyMate.Views.Profile.DeleteAccountPage"
+                x:Name="self"
                 x:DataType="viewModels:DeleteAccountViewModel"
                 Title="Supprimer mon compte"
                 ShowFooter="False"
@@ -20,6 +21,12 @@
                         <OnIdiom x:TypeArguments="LayoutOptions"
                                  Phone="Fill" Tablet="Center" Desktop="Center" />
                     </VerticalStackLayout.HorizontalOptions>
+
+                     <Label Text="{Binding Source={x:Reference self}, Path=Title}"
+                           FontSize="24"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource Primary}"
+                           HorizontalOptions="Start" />
 
                     <Border BackgroundColor="#FFF3F3"
                             Padding="16"

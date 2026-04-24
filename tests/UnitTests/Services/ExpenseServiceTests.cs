@@ -14,6 +14,12 @@ namespace UnitTests.Services
         {
             Mock<IMoneyMateDbContext> dbContextMock = new();
 
+            dbContextMock.Setup(x => x.GetBudgetsByUserId(1))
+                .Returns(new List<Budget>
+                {
+                    new() { Id = 1, UserId = 1, Amount = 100m, StartDate = DateTime.Today, EndDate = DateTime.Today.AddDays(27), IsActive = true }
+                });
+
             dbContextMock.Setup(x => x.GetCategoryById(10, 1))
                 .Returns(new Category
                 {
@@ -43,6 +49,12 @@ namespace UnitTests.Services
         public async Task CreateExpenseAsync_WithValidExpense_ReturnsSuccess()
         {
             Mock<IMoneyMateDbContext> dbContextMock = new();
+
+            dbContextMock.Setup(x => x.GetBudgetsByUserId(1))
+                .Returns(new List<Budget>
+                {
+                    new() { Id = 1, UserId = 1, Amount = 100m, StartDate = DateTime.Today, EndDate = DateTime.Today.AddDays(27), IsActive = true }
+                });
 
             dbContextMock.Setup(x => x.GetCategoryById(10, 1))
                 .Returns(new Category
@@ -74,6 +86,30 @@ namespace UnitTests.Services
             Assert.IsNotNull(result.Data);
             Assert.AreEqual(42, result.Data.Id);
             Assert.AreEqual("Pain et lait", result.Data.Note);
+        }
+
+        [TestMethod]
+        public async Task CreateExpenseAsync_WithoutBudget_ReturnsBudgetRequired()
+        {
+            Mock<IMoneyMateDbContext> dbContextMock = new();
+
+            dbContextMock.Setup(x => x.GetBudgetsByUserId(1))
+                .Returns(new List<Budget>());
+
+            ExpenseService service = new(dbContextMock.Object);
+
+            Expense expense = new()
+            {
+                UserId = 1,
+                CategoryId = 10,
+                Amount = 19.99m,
+                DateOperation = DateTime.Now.AddMinutes(-1)
+            };
+
+            var result = await service.CreateExpenseAsync(expense);
+
+            Assert.IsFalse(result.IsSuccess);
+            Assert.AreEqual("EXPENSE_BUDGET_REQUIRED", result.ErrorCode);
         }
     }
 }

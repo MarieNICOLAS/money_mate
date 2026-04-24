@@ -11,6 +11,15 @@ namespace UnitTests.ViewModels;
 [TestClass]
 public class CategoriesViewModelTests
 {
+    private static IAlertThresholdService CreateAlertThresholdService()
+    {
+        Mock<IAlertThresholdService> alertThresholdServiceMock = new();
+        alertThresholdServiceMock.Setup(x => x.GetAlertThresholdsAsync(It.IsAny<int>()))
+            .ReturnsAsync(ServiceResult<List<AlertThreshold>>.Success([]));
+
+        return alertThresholdServiceMock.Object;
+    }
+
     [TestMethod]
     public async Task LoadAsync_WithCategories_PopulatesCollectionAndCounters()
     {
@@ -32,6 +41,7 @@ public class CategoriesViewModelTests
 
         CategoriesViewModel viewModel = new(
             categoryServiceMock.Object,
+            CreateAlertThresholdService(),
             ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
             ViewModelTestHelper.CreateDialogServiceMock().Object,
             ViewModelTestHelper.CreateNavigationServiceMock().Object);
@@ -57,6 +67,7 @@ public class CategoriesViewModelTests
 
         CategoriesViewModel viewModel = new(
             categoryServiceMock.Object,
+            CreateAlertThresholdService(),
             ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
             ViewModelTestHelper.CreateDialogServiceMock().Object,
             ViewModelTestHelper.CreateNavigationServiceMock().Object);
@@ -76,6 +87,7 @@ public class CategoriesViewModelTests
 
         CategoriesViewModel viewModel = new(
             new Mock<ICategoryService>().Object,
+            CreateAlertThresholdService(),
             ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
             ViewModelTestHelper.CreateDialogServiceMock().Object,
             navigationServiceMock.Object);
@@ -103,6 +115,7 @@ public class CategoriesViewModelTests
 
         CategoriesViewModel viewModel = new(
             categoryServiceMock.Object,
+            CreateAlertThresholdService(),
             ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
             ViewModelTestHelper.CreateDialogServiceMock(confirmationResult: true).Object,
             ViewModelTestHelper.CreateNavigationServiceMock().Object);
@@ -129,6 +142,7 @@ public class CategoriesViewModelTests
 
         CategoriesViewModel viewModel = new(
             categoryServiceMock.Object,
+            CreateAlertThresholdService(),
             ViewModelTestHelper.CreateAuthenticationServiceMock(null).Object,
             ViewModelTestHelper.CreateDialogServiceMock().Object,
             ViewModelTestHelper.CreateNavigationServiceMock().Object);

@@ -17,7 +17,14 @@ public class ExpensesListViewModelTests
     {
         User user = ViewModelTestHelper.CreateUser(devise: "EUR");
         Mock<IExpenseService> expenseServiceMock = new();
+        Mock<IBudgetService> budgetServiceMock = new();
         Mock<ICategoryService> categoryServiceMock = new();
+
+        budgetServiceMock.Setup(x => x.GetBudgetsAsync(user.Id))
+            .ReturnsAsync(ServiceResult<List<Budget>>.Success(new List<Budget>
+            {
+                new() { Id = 1, UserId = user.Id, Amount = 100m, StartDate = DateTime.Today, EndDate = DateTime.Today.AddDays(27), IsActive = true }
+            }));
 
         expenseServiceMock.Setup(x => x.GetExpensesAsync(user.Id))
             .ReturnsAsync(ServiceResult<List<Expense>>.Success(new List<Expense>
@@ -35,6 +42,7 @@ public class ExpensesListViewModelTests
 
         ExpensesListViewModel viewModel = new(
             expenseServiceMock.Object,
+            budgetServiceMock.Object,
             categoryServiceMock.Object,
             ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
             ViewModelTestHelper.CreateDialogServiceMock().Object,
@@ -55,10 +63,18 @@ public class ExpensesListViewModelTests
     public async Task AddExpenseCommand_NavigatesToAddExpensePage()
     {
         User user = ViewModelTestHelper.CreateUser();
+        Mock<IBudgetService> budgetServiceMock = new();
         Mock<INavigationService> navigationServiceMock = ViewModelTestHelper.CreateNavigationServiceMock();
+
+        budgetServiceMock.Setup(x => x.GetBudgetsAsync(user.Id))
+            .ReturnsAsync(ServiceResult<List<Budget>>.Success(new List<Budget>
+            {
+                new() { Id = 1, UserId = user.Id, Amount = 100m, StartDate = DateTime.Today, EndDate = DateTime.Today.AddDays(27), IsActive = true }
+            }));
 
         ExpensesListViewModel viewModel = new(
             new Mock<IExpenseService>().Object,
+            budgetServiceMock.Object,
             new Mock<ICategoryService>().Object,
             ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
             ViewModelTestHelper.CreateDialogServiceMock().Object,
@@ -74,10 +90,18 @@ public class ExpensesListViewModelTests
     public async Task QuickAddExpenseCommand_NavigatesToQuickAddExpensePage()
     {
         User user = ViewModelTestHelper.CreateUser();
+        Mock<IBudgetService> budgetServiceMock = new();
         Mock<INavigationService> navigationServiceMock = ViewModelTestHelper.CreateNavigationServiceMock();
+
+        budgetServiceMock.Setup(x => x.GetBudgetsAsync(user.Id))
+            .ReturnsAsync(ServiceResult<List<Budget>>.Success(new List<Budget>
+            {
+                new() { Id = 1, UserId = user.Id, Amount = 100m, StartDate = DateTime.Today, EndDate = DateTime.Today.AddDays(27), IsActive = true }
+            }));
 
         ExpensesListViewModel viewModel = new(
             new Mock<IExpenseService>().Object,
+            budgetServiceMock.Object,
             new Mock<ICategoryService>().Object,
             ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
             ViewModelTestHelper.CreateDialogServiceMock().Object,
@@ -97,6 +121,7 @@ public class ExpensesListViewModelTests
 
         ExpensesListViewModel viewModel = new(
             new Mock<IExpenseService>().Object,
+            new Mock<IBudgetService>().Object,
             new Mock<ICategoryService>().Object,
             ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
             ViewModelTestHelper.CreateDialogServiceMock().Object,
@@ -123,6 +148,7 @@ public class ExpensesListViewModelTests
 
         ExpensesListViewModel viewModel = new(
             expenseServiceMock.Object,
+            new Mock<IBudgetService>().Object,
             new Mock<ICategoryService>().Object,
             ViewModelTestHelper.CreateAuthenticationServiceMock(null).Object,
             ViewModelTestHelper.CreateDialogServiceMock().Object,

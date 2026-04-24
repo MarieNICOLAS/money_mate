@@ -12,6 +12,12 @@
     <views:BasePage.PageContent>
         <ScrollView>
             <VerticalStackLayout Spacing="20" Padding="24">
+                <Label Text="{Binding Source={x:Reference Page}, Path=Title}"
+                       FontSize="24"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextDark}"
+                       HorizontalOptions="Start" />
+
                 <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
                     <VerticalStackLayout Grid.Column="0" Spacing="4">
                         <Label Text="Consultez vos opérations récentes et vos totaux." TextColor="{StaticResource Secondary}" />

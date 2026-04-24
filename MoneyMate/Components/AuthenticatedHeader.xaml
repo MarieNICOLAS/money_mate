@@ -35,11 +35,6 @@
                        FontAttributes="Bold"
                        TextColor="{StaticResource TextLight}"
                        LineBreakMode="TailTruncation" />
-                <Label Text="{Binding Source={x:Reference this}, Path=UserName}"
-                       FontSize="12"
-                       TextColor="{StaticResource TextLight}"
-                       Opacity="0.9"
-                       LineBreakMode="TailTruncation" />
             </VerticalStackLayout>
 
             <Button Grid.Column="3"

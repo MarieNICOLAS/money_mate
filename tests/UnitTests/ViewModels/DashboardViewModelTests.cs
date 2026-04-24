@@ -43,7 +43,9 @@ public class DashboardViewModelTests
 
         await viewModel.LoadAsync();
 
-        Assert.AreEqual("user@test.com", viewModel.UserName);
+        Assert.AreEqual("user", viewModel.UserName);
+        Assert.AreEqual("Bonjour user", viewModel.GreetingText);
+        Assert.IsFalse(string.IsNullOrWhiteSpace(viewModel.TodayDisplay));
         Assert.AreEqual("3", viewModel.ExpensesCountDisplay);
         Assert.AreEqual("2", viewModel.ActiveBudgetsDisplay);
         Assert.AreEqual("1", viewModel.TriggeredAlertsDisplay);

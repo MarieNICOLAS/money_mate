@@ -11,8 +11,12 @@ namespace MoneyMate.ViewModels.Expenses;
 /// </summary>
 public class QuickAddExpenseViewModel : FormViewModelBase
 {
+    private const string BudgetRequiredMessage = "Créez d’abord un budget avant d’ajouter une dépense.";
+
     private readonly IExpenseService _expenseService;
+    private readonly IBudgetService _budgetService;
     private readonly ICategoryService _categoryService;
+    private List<Budget> _activeBudgets = [];
     private string _amountText = string.Empty;
     private int _selectedCategoryId;
     private CategoryOptionViewModel? _selectedCategory;
@@ -20,6 +24,7 @@ public class QuickAddExpenseViewModel : FormViewModelBase
 
     public QuickAddExpenseViewModel(
         IExpenseService expenseService,
+        IBudgetService budgetService,
         ICategoryService categoryService,
         IAuthenticationService authenticationService,
         IDialogService dialogService,
@@ -27,6 +32,7 @@ public class QuickAddExpenseViewModel : FormViewModelBase
         : base(authenticationService, dialogService, navigationService)
     {
         _expenseService = expenseService ?? throw new ArgumentNullException(nameof(expenseService));
+        _budgetService = budgetService ?? throw new ArgumentNullException(nameof(budgetService));
         _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
         Categories = [];
         Title = "Ajout rapide";
@@ -71,12 +77,18 @@ public class QuickAddExpenseViewModel : FormViewModelBase
         set => SetFormProperty(ref _note, value);
     }
 
+    public bool HasAvailableBudget => _activeBudgets.Count > 0;
+
+    public string BudgetRequirementMessage => BudgetRequiredMessage;
+
     protected override string EditParameterKey => NavigationParameterKeys.ExpenseId;
 
     protected override bool CanDeleteEntity => false;
 
     protected override async Task LoadLookupsAsync()
     {
+        await LoadBudgetsAsync();
+
         var result = await _categoryService.GetCategoriesAsync(CurrentUserId);
         if (!result.IsSuccess)
         {
@@ -112,11 +124,17 @@ public class QuickAddExpenseViewModel : FormViewModelBase
         if (CurrentUserId <= 0)
             return "Aucune session utilisateur active.";
 
+        if (!HasAvailableBudget)
+            return BudgetRequiredMessage;
+
         if (!TryParseDecimalInput(AmountText, out decimal amount) || amount <= 0)
             return "Le montant doit être strictement positif.";
 
         if (SelectedCategoryId <= 0)
             return "La catégorie est requise.";
+
+        if (!HasBudgetForDate(DateTime.Today))
+            return "Aucun budget actif ne couvre la date du jour.";
 
         return string.Empty;
     }
@@ -144,5 +162,51 @@ public class QuickAddExpenseViewModel : FormViewModelBase
 
         await NavigationService.NavigateToAsync(AppRoutes.ExpensesList);
         return true;
+    }
+
+    private async Task LoadBudgetsAsync()
+    {
+        var result = await _budgetService.GetBudgetsAsync(CurrentUserId);
+        if (!result.IsSuccess)
+        {
+            ErrorMessage = result.Message;
+            _activeBudgets = [];
+            OnPropertyChanged(nameof(HasAvailableBudget));
+            return;
+        }
+
+        _activeBudgets = (result.Data ?? [])
+            .Where(budget => budget.IsActive)
+            .Select(NormalizeBudget)
+            .ToList();
+
+        OnPropertyChanged(nameof(HasAvailableBudget));
+    }
+
+    private bool HasBudgetForDate(DateTime date)
+    {
+        DateTime targetDate = date.Date;
+
+        return _activeBudgets.Any(budget =>
+            targetDate >= budget.StartDate.Date &&
+            targetDate <= (budget.EndDate ?? DateTime.MaxValue).Date);
+    }
+
+    private static Budget NormalizeBudget(Budget budget)
+    {
+        DateTime startDate = new(budget.StartDate.Year, budget.StartDate.Month, 1);
+
+        return new Budget
+        {
+            Id = budget.Id,
+            UserId = budget.UserId,
+            CategoryId = budget.CategoryId,
+            Amount = budget.Amount,
+            PeriodType = budget.PeriodType,
+            StartDate = startDate,
+            EndDate = (budget.EndDate ?? startDate.AddMonths(1).AddDays(-1)).Date,
+            IsActive = budget.IsActive,
+            CreatedAt = budget.CreatedAt
+        };
     }
 }

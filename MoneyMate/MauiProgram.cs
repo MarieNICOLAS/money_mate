@@ -10,6 +10,7 @@ using MoneyMate.Services.Interfaces;
 using MoneyMate.ViewModels.Alerts;
 using MoneyMate.ViewModels.Auth;
 using MoneyMate.ViewModels.Budgets;
+using MoneyMate.ViewModels.Calendar;
 using MoneyMate.ViewModels.Categories;
 using MoneyMate.ViewModels.Dashboard;
 using MoneyMate.ViewModels.Expenses;
@@ -123,6 +124,7 @@ public static class MauiProgram
         builder.Services.AddTransient<BudgetFormViewModel>();
         builder.Services.AddTransient<AlertThresholdsViewModel>();
         builder.Services.AddTransient<AlertThresholdFormViewModel>();
+        builder.Services.AddTransient<CalendarViewModel>();
         builder.Services.AddTransient<FixedChargesViewModel>();
         builder.Services.AddTransient<FixedChargeFormViewModel>();
 

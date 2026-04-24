@@ -17,6 +17,7 @@ public class CategoryFormViewModelTests
     {
         User user = ViewModelTestHelper.CreateUser();
         Mock<ICategoryService> categoryServiceMock = new();
+        Mock<IAlertThresholdService> alertThresholdServiceMock = new();
 
         categoryServiceMock.Setup(x => x.GetCategoryByIdAsync(12, user.Id))
             .ReturnsAsync(ServiceResult<Category>.Success(new Category
@@ -32,8 +33,12 @@ public class CategoryFormViewModelTests
                 CreatedAt = DateTime.UtcNow.AddDays(-2)
             }));
 
+        alertThresholdServiceMock.Setup(x => x.GetAlertThresholdsAsync(user.Id))
+            .ReturnsAsync(ServiceResult<List<AlertThreshold>>.Success([]));
+
         CategoryFormViewModel viewModel = new(
             categoryServiceMock.Object,
+            alertThresholdServiceMock.Object,
             ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
             ViewModelTestHelper.CreateDialogServiceMock().Object,
             ViewModelTestHelper.CreateNavigationServiceMock().Object);
@@ -55,13 +60,18 @@ public class CategoryFormViewModelTests
     {
         User user = ViewModelTestHelper.CreateUser();
         Mock<ICategoryService> categoryServiceMock = new();
+        Mock<IAlertThresholdService> alertThresholdServiceMock = new();
         Mock<INavigationService> navigationServiceMock = ViewModelTestHelper.CreateNavigationServiceMock();
 
         categoryServiceMock.Setup(x => x.CreateCategoryAsync(It.IsAny<Category>()))
             .ReturnsAsync(ServiceResult<Category>.Success(new Category { Id = 1, UserId = user.Id, Name = "Sport" }));
 
+        alertThresholdServiceMock.Setup(x => x.GetAlertThresholdsAsync(user.Id))
+            .ReturnsAsync(ServiceResult<List<AlertThreshold>>.Success([]));
+
         CategoryFormViewModel viewModel = new(
             categoryServiceMock.Object,
+            alertThresholdServiceMock.Object,
             ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
             ViewModelTestHelper.CreateDialogServiceMock().Object,
             navigationServiceMock.Object);
@@ -86,9 +96,11 @@ public class CategoryFormViewModelTests
     {
         User user = ViewModelTestHelper.CreateUser();
         Mock<ICategoryService> categoryServiceMock = new();
+        Mock<IAlertThresholdService> alertThresholdServiceMock = new();
 
         CategoryFormViewModel viewModel = new(
             categoryServiceMock.Object,
+            alertThresholdServiceMock.Object,
             ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
             ViewModelTestHelper.CreateDialogServiceMock().Object,
             ViewModelTestHelper.CreateNavigationServiceMock().Object);

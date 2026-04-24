@@ -45,6 +45,9 @@ public class DashboardViewModel : AuthenticatedViewModelBase
 
         RefreshCommand = new Command(async () => await LoadAsync());
         LogoutCommand = new Command(async () => await LogoutAsync());
+        OpenCalendarCommand = new Command(async () => await NavigationService.NavigateToAsync(AppRoutes.Calendar));
+        OpenFixedChargesCommand = new Command(async () => await NavigationService.NavigateToAsync(AppRoutes.FixedCharges));
+        OpenAlertsCommand = new Command(async () => await NavigationService.NavigateToAsync(AppRoutes.AlertThreshold));
 
         UpdateCurrentUserContext();
         ApplySummary(new DashboardSummary());
@@ -59,6 +62,12 @@ public class DashboardViewModel : AuthenticatedViewModelBase
     public ICommand RefreshCommand { get; }
 
     public ICommand LogoutCommand { get; }
+
+    public ICommand OpenCalendarCommand { get; }
+
+    public ICommand OpenFixedChargesCommand { get; }
+
+    public ICommand OpenAlertsCommand { get; }
 
     public string UserName
     {

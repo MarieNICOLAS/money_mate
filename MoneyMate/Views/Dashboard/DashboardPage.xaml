@@ -44,17 +44,6 @@
                            TextColor="#E57373"
                            FontAttributes="Bold" />
 
-                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="12">
-                        <components:StatCard Grid.Row="0" Grid.Column="0" Title="Dépenses du mois" Value="{Binding CurrentMonthExpensesDisplay}" Icon="💸" CardColor="#6793AE" />
-                        <components:StatCard Grid.Row="0" Grid.Column="1" Title="Opérations" Value="{Binding ExpensesCountDisplay}" Icon="🧾" CardColor="#7D8F69" />
-                        <components:StatCard Grid.Row="1" Grid.Column="0" Title="Budgets actifs" Value="{Binding ActiveBudgetsDisplay}" Icon="📊" CardColor="#8D6E63" />
-                        <components:StatCard Grid.Row="1" Grid.Column="1" Title="Charges fixes" Value="{Binding ActiveFixedChargesDisplay}" Icon="📅" CardColor="#7986CB" />
-                        <components:StatCard Grid.Row="2" Grid.Column="0" Title="Alertes actives" Value="{Binding ActiveAlertsDisplay}" Icon="🔔" CardColor="#FFB74D" />
-                        <components:StatCard Grid.Row="2" Grid.Column="1" Title="Alertes déclenchées" Value="{Binding TriggeredAlertsDisplay}" Icon="🚨" CardColor="#E57373" />
-                        <components:StatCard Grid.Row="3" Grid.Column="0" Title="Budgets à risque" Value="{Binding BudgetsAtRiskDisplay}" Icon="⚠️" CardColor="#A1887F" />
-                        <components:StatCard Grid.Row="3" Grid.Column="1" Title="Écart vs mois dernier" Value="{Binding PreviousMonthDeltaDisplay}" Icon="📈" CardColor="#4DB6AC" />
-                    </Grid>
-
                     <Border Padding="18" Stroke="#D6E1EA" StrokeThickness="1" BackgroundColor="White">
                         <Border.StrokeShape>
                             <RoundRectangle CornerRadius="18" />
@@ -82,6 +71,24 @@
                             </VerticalStackLayout>
                         </Grid>
                     </Border>
+
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
+                        <Button Grid.Column="0"
+                                Text="Calendrier"
+                                Command="{Binding OpenCalendarCommand}"
+                                BackgroundColor="#F3F8FC"
+                                TextColor="{StaticResource TextDark}" />
+                        <Button Grid.Column="1"
+                                Text="Charges fixes"
+                                Command="{Binding OpenFixedChargesCommand}"
+                                BackgroundColor="#EEF7EE"
+                                TextColor="{StaticResource TextDark}" />
+                        <Button Grid.Column="2"
+                                Text="Alertes"
+                                Command="{Binding OpenAlertsCommand}"
+                                BackgroundColor="#FFF6E9"
+                                TextColor="{StaticResource TextDark}" />
+                    </Grid>
 
                     <Label Text="Top catégories du mois"
                            Style="{StaticResource SectionTitle}" />

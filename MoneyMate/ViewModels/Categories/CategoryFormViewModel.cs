@@ -13,6 +13,7 @@ namespace MoneyMate.ViewModels.Categories;
 public class CategoryFormViewModel : FormViewModelBase
 {
     private readonly ICategoryService _categoryService;
+    private readonly IAlertThresholdService _alertThresholdService;
     private string _name = string.Empty;
     private string _description = string.Empty;
     private string _colorHex = "#6B7A8F";
@@ -20,15 +21,20 @@ public class CategoryFormViewModel : FormViewModelBase
     private bool _isActive = true;
     private DateTime _createdAt = DateTime.UtcNow;
     private bool _isSystemCategory;
+    private bool _enableCategoryAlert;
+    private string _categoryAlertThresholdPercentageText = "80";
+    private string _categoryAlertMessage = string.Empty;
 
     public CategoryFormViewModel(
         ICategoryService categoryService,
+        IAlertThresholdService alertThresholdService,
         IAuthenticationService authenticationService,
         IDialogService dialogService,
         INavigationService navigationService)
         : base(authenticationService, dialogService, navigationService)
     {
         _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
+        _alertThresholdService = alertThresholdService ?? throw new ArgumentNullException(nameof(alertThresholdService));
         Title = "Catégorie";
         SelectColorCommand = new Command<string>(SelectColor);
         SelectIconCommand = new Command<string>(SelectIcon);
@@ -73,6 +79,24 @@ public class CategoryFormViewModel : FormViewModelBase
 
     public bool IsCustomCategory => !IsSystemCategory;
 
+    public bool EnableCategoryAlert
+    {
+        get => _enableCategoryAlert;
+        set => SetFormProperty(ref _enableCategoryAlert, value);
+    }
+
+    public string CategoryAlertThresholdPercentageText
+    {
+        get => _categoryAlertThresholdPercentageText;
+        set => SetFormProperty(ref _categoryAlertThresholdPercentageText, value);
+    }
+
+    public string CategoryAlertMessage
+    {
+        get => _categoryAlertMessage;
+        set => SetFormProperty(ref _categoryAlertMessage, value);
+    }
+
     protected override string EditParameterKey => NavigationParameterKeys.CategoryId;
 
     protected override string? CancelNavigationFallbackRoute => AppRoutes.CategoriesList;
@@ -88,6 +112,9 @@ public class CategoryFormViewModel : FormViewModelBase
         Icon = "💰";
         IsActive = true;
         IsSystemCategory = false;
+        EnableCategoryAlert = false;
+        CategoryAlertThresholdPercentageText = "80";
+        CategoryAlertMessage = string.Empty;
         _createdAt = DateTime.UtcNow;
         OnPropertyChanged(nameof(IsCustomCategory));
         OnPropertyChanged(nameof(CanEditSystemCategory));
@@ -112,6 +139,8 @@ public class CategoryFormViewModel : FormViewModelBase
         IsActive = category.IsActive;
         IsSystemCategory = category.IsSystem;
         _createdAt = category.CreatedAt;
+
+        await LoadCategoryAlertAsync(category.Id);
 
         OnPropertyChanged(nameof(IsCustomCategory));
         OnPropertyChanged(nameof(CanEditSystemCategory));
@@ -138,6 +167,12 @@ public class CategoryFormViewModel : FormViewModelBase
         catch
         {
             return "La couleur doit être au format hexadécimal.";
+        }
+
+        if (EnableCategoryAlert)
+        {
+            if (!TryParseDecimalInput(CategoryAlertThresholdPercentageText, out decimal threshold) || threshold < 0 || threshold > 100)
+                return "Le seuil d'alerte de la catégorie doit être compris entre 0 et 100.";
         }
 
         return string.Empty;
@@ -167,6 +202,10 @@ public class CategoryFormViewModel : FormViewModelBase
             ErrorMessage = result.Message;
             return false;
         }
+
+        Category savedCategory = result.Data ?? category;
+        if (!await SyncCategoryAlertAsync(savedCategory.Id, savedCategory.Name))
+            return false;
 
         await NavigationService.NavigateToAsync(AppRoutes.CategoriesList);
         return true;
@@ -237,4 +276,82 @@ public class CategoryFormViewModel : FormViewModelBase
     public ICommand SelectIconCommand { get; }
 
     public bool CanEditSystemCategory => !IsSystemCategory;
+
+    private async Task LoadCategoryAlertAsync(int categoryId)
+    {
+        var alertsResult = await _alertThresholdService.GetAlertThresholdsAsync(CurrentUserId);
+        if (!alertsResult.IsSuccess)
+        {
+            ErrorMessage = alertsResult.Message;
+            EnableCategoryAlert = false;
+            CategoryAlertThresholdPercentageText = "80";
+            CategoryAlertMessage = string.Empty;
+            return;
+        }
+
+        AlertThreshold? existingCategoryAlert = (alertsResult.Data ?? [])
+            .FirstOrDefault(alert => alert.CategoryId == categoryId && !alert.BudgetId.HasValue);
+
+        EnableCategoryAlert = existingCategoryAlert is not null;
+        CategoryAlertThresholdPercentageText = existingCategoryAlert?.ThresholdPercentage.ToString("0.##") ?? "80";
+        CategoryAlertMessage = existingCategoryAlert?.Message ?? string.Empty;
+    }
+
+    private async Task<bool> SyncCategoryAlertAsync(int categoryId, string categoryName)
+    {
+        var alertsResult = await _alertThresholdService.GetAlertThresholdsAsync(CurrentUserId);
+        if (!alertsResult.IsSuccess)
+        {
+            ErrorMessage = alertsResult.Message;
+            return false;
+        }
+
+        AlertThreshold? existingCategoryAlert = (alertsResult.Data ?? [])
+            .FirstOrDefault(alert => alert.CategoryId == categoryId && !alert.BudgetId.HasValue);
+
+        if (!EnableCategoryAlert)
+        {
+            if (existingCategoryAlert is null)
+                return true;
+
+            var deleteResult = await _alertThresholdService.DeleteAlertThresholdAsync(existingCategoryAlert.Id, CurrentUserId);
+            if (!deleteResult.IsSuccess)
+            {
+                ErrorMessage = deleteResult.Message;
+                return false;
+            }
+
+            return true;
+        }
+
+        _ = TryParseDecimalInput(CategoryAlertThresholdPercentageText, out decimal threshold);
+
+        AlertThreshold alertThreshold = new()
+        {
+            Id = existingCategoryAlert?.Id ?? 0,
+            UserId = CurrentUserId,
+            BudgetId = null,
+            CategoryId = categoryId,
+            ThresholdPercentage = threshold,
+            AlertType = existingCategoryAlert?.AlertType ?? "Warning",
+            Message = string.IsNullOrWhiteSpace(CategoryAlertMessage)
+                ? $"Seuil atteint pour la catégorie {categoryName}."
+                : CategoryAlertMessage.Trim(),
+            IsActive = existingCategoryAlert?.IsActive ?? true,
+            SendNotification = existingCategoryAlert?.SendNotification ?? true,
+            CreatedAt = existingCategoryAlert?.CreatedAt ?? DateTime.UtcNow
+        };
+
+        var saveAlertResult = existingCategoryAlert is null
+            ? await _alertThresholdService.CreateAlertThresholdAsync(alertThreshold)
+            : await _alertThresholdService.UpdateAlertThresholdAsync(alertThreshold);
+
+        if (!saveAlertResult.IsSuccess)
+        {
+            ErrorMessage = saveAlertResult.Message;
+            return false;
+        }
+
+        return true;
+    }
 }

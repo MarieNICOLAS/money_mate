@@ -1,16 +1,153 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
+                xmlns:components="clr-namespace:MoneyMate.Components"
+                xmlns:viewModels="clr-namespace:MoneyMate.ViewModels.Calendar"
                 x:Class="MoneyMate.Views.Calendar.CalendarPage"
+                x:DataType="viewModels:CalendarViewModel"
                 Title="Calendrier"
                 UseAuthenticatedFooter="True">
     <views:BasePage.PageContent>
-        <VerticalStackLayout Spacing="20" Padding="30">
-            <Label
-                Text="Vue Calendrier"
-                Style="{StaticResource PageTitle}"
-                HorizontalOptions="Center" />
-        </VerticalStackLayout>
+        <ScrollView>
+            <VerticalStackLayout Spacing="20" Padding="24">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <VerticalStackLayout Grid.Column="0" Spacing="4">
+                        <Label Text="Calendrier"
+                               Style="{StaticResource PageTitle}" />
+                        <Label Text="Visualisez vos dépenses et charges fixes mois par mois."
+                               TextColor="{StaticResource Secondary}" />
+                    </VerticalStackLayout>
+                    <Button Grid.Column="1"
+                            Text="Actualiser"
+                            Command="{Binding RefreshCommand}"
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="White" />
+                </Grid>
+
+                <Border Padding="16" StrokeThickness="0" BackgroundColor="#F3F8FC">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16" />
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="12">
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                            <Button Grid.Column="0"
+                                    Text="←"
+                                    Command="{Binding PreviousMonthCommand}"
+                                    BackgroundColor="White"
+                                    TextColor="{StaticResource TextDark}" />
+                            <VerticalStackLayout Grid.Column="1" Spacing="2" HorizontalOptions="Center">
+                                <Label Text="{Binding MonthLabel}"
+                                       FontSize="22"
+                                       FontAttributes="Bold"
+                                       HorizontalTextAlignment="Center" />
+                                <Label Text="{Binding MonthPeriodLabel}"
+                                       TextColor="{StaticResource Secondary}"
+                                       HorizontalTextAlignment="Center" />
+                            </VerticalStackLayout>
+                            <Button Grid.Column="2"
+                                    Text="→"
+                                    Command="{Binding NextMonthCommand}"
+                                    BackgroundColor="White"
+                                    TextColor="{StaticResource TextDark}" />
+                        </Grid>
+
+                        <Button Text="Aujourd’hui"
+                                Command="{Binding CurrentMonthCommand}"
+                                BackgroundColor="Transparent"
+                                TextColor="{StaticResource Primary}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Label Text="{Binding ErrorMessage}"
+                       IsVisible="{Binding HasError}"
+                       TextColor="#E57373"
+                       FontAttributes="Bold" />
+
+                <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                   IsVisible="{Binding IsBusy}"
+                                   Color="{StaticResource Primary}" />
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Border Grid.Column="0" Padding="16" StrokeThickness="0" BackgroundColor="#EEF7EE">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="14" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Dépenses du mois" TextColor="{StaticResource Secondary}" />
+                            <Label Text="{Binding MonthExpensesDisplay}" FontSize="22" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Border Grid.Column="1" Padding="16" StrokeThickness="0" BackgroundColor="#FFF6E9">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="14" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Charges fixes prévues" TextColor="{StaticResource Secondary}" />
+                            <Label Text="{Binding MonthFixedChargesDisplay}" FontSize="22" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <Label Text="Événements du mois"
+                       Style="{StaticResource SectionTitle}" />
+
+                <CollectionView ItemsSource="{Binding DayGroups}"
+                                IsVisible="{Binding HasDayGroups}">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="viewModels:CalendarDayGroupViewModel">
+                            <Border Padding="16" Margin="0,4" Stroke="#D6E1EA" StrokeThickness="1" BackgroundColor="White">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="14" />
+                                </Border.StrokeShape>
+
+                                <VerticalStackLayout Spacing="12">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                        <Label Text="{Binding DayLabel}"
+                                               FontAttributes="Bold"
+                                               FontSize="16" />
+                                        <Label Grid.Column="1"
+                                               Text="{Binding TotalAmountDisplay}"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource Accent}" />
+                                    </Grid>
+
+                                    <VerticalStackLayout Spacing="8"
+                                                         BindableLayout.ItemsSource="{Binding Items}">
+                                        <BindableLayout.ItemTemplate>
+                                            <DataTemplate x:DataType="viewModels:CalendarItemViewModel">
+                                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                                                    <Label Text="{Binding Icon}"
+                                                           FontSize="18"
+                                                           VerticalTextAlignment="Center" />
+                                                    <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                                        <Label Text="{Binding Title}"
+                                                               FontAttributes="Bold"
+                                                               LineBreakMode="TailTruncation" />
+                                                        <Label Text="{Binding Subtitle}"
+                                                               TextColor="{StaticResource Secondary}"
+                                                               LineBreakMode="TailTruncation" />
+                                                    </VerticalStackLayout>
+                                                    <Label Grid.Column="2"
+                                                           Text="{Binding AmountDisplay}"
+                                                           FontAttributes="Bold"
+                                                           VerticalTextAlignment="Center"
+                                                           TextColor="{StaticResource TextDark}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </BindableLayout.ItemTemplate>
+                                    </VerticalStackLayout>
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <components:EmptyStateView IsVisible="{Binding HasDayGroups, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"
+                                           Icon="📅"
+                                           Message="Aucun événement sur cette période." />
+            </VerticalStackLayout>
+        </ScrollView>
     </views:BasePage.PageContent>
 </views:BasePage>

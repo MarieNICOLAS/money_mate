@@ -1,3 +1,4 @@
+﻿using MoneyMate.Configuration;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.ViewModels.Forms;
@@ -55,7 +56,7 @@ public class BudgetFormViewModel : FormViewModelBase
 
     protected override string EditParameterKey => NavigationParameterKeys.BudgetId;
 
-    protected override string? CancelNavigationFallbackRoute => "//BudgetsOverviewPage";
+    protected override string? CancelNavigationFallbackRoute => AppRoutes.BudgetsOverview;
 
     protected override Task InitializeForCreateAsync()
     {
@@ -132,7 +133,7 @@ public class BudgetFormViewModel : FormViewModelBase
             return false;
         }
 
-        await NavigationService.NavigateToAsync("//BudgetsOverviewPage");
+        await NavigationService.NavigateToAsync(AppRoutes.BudgetsOverview);
         return true;
     }
 
@@ -157,7 +158,7 @@ public class BudgetFormViewModel : FormViewModelBase
             return false;
         }
 
-        await NavigationService.NavigateToAsync("//BudgetsOverviewPage");
+        await NavigationService.NavigateToAsync(AppRoutes.BudgetsOverview);
         return true;
     }
 

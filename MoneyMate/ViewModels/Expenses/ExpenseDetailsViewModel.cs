@@ -1,4 +1,5 @@
 ﻿using Microsoft.Maui.Graphics;
+using MoneyMate.Configuration;
 using MoneyMate.Helpers;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
@@ -162,7 +163,7 @@ public class ExpenseDetailsViewModel : AuthenticatedViewModelBase
         if (ExpenseId <= 0)
             return;
 
-        await NavigationService.NavigateToAsync("//EditExpensePage", new Dictionary<string, object>
+        await NavigationService.NavigateToAsync(AppRoutes.EditExpense, new Dictionary<string, object>
         {
             [NavigationParameterKeys.ExpenseId] = ExpenseId
         });
@@ -191,7 +192,7 @@ public class ExpenseDetailsViewModel : AuthenticatedViewModelBase
                 return;
             }
 
-            await NavigationService.NavigateToAsync("//ExpensesListPage");
+            await NavigationService.NavigateToAsync(AppRoutes.ExpensesList);
         }, "Une erreur est survenue lors de la suppression de la dépense.");
     }
 
@@ -209,7 +210,7 @@ public class ExpenseDetailsViewModel : AuthenticatedViewModelBase
                 return;
             }
 
-            await NavigationService.NavigateToAsync("//ExpensesListPage");
+            await NavigationService.NavigateToAsync(AppRoutes.ExpensesList);
         }, "Une erreur est survenue lors de la duplication de la dépense.");
     }
 

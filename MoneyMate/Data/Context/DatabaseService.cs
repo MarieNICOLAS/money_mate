@@ -1,45 +1,68 @@
-﻿namespace MoneyMate.Data.Context
+﻿using MoneyMate.Data.Repositories;
+using MoneyMate.Models;
+using MoneyMate.Services.Common;
+
+namespace MoneyMate.Data.Context;
+
+public class DatabaseService
 {
-    /// <summary>
-    /// Service de configuration de la base de donn�es
-    /// G�re l'initialisation et la configuration SQLite
-    /// </summary>
-    public static class DatabaseService
+    private readonly IDataRepository<User> _userRepo;
+    private readonly IDataRepository<Expense> _expenseRepo;
+    private readonly IMemoryCacheService _cache;
+
+    public DatabaseService(
+        IDataRepository<User> userRepo,
+        IDataRepository<Expense> expenseRepo,
+        IMemoryCacheService cache)
     {
-        private static MoneyMateDbContext? _instance;
-        private static readonly object _lock = new();
+        _userRepo = userRepo;
+        _expenseRepo = expenseRepo;
+        _cache = cache;
+    }
 
-        /// <summary>
-        /// Obtient l'instance singleton du contexte de base de donn�es
-        /// </summary>
-        public static MoneyMateDbContext Instance
-        {
-            get
-            {
-                if (_instance == null)
-                {
-                    lock (_lock)
-                    {
-                        if (_instance == null)
-                        {
-                            // Utilisation du dossier AppData\Local de l'utilisateur
-                            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                            var dbPath = Path.Combine(localAppData, "MoneyMate.db3");
-                            _instance = new MoneyMateDbContext(dbPath);
-                        }
-                    }
-                }
-                return _instance;
-            }
-        }
+    // ========================
+    // USERS (cached)
+    // ========================
+    public async Task<List<User>> GetUsersAsync()
+    {
+        const string cacheKey = "users";
 
-        /// <summary>
-        /// Ferme la connexion � la base de donn�es
-        /// </summary>
-        public static void CloseConnection()
-        {
-            _instance?.Close();
-            _instance = null;
-        }
+        var cached = _cache.Get<List<User>>(cacheKey);
+        if (cached != null)
+            return cached;
+
+        var users = await _userRepo.GetAllAsync();
+
+        _cache.Set(cacheKey, users);
+
+        return users;
+    }
+
+    // ========================
+    // EXPENSES (optimized)
+    // ========================
+    public async Task<List<Expense>> GetExpensesByUserAsync(int userId)
+    {
+        var cacheKey = $"expenses_{userId}";
+
+        var cached = _cache.Get<List<Expense>>(cacheKey);
+        if (cached != null)
+            return cached;
+
+        var data = await _expenseRepo.FindAsync(e => e.UserId == userId);
+
+        var result = data
+            .OrderByDescending(e => e.DateOperation)
+            .Take(200) // 🔥 LIMIT PERF
+            .ToList();
+
+        _cache.Set(cacheKey, result);
+
+        return result;
+    }
+
+    public void InvalidateUserCache(int userId)
+    {
+        _cache.Remove($"expenses_{userId}");
     }
 }

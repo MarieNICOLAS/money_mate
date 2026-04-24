@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using MoneyMate.Configuration;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.ViewModels.Forms;
@@ -141,7 +142,7 @@ public class QuickAddExpenseViewModel : FormViewModelBase
             return false;
         }
 
-        await NavigationService.NavigateToAsync("//ExpensesListPage");
+        await NavigationService.NavigateToAsync(AppRoutes.ExpensesList);
         return true;
     }
 }

@@ -1,4 +1,4 @@
-using SQLite;
+﻿using SQLite;
 
 namespace MoneyMate.Models
 {
@@ -34,9 +34,7 @@ namespace MoneyMate.Models
         [Ignore]
         public User? User { get; set; }
 
-        // Compatibilité transitoire : l'ancien modèle liait un budget à une catégorie.
-        // Le MVP utilise désormais un budget mensuel global, cette propriété n'est plus exploitée.
-        [Ignore]
+        [Indexed]
         public int CategoryId { get; set; }
 
         [Ignore]

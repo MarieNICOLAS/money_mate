@@ -1,6 +1,7 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Microsoft.Maui.Graphics;
+using MoneyMate.Configuration;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.Services.Models;
@@ -30,8 +31,8 @@ public class BudgetsOverviewViewModel : AuthenticatedViewModelBase
         Budgets = [];
 
         RefreshCommand = new Command(async () => await LoadAsync());
-        AddBudgetCommand = new Command(async () => await NavigationService.NavigateToAsync("AddBudgetPage"));
-        ManageCategoriesCommand = new Command(async () => await NavigationService.NavigateToAsync("//CategoriesListPage"));
+        AddBudgetCommand = new Command(async () => await NavigationService.NavigateToAsync(AppRoutes.AddBudget));
+        ManageCategoriesCommand = new Command(async () => await NavigationService.NavigateToAsync(AppRoutes.CategoriesList));
         OpenEditBudgetCommand = new Command<BudgetOverviewItemViewModel>(async budget => await OpenEditBudgetAsync(budget));
     }
 
@@ -113,7 +114,7 @@ public class BudgetsOverviewViewModel : AuthenticatedViewModelBase
         if (budget == null)
             return;
 
-        await NavigationService.NavigateToAsync($"EditBudgetPage?{NavigationParameterKeys.BudgetId}={budget.Id}");
+        await NavigationService.NavigateToAsync($"{AppRoutes.EditBudget}?{NavigationParameterKeys.BudgetId}={budget.Id}");
     }
 }
 

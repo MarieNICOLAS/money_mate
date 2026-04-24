@@ -58,27 +58,6 @@ namespace UnitTests.Services
                     }
                 });
 
-            dbContextMock.Setup(x => x.GetExpensesByCategory(1, 2))
-                .Returns(new List<Expense>
-                {
-                    new()
-                    {
-                        Id = 1,
-                        UserId = 1,
-                        CategoryId = 2,
-                        Amount = 100m,
-                        DateOperation = currentMonthExpenseDate
-                    },
-                    new()
-                    {
-                        Id = 2,
-                        UserId = 1,
-                        CategoryId = 2,
-                        Amount = 50m,
-                        DateOperation = currentMonthExpenseDate.AddDays(1)
-                    }
-                });
-
             dbContextMock.Setup(x => x.GetBudgetsByUserId(1))
                 .Returns(new List<Budget>
                 {
@@ -111,36 +90,8 @@ namespace UnitTests.Services
                     }
                 });
 
-            dbContextMock.Setup(x => x.GetBudgetById(10, 1))
-                .Returns(new Budget
-                {
-                    Id = 10,
-                    UserId = 1,
-                    CategoryId = 2,
-                    Amount = 180m,
-                    PeriodType = "Monthly",
-                    StartDate = new DateTime(now.Year, now.Month, 1),
-                    EndDate = new DateTime(now.Year, now.Month, 28),
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow
-                });
-
-            dbContextMock.Setup(x => x.GetFixedChargesByUserId(1))
-                .Returns(new List<FixedCharge>
-                {
-                    new()
-                    {
-                        Id = 30,
-                        UserId = 1,
-                        Name = "Netflix",
-                        CategoryId = 2,
-                        Amount = 15.99m,
-                        Frequency = "Monthly",
-                        DayOfMonth = 5,
-                        StartDate = DateTime.Today,
-                        IsActive = true
-                    }
-                });
+            dbContextMock.Setup(x => x.GetActiveFixedChargesCountByUserId(1))
+                .Returns(1);
 
             dbContextMock.Setup(x => x.GetCategoriesByUserId(1))
                 .Returns(new List<Category>

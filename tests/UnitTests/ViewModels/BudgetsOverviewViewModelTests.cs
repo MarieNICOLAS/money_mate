@@ -1,5 +1,6 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using MoneyMate.Configuration;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.Services.Models;
@@ -79,7 +80,7 @@ public class BudgetsOverviewViewModelTests
         viewModel.AddBudgetCommand.Execute(null);
         await Task.Delay(100);
 
-        navigationServiceMock.Verify(x => x.NavigateToAsync("AddBudgetPage"), Times.Once);
+        navigationServiceMock.Verify(x => x.NavigateToAsync(AppRoutes.AddBudget), Times.Once);
     }
 
     [TestMethod]
@@ -98,7 +99,7 @@ public class BudgetsOverviewViewModelTests
         viewModel.ManageCategoriesCommand.Execute(null);
         await Task.Delay(100);
 
-        navigationServiceMock.Verify(x => x.NavigateToAsync("//CategoriesListPage"), Times.Once);
+        navigationServiceMock.Verify(x => x.NavigateToAsync(AppRoutes.CategoriesList), Times.Once);
     }
 
     [TestMethod]
@@ -118,7 +119,7 @@ public class BudgetsOverviewViewModelTests
         await Task.Delay(100);
 
         navigationServiceMock.Verify(
-            x => x.NavigateToAsync($"EditBudgetPage?{NavigationParameterKeys.BudgetId}=42"),
+            x => x.NavigateToAsync($"{AppRoutes.EditBudget}?{NavigationParameterKeys.BudgetId}=42"),
             Times.Once);
     }
 

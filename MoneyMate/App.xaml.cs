@@ -1,30 +1,40 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿namespace MoneyMate;
+
 using MoneyMate.Services.Interfaces;
 
-namespace MoneyMate
+public partial class App : Application
 {
-    public partial class App : Application
+    private readonly IStartupCoordinator _startupCoordinator;
+    private bool _startupCompleted;
+
+    public App(AppShell appShell, IStartupCoordinator startupCoordinator)
     {
-        private readonly IServiceProvider _serviceProvider;
-        private readonly IAuthenticationService _authenticationService;
+        InitializeComponent();
 
-        public App(IServiceProvider serviceProvider, IAuthenticationService authenticationService)
+        _startupCoordinator = startupCoordinator ?? throw new ArgumentNullException(nameof(startupCoordinator));
+        MainPage = appShell ?? throw new ArgumentNullException(nameof(appShell));
+    }
+
+    protected override Window CreateWindow(IActivationState? activationState)
+    {
+        Window window = base.CreateWindow(activationState);
+        window.Created += OnWindowCreated;
+        return window;
+    }
+
+    private async void OnWindowCreated(object? sender, EventArgs e)
+    {
+        if (_startupCompleted)
+            return;
+
+        _startupCompleted = true;
+
+        try
         {
-            _serviceProvider = serviceProvider;
-            _authenticationService = authenticationService;
-            InitializeComponent();
+            await _startupCoordinator.InitializeAsync();
         }
-
-        protected override Window CreateWindow(IActivationState? activationState)
+        catch
         {
-            _authenticationService.RestoreSession();
-
-            AppShell appShell = _serviceProvider.GetRequiredService<AppShell>();
-            Window window = new(appShell);
-
-            appShell.InitializeForCurrentSession();
-
-            return window;
         }
     }
 }

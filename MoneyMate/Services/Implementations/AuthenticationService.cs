@@ -1,15 +1,12 @@
 ﻿using MoneyMate.Data.Context;
 using MoneyMate.Helpers;
 using MoneyMate.Models;
+using MoneyMate.Services.Common;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.Services.Results;
 
 namespace MoneyMate.Services.Implementations
 {
-    /// <summary>
-    /// Service d'authentification avec hashage BCrypt.
-    /// Conforme aux exigences de sécurité du projet.
-    /// </summary>
     public class AuthenticationService : IAuthenticationService
     {
         private static readonly HashSet<string> AllowedCurrencies = new(StringComparer.OrdinalIgnoreCase)
@@ -21,331 +18,253 @@ namespace MoneyMate.Services.Implementations
             "CAD"
         };
 
-        private const int MIN_PASSWORD_LENGTH = 8;
+        private const int MinPasswordLength = 8;
+        private const int PasswordHashWorkFactor = 10;
+
         private readonly IMoneyMateDbContext _dbContext;
         private readonly ISessionManager _sessionManager;
 
-        /// <summary>
-        /// Événement déclenché lors d'un changement d'état de session.
-        /// </summary>
         public event EventHandler? AuthenticationStateChanged
         {
             add => _sessionManager.SessionChanged += value;
             remove => _sessionManager.SessionChanged -= value;
         }
 
-        /// <summary>
-        /// Initialise une nouvelle instance du service d'authentification.
-        /// </summary>
         public AuthenticationService(ISessionManager sessionManager)
-            : this(DatabaseService.Instance, sessionManager)
+            : this(DbContextFactory.CreateDefault(), sessionManager)
         {
         }
 
-        /// <summary>
-        /// Initialise une nouvelle instance du service d'authentification avec contexte injecté.
-        /// </summary>
         public AuthenticationService(IMoneyMateDbContext dbContext, ISessionManager sessionManager)
         {
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             _sessionManager = sessionManager ?? throw new ArgumentNullException(nameof(sessionManager));
         }
 
-        /// <summary>
-        /// Indique si un utilisateur est actuellement connecté.
-        /// </summary>
         public bool IsAuthenticated => _sessionManager.IsAuthenticated;
 
-        /// <summary>
-        /// Authentifie un utilisateur avec email et mot de passe.
-        /// </summary>
-        /// <param name="email">Email de l'utilisateur.</param>
-        /// <param name="password">Mot de passe en clair.</param>
-        /// <returns>Résultat contenant l'utilisateur authentifié si succès.</returns>
+        public User? GetCurrentUser() => _sessionManager.CurrentUser;
+
+        public Task<bool> RestoreSessionAsync(CancellationToken cancellationToken = default)
+            => _sessionManager.RestoreSessionAsync(cancellationToken);
+
+        public string GetRememberedEmail() => _sessionManager.GetRememberedEmail();
+
+        public bool GetRememberMePreference() => _sessionManager.GetRememberMePreference();
+
+        public bool HasRole(params string[] roles) => _sessionManager.HasRole(roles);
+
+        public bool CanAccessRoute(string route) => _sessionManager.CanAccessRoute(route);
+
         public async Task<ServiceResult<User>> LoginAsync(string email, string password, bool rememberSession = false)
         {
-            return await Task.Run(() =>
+            try
             {
-                try
+                if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
                 {
-                    if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
-                    {
-                        return ServiceResult<User>.Failure(
-                            "AUTH_INVALID_INPUT",
-                            "L'email et le mot de passe sont requis.");
-                    }
-
-                    string normalizedEmail = NormalizeEmail(email);
-                    User? user = _dbContext.GetUserByEmail(normalizedEmail);
-
-                    if (user == null)
-                    {
-                        return ServiceResult<User>.Failure(
-                            "AUTH_INVALID_CREDENTIALS",
-                            "Email ou mot de passe incorrect.");
-                    }
-
-                    if (!user.IsActive)
-                    {
-                        return ServiceResult<User>.Failure(
-                            "AUTH_ACCOUNT_INACTIVE",
-                            "Ce compte est désactivé.");
-                    }
-
-                    bool isPasswordValid = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
-
-                    if (!isPasswordValid)
-                    {
-                        return ServiceResult<User>.Failure(
-                            "AUTH_INVALID_CREDENTIALS",
-                            "Email ou mot de passe incorrect.");
-                    }
-
-                    _sessionManager.StartSession(user, rememberSession);
-
-                    return ServiceResult<User>.Success(
-                        user,
-                        "Connexion réussie.");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur LoginAsync : {ex.Message}");
-
                     return ServiceResult<User>.Failure(
-                        "AUTH_UNEXPECTED_ERROR",
-                        "Une erreur est survenue lors de la connexion.");
+                        "AUTH_INVALID_INPUT",
+                        "L'email et le mot de passe sont requis.");
                 }
-            });
+
+                string normalizedEmail = NormalizeEmail(email);
+
+                User? user = await Task.Run(() => _dbContext.GetUserByEmail(normalizedEmail));
+
+                if (user is null)
+                {
+                    return ServiceResult<User>.Failure(
+                        "AUTH_INVALID_CREDENTIALS",
+                        "Email ou mot de passe incorrect.");
+                }
+
+                if (!user.IsActive)
+                {
+                    return ServiceResult<User>.Failure(
+                        "AUTH_ACCOUNT_INACTIVE",
+                        "Ce compte est désactivé.");
+                }
+
+                bool isPasswordValid = await Task.Run(() => BCrypt.Net.BCrypt.Verify(password, user.PasswordHash));
+
+                if (!isPasswordValid)
+                {
+                    return ServiceResult<User>.Failure(
+                        "AUTH_INVALID_CREDENTIALS",
+                        "Email ou mot de passe incorrect.");
+                }
+
+                _sessionManager.StartSession(user, rememberSession);
+
+                return ServiceResult<User>.Success(user, "Connexion réussie.");
+            }
+            catch (Exception ex)
+            {
+#if DEBUG
+                System.Diagnostics.Debug.WriteLine($"Erreur LoginAsync : {ex}");
+#endif
+                return ServiceResult<User>.Failure(
+                    "AUTH_UNEXPECTED_ERROR",
+                    "Une erreur est survenue lors de la connexion.");
+            }
         }
 
-        /// <summary>
-        /// Enregistre un nouvel utilisateur.
-        /// </summary>
-        /// <param name="email">Email de l'utilisateur.</param>
-        /// <param name="password">Mot de passe en clair.</param>
-        /// <param name="devise">Devise préférée.</param>
-        /// <returns>Résultat contenant l'utilisateur créé si succès.</returns>
         public async Task<ServiceResult<User>> RegisterAsync(string email, string password, string devise = "EUR")
         {
-            return await Task.Run(() =>
+            try
             {
-                try
+                if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
                 {
-                    if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
-                    {
-                        return ServiceResult<User>.Failure(
-                            "AUTH_INVALID_INPUT",
-                            "L'email et le mot de passe sont requis.");
-                    }
-
-                    string normalizedEmail = NormalizeEmail(email);
-                    string normalizedCurrency = NormalizeCurrency(devise);
-
-                    if (!ValidationHelper.IsValidEmail(normalizedEmail))
-                    {
-                        return ServiceResult<User>.Failure(
-                            "AUTH_INVALID_EMAIL",
-                            "Le format de l'email est invalide.");
-                    }
-
-                    if (!AllowedCurrencies.Contains(normalizedCurrency))
-                    {
-                        return ServiceResult<User>.Failure(
-                            "AUTH_INVALID_CURRENCY",
-                            "La devise sélectionnée est invalide.");
-                    }
-
-                    if (!ValidatePasswordStrength(password))
-                    {
-                        return ServiceResult<User>.Failure(
-                            "AUTH_WEAK_PASSWORD",
-                            "Le mot de passe ne respecte pas les critères de sécurité.");
-                    }
-
-                    if (_dbContext.GetUserByEmail(normalizedEmail) != null)
-                    {
-                        return ServiceResult<User>.Failure(
-                            "AUTH_EMAIL_ALREADY_EXISTS",
-                            "Cet email est déjà utilisé.");
-                    }
-
-                    string passwordHash = BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
-
-                    User newUser = new()
-                    {
-                        Email = normalizedEmail,
-                        PasswordHash = passwordHash,
-                        Devise = normalizedCurrency,
-                        BudgetStartDay = 1,
-                        Role = "User",
-                        IsActive = true,
-                        CreatedAt = DateTime.UtcNow
-                    };
-
-                    int userId = _dbContext.InsertUser(newUser);
-                    if (userId <= 0)
-                    {
-                        return ServiceResult<User>.Failure(
-                            "AUTH_CREATE_USER_FAILED",
-                            "Impossible de créer le compte utilisateur.");
-                    }
-
-                    newUser.Id = userId;
-
-                    System.Diagnostics.Debug.WriteLine($"Utilisateur cree : {normalizedEmail} (ID: {userId})");
-
-                    return ServiceResult<User>.Success(
-                        newUser,
-                        "Compte créé avec succès.");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur RegisterAsync : {ex}");
-
                     return ServiceResult<User>.Failure(
-                        "AUTH_UNEXPECTED_ERROR",
-                        "Une erreur est survenue lors de l'inscription.");
+                        "AUTH_INVALID_INPUT",
+                        "L'email et le mot de passe sont requis.");
                 }
-            });
-        }
 
-        /// <summary>
-        /// Déconnecte l'utilisateur actuel.
-        /// </summary>
-        public async Task LogoutAsync(bool clearPersistentSession = true)
-        {
-            await Task.Run(() =>
+                string normalizedEmail = NormalizeEmail(email);
+                string normalizedCurrency = NormalizeCurrency(devise);
+
+                if (!ValidationHelper.IsValidEmail(normalizedEmail))
+                {
+                    return ServiceResult<User>.Failure(
+                        "AUTH_INVALID_EMAIL",
+                        "Le format de l'email est invalide.");
+                }
+
+                if (!AllowedCurrencies.Contains(normalizedCurrency))
+                {
+                    return ServiceResult<User>.Failure(
+                        "AUTH_INVALID_CURRENCY",
+                        "La devise sélectionnée est invalide.");
+                }
+
+                if (!ValidatePasswordStrength(password))
+                {
+                    return ServiceResult<User>.Failure(
+                        "AUTH_WEAK_PASSWORD",
+                        "Le mot de passe ne respecte pas les critères de sécurité.");
+                }
+
+                User? existingUser = await Task.Run(() => _dbContext.GetUserByEmail(normalizedEmail));
+                if (existingUser is not null)
+                {
+                    return ServiceResult<User>.Failure(
+                        "AUTH_EMAIL_ALREADY_EXISTS",
+                        "Cet email est déjà utilisé.");
+                }
+
+                string passwordHash = await Task.Run(() => BCrypt.Net.BCrypt.HashPassword(password, workFactor: PasswordHashWorkFactor));
+
+                User newUser = new()
+                {
+                    Email = normalizedEmail,
+                    PasswordHash = passwordHash,
+                    Devise = normalizedCurrency,
+                    BudgetStartDay = 1,
+                    Role = "User",
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                int userId = await Task.Run(() => _dbContext.InsertUser(newUser));
+
+                if (userId <= 0)
+                {
+                    return ServiceResult<User>.Failure(
+                        "AUTH_CREATE_USER_FAILED",
+                        "Impossible de créer le compte utilisateur.");
+                }
+
+                newUser.Id = userId;
+
+                return ServiceResult<User>.Success(newUser, "Compte créé avec succès.");
+            }
+            catch (Exception ex)
             {
-                _sessionManager.ClearSession(clearPersistentSession);
-                System.Diagnostics.Debug.WriteLine("Utilisateur déconnecté");
-            });
+#if DEBUG
+                System.Diagnostics.Debug.WriteLine($"Erreur RegisterAsync : {ex}");
+#endif
+                return ServiceResult<User>.Failure(
+                    "AUTH_UNEXPECTED_ERROR",
+                    "Une erreur est survenue lors de l'inscription.");
+            }
         }
 
-        /// <summary>
-        /// Récupère l'utilisateur actuellement connecté.
-        /// </summary>
-        /// <returns>L'utilisateur connecté ou null.</returns>
-        public User? GetCurrentUser()
-            => _sessionManager.CurrentUser;
+        public Task LogoutAsync(bool clearPersistentSession = true)
+        {
+            _sessionManager.ClearSession(clearPersistentSession);
+            return Task.CompletedTask;
+        }
 
-        /// <summary>
-        /// Restaure une session persistée si disponible.
-        /// </summary>
-        public bool RestoreSession()
-            => _sessionManager.RestoreSession();
-
-        /// <summary>
-        /// Retourne l'email mémorisé pour pré-remplir la connexion.
-        /// </summary>
-        public string GetRememberedEmail()
-            => _sessionManager.GetRememberedEmail();
-
-        /// <summary>
-        /// Retourne l'état de l'option de persistance de session.
-        /// </summary>
-        public bool GetRememberMePreference()
-            => _sessionManager.GetRememberMePreference();
-
-        /// <summary>
-        /// Vérifie si l'utilisateur courant possède au moins un des rôles demandés.
-        /// </summary>
-        public bool HasRole(params string[] roles)
-            => _sessionManager.HasRole(roles);
-
-        /// <summary>
-        /// Vérifie si l'utilisateur courant peut accéder à une route de navigation.
-        /// </summary>
-        public bool CanAccessRoute(string route)
-            => _sessionManager.CanAccessRoute(route);
-
-        /// <summary>
-        /// Change le mot de passe de l'utilisateur.
-        /// </summary>
-        /// <param name="userId">ID de l'utilisateur.</param>
-        /// <param name="oldPassword">Ancien mot de passe.</param>
-        /// <param name="newPassword">Nouveau mot de passe.</param>
-        /// <returns>Résultat de l'opération.</returns>
         public async Task<ServiceResult> ChangePasswordAsync(int userId, string oldPassword, string newPassword)
         {
-            return await Task.Run(() =>
+            try
             {
-                try
+                if (userId <= 0 || string.IsNullOrWhiteSpace(oldPassword) || string.IsNullOrWhiteSpace(newPassword))
                 {
-                    if (userId <= 0 || string.IsNullOrWhiteSpace(oldPassword) || string.IsNullOrWhiteSpace(newPassword))
-                    {
-                        return ServiceResult.Failure(
-                            "AUTH_INVALID_INPUT",
-                            "Les informations saisies sont invalides.");
-                    }
-
-                    User? user = _dbContext.GetUserById(userId);
-                    if (user == null)
-                    {
-                        return ServiceResult.Failure(
-                            "AUTH_USER_NOT_FOUND",
-                            "Utilisateur introuvable.");
-                    }
-
-                    bool isOldPasswordValid = BCrypt.Net.BCrypt.Verify(oldPassword, user.PasswordHash);
-                    if (!isOldPasswordValid)
-                    {
-                        return ServiceResult.Failure(
-                            "AUTH_INVALID_OLD_PASSWORD",
-                            "L'ancien mot de passe est incorrect.");
-                    }
-
-                    if (!ValidatePasswordStrength(newPassword))
-                    {
-                        return ServiceResult.Failure(
-                            "AUTH_WEAK_PASSWORD",
-                            "Le nouveau mot de passe ne respecte pas les critères de sécurité.");
-                    }
-
-                    if (string.Equals(oldPassword, newPassword, StringComparison.Ordinal))
-                    {
-                        return ServiceResult.Failure(
-                            "AUTH_SAME_PASSWORD",
-                            "Le nouveau mot de passe doit être différent de l'ancien.");
-                    }
-
-                    user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword, workFactor: 12);
-
-                    int updatedRows = _dbContext.UpdateUser(user);
-                    if (updatedRows != 1)
-                    {
-                        return ServiceResult.Failure(
-                            "AUTH_UPDATE_PASSWORD_FAILED",
-                            "La mise à jour du mot de passe a échoué.");
-                    }
-
-                    if (_sessionManager.CurrentUser?.Id == user.Id)
-                        _sessionManager.UpdateCurrentUser(user);
-
-                    System.Diagnostics.Debug.WriteLine($"Mot de passe change pour l utilisateur {userId}");
-
-                    return ServiceResult.Success("Mot de passe modifié avec succès.");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erreur ChangePasswordAsync : {ex.Message}");
-
                     return ServiceResult.Failure(
-                        "AUTH_UNEXPECTED_ERROR",
-                        "Une erreur est survenue lors du changement de mot de passe.");
+                        "AUTH_INVALID_INPUT",
+                        "Les informations saisies sont invalides.");
                 }
-            });
+
+                User? user = await Task.Run(() => _dbContext.GetUserById(userId));
+                if (user is null)
+                {
+                    return ServiceResult.Failure(
+                        "AUTH_USER_NOT_FOUND",
+                        "Utilisateur introuvable.");
+                }
+
+                bool isOldPasswordValid = await Task.Run(() => BCrypt.Net.BCrypt.Verify(oldPassword, user.PasswordHash));
+                if (!isOldPasswordValid)
+                {
+                    return ServiceResult.Failure(
+                        "AUTH_INVALID_OLD_PASSWORD",
+                        "L'ancien mot de passe est incorrect.");
+                }
+
+                if (!ValidatePasswordStrength(newPassword))
+                {
+                    return ServiceResult.Failure(
+                        "AUTH_WEAK_PASSWORD",
+                        "Le nouveau mot de passe ne respecte pas les critères de sécurité.");
+                }
+
+                if (string.Equals(oldPassword, newPassword, StringComparison.Ordinal))
+                {
+                    return ServiceResult.Failure(
+                        "AUTH_SAME_PASSWORD",
+                        "Le nouveau mot de passe doit être différent de l'ancien.");
+                }
+
+                user.PasswordHash = await Task.Run(() => BCrypt.Net.BCrypt.HashPassword(newPassword, workFactor: PasswordHashWorkFactor));
+
+                int updatedRows = await Task.Run(() => _dbContext.UpdateUser(user));
+                if (updatedRows != 1)
+                {
+                    return ServiceResult.Failure(
+                        "AUTH_UPDATE_PASSWORD_FAILED",
+                        "La mise à jour du mot de passe a échoué.");
+                }
+
+                if (_sessionManager.CurrentUser?.Id == user.Id)
+                    _sessionManager.UpdateCurrentUser(user);
+
+                return ServiceResult.Success("Mot de passe modifié avec succès.");
+            }
+            catch (Exception ex)
+            {
+#if DEBUG
+                System.Diagnostics.Debug.WriteLine($"Erreur ChangePasswordAsync : {ex}");
+#endif
+                return ServiceResult.Failure(
+                    "AUTH_UNEXPECTED_ERROR",
+                    "Une erreur est survenue lors du changement de mot de passe.");
+            }
         }
 
-        /// <summary>
-        /// Valide la force d'un mot de passe.
-        /// Exigences : 8 caractères minimum, 1 majuscule, 1 minuscule,
-        /// 1 chiffre, 1 caractère spécial.
-        /// </summary>
-        /// <param name="password">Mot de passe à valider.</param>
-        /// <returns>True si le mot de passe est valide.</returns>
         public bool ValidatePasswordStrength(string password)
         {
-            if (string.IsNullOrWhiteSpace(password) || password.Length < MIN_PASSWORD_LENGTH)
+            if (string.IsNullOrWhiteSpace(password) || password.Length < MinPasswordLength)
                 return false;
 
             bool hasUpperCase = password.Any(char.IsUpper);
@@ -353,23 +272,12 @@ namespace MoneyMate.Services.Implementations
             bool hasDigit = password.Any(char.IsDigit);
             bool hasSpecialChar = password.Any(character => !char.IsLetterOrDigit(character));
 
-            return hasUpperCase
-                && hasLowerCase
-                && hasDigit
-                && hasSpecialChar;
+            return hasUpperCase && hasLowerCase && hasDigit && hasSpecialChar;
         }
 
-        /// <summary>
-        /// Normalise un email pour stockage et comparaison.
-        /// </summary>
-        /// <param name="email">Email brut.</param>
-        /// <returns>Email normalisé.</returns>
         private static string NormalizeEmail(string email)
             => email.Trim().ToLowerInvariant();
 
-        /// <summary>
-        /// Normalise une devise sur 3 lettres majuscules.
-        /// </summary>
         private static string NormalizeCurrency(string devise)
             => string.IsNullOrWhiteSpace(devise) ? string.Empty : devise.Trim().ToUpperInvariant();
     }

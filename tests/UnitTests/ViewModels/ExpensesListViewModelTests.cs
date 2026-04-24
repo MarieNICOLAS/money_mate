@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using MoneyMate.Configuration;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.Services.Results;
@@ -66,7 +67,7 @@ public class ExpensesListViewModelTests
         viewModel.AddExpenseCommand.Execute(null);
         await Task.Delay(100);
 
-        navigationServiceMock.Verify(x => x.NavigateToAsync("//AddExpensePage"), Times.Once);
+        navigationServiceMock.Verify(x => x.NavigateToAsync(AppRoutes.AddExpense), Times.Once);
     }
 
     [TestMethod]
@@ -85,7 +86,7 @@ public class ExpensesListViewModelTests
         viewModel.QuickAddExpenseCommand.Execute(null);
         await Task.Delay(100);
 
-        navigationServiceMock.Verify(x => x.NavigateToAsync("//QuickAddExpensePage"), Times.Once);
+        navigationServiceMock.Verify(x => x.NavigateToAsync(AppRoutes.QuickAddExpense), Times.Once);
     }
 
     [TestMethod]
@@ -110,7 +111,7 @@ public class ExpensesListViewModelTests
         });
         await Task.Delay(100);
 
-        navigationServiceMock.Verify(x => x.NavigateToAsync("//ExpenseDetailsPage", It.Is<Dictionary<string, object>>(parameters =>
+        navigationServiceMock.Verify(x => x.NavigateToAsync(AppRoutes.ExpenseDetails, It.Is<Dictionary<string, object>>(parameters =>
             parameters.ContainsKey(NavigationParameterKeys.ExpenseId) &&
             (int)parameters[NavigationParameterKeys.ExpenseId] == 42)), Times.Once);
     }

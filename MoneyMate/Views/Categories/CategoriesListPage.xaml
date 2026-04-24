@@ -72,18 +72,31 @@
                                                               CategoryIcon="{Binding Icon}"
                                                               CategoryColor="{Binding CategoryColor}" />
 
-                                    <VerticalStackLayout Grid.Row="0" Grid.Column="1" Grid.RowSpan="3" Spacing="8" HorizontalOptions="End">
+                                    <VerticalStackLayout Grid.Row="0"
+                                                         Grid.Column="1"
+                                                         Grid.RowSpan="3"
+                                                         Spacing="8"
+                                                         HorizontalOptions="End">
+
+                                        <Button Text="Modifier"
+                                                Command="{Binding Source={x:Reference Page}, Path=BindingContext.EditCategoryCommand}"
+                                                CommandParameter="{Binding .}"
+                                                IsVisible="{Binding CanEdit}"
+                                                BackgroundColor="{StaticResource Accent}"
+                                                TextColor="White" />
+
                                         <Button Text="{Binding ToggleActionText}"
                                                 Command="{Binding Source={x:Reference Page}, Path=BindingContext.ToggleCategoryActiveCommand}"
                                                 CommandParameter="{Binding .}"
-                                                IsVisible="{Binding CanManage}"
+                                                IsVisible="{Binding CanToggleActive}"
                                                 BackgroundColor="{StaticResource Primary}"
                                                 TextColor="White" />
+
                                         <Button Text="Supprimer"
                                                 Command="{Binding Source={x:Reference Page}, Path=BindingContext.DeleteCategoryCommand}"
                                                 CommandParameter="{Binding .}"
-                                                IsVisible="{Binding CanManage}"
-                                                BackgroundColor="#E57373"
+                                                IsVisible="{Binding CanDelete}"
+                                                BackgroundColor="{StaticResource Error}"
                                                 TextColor="White" />
                                     </VerticalStackLayout>
 

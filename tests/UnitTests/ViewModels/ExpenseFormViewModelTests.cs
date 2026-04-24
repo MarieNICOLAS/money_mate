@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using MoneyMate.Configuration;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.Services.Results;
@@ -91,7 +92,7 @@ public class ExpenseFormViewModelTests
             expense.UserId == user.Id &&
             expense.CategoryId == 3 &&
             expense.Amount == 35.90m)), Times.Once);
-        navigationServiceMock.Verify(x => x.NavigateToAsync("//ExpensesListPage"), Times.Once);
+        navigationServiceMock.Verify(x => x.NavigateToAsync(AppRoutes.ExpensesList), Times.Once);
     }
 
     [TestMethod]

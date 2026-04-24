@@ -15,6 +15,10 @@
         /// </summary>
         public string CategoryName { get; set; } = string.Empty;
 
+        public string CategoryColor { get; set; } = "#6B7A8F";
+
+        public string CategoryIcon { get; set; } = "💰";
+
         /// <summary>
         /// Montant total dépensé.
         /// </summary>

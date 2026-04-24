@@ -3,14 +3,17 @@
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
                 xmlns:behaviors="clr-namespace:MoneyMate.Behaviors"
+                xmlns:viewModels="clr-namespace:MoneyMate.ViewModels.Auth"
                 x:Class="MoneyMate.Views.Auth.LoginPage"
+                x:DataType="viewModels:LoginViewModel"
                 Title="Connexion">
 
     <views:BasePage.PageContent>
-        <ScrollView>
-            <VerticalStackLayout Padding="30"
-                                 Spacing="15"
-                                 VerticalOptions="Center">
+        <Grid>
+            <ScrollView>
+                <VerticalStackLayout Padding="30"
+                                     Spacing="15"
+                                     IsEnabled="{Binding IsNotBusy}">
                 <VerticalStackLayout.MaximumWidthRequest>
                     <OnIdiom x:TypeArguments="x:Double"
                              Phone="10000"
@@ -37,7 +40,7 @@
                     <Entry x:Name="EmailEntry"
                            Placeholder="Adresse e-mail"
                            Keyboard="Email"
-                           Text="{Binding Email}"
+                            Text="{Binding Email, Mode=TwoWay}"
                            Style="{StaticResource EntryForm}">
                         <Entry.Behaviors>
                             <behaviors:EmailValidationBehavior
@@ -62,7 +65,7 @@
                         <Entry x:Name="PasswordEntry"
                                Placeholder="Mot de passe"
                                IsPassword="True"
-                               Text="{Binding Password}"
+                               Text="{Binding Password, Mode=TwoWay}"
                                Style="{StaticResource EntryForm}">
                             <Entry.Behaviors>
                                 <behaviors:PasswordMinLengthBehavior
@@ -104,6 +107,7 @@
 
                 <Button Text="Se connecter"
                         Command="{Binding LoginCommand}"
+                        IsEnabled="{Binding IsNotBusy}"
                         Style="{StaticResource PrimaryButton}" />
 
                 <Label x:Name="LoginErrorLabel"
@@ -126,11 +130,30 @@
                 </HorizontalStackLayout>
 
                 <Button Text="Retour"
+                        IsEnabled="{Binding IsNotBusy}"
                         Style="{StaticResource OutlineButton}"
                         Clicked="OnBackClicked" />
 
-            </VerticalStackLayout>
-        </ScrollView>
+                </VerticalStackLayout>
+            </ScrollView>
+
+            <Grid IsVisible="{Binding IsBusy}"
+                  BackgroundColor="#66000000"
+                  InputTransparent="False">
+                <VerticalStackLayout HorizontalOptions="Center"
+                                     VerticalOptions="Center"
+                                     Spacing="12">
+                    <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                       WidthRequest="40"
+                                       HeightRequest="40"
+                                       Color="White" />
+                    <Label Text="Connexion en cours..."
+                           TextColor="White"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Grid>
+        </Grid>
     </views:BasePage.PageContent>
 
 </views:BasePage>

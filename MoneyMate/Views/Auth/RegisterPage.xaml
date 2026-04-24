@@ -3,13 +3,17 @@
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
                 xmlns:behaviors="clr-namespace:MoneyMate.Behaviors"
+                xmlns:viewModels="clr-namespace:MoneyMate.ViewModels.Auth"
                 x:Class="MoneyMate.Views.Auth.RegisterPage"
+                x:DataType="viewModels:RegisterViewModel"
                 Title="Inscription">
 
     <views:BasePage.PageContent>
-        <ScrollView>
-            <VerticalStackLayout Padding="30"
-                                 Spacing="15">
+        <Grid>
+            <ScrollView>
+                <VerticalStackLayout Padding="30"
+                                     Spacing="15"
+                                     IsEnabled="{Binding IsNotBusy}">
                 <VerticalStackLayout.MaximumWidthRequest>
                     <OnIdiom x:TypeArguments="x:Double"
                              Phone="10000"
@@ -35,7 +39,7 @@
                         Style="{StaticResource InputContainer}">
                     <Entry x:Name="UsernameEntry"
                            Placeholder="Pseudo"
-                           Text="{Binding Username}"
+                           Text="{Binding Username, Mode=TwoWay}"
                            Style="{StaticResource EntryForm}" />
                 </Border>
 
@@ -46,7 +50,7 @@
                     <Entry x:Name="EmailEntry"
                            Placeholder="Adresse e-mail"
                            Keyboard="Email"
-                           Text="{Binding Email}"
+                           Text="{Binding Email, Mode=TwoWay}"
                            Style="{StaticResource EntryForm}">
                         <Entry.Behaviors>
                             <behaviors:EmailValidationBehavior
@@ -77,7 +81,7 @@
                         <Entry x:Name="PasswordEntry"
                                Placeholder="Mot de passe"
                                IsPassword="True"
-                               Text="{Binding Password}"
+                               Text="{Binding Password, Mode=TwoWay}"
                                Style="{StaticResource EntryForm}">
                             <Entry.Behaviors>
                                 <behaviors:PasswordStrengthBehavior
@@ -140,7 +144,7 @@
                     <Entry x:Name="ConfirmPasswordEntry"
                            Placeholder="Confirmer le mot de passe"
                            IsPassword="True"
-                           Text="{Binding ConfirmPassword}"
+                           Text="{Binding ConfirmPassword, Mode=TwoWay}"
                            Style="{StaticResource EntryForm}">
                         <Entry.Behaviors>
                             <behaviors:PasswordConfirmBehavior
@@ -166,9 +170,11 @@
 
                 <Button Text="S'inscrire"
                         Command="{Binding RegisterCommand}"
+                        IsEnabled="{Binding IsNotBusy}"
                         Style="{StaticResource PrimaryButton}" />
 
                 <Button Text="Retour"
+                        IsEnabled="{Binding IsNotBusy}"
                         Style="{StaticResource OutlineButton}"
                         Clicked="OnBackClicked" />
 
@@ -183,8 +189,26 @@
                     </Label>
                 </HorizontalStackLayout>
 
-            </VerticalStackLayout>
-        </ScrollView>
+                </VerticalStackLayout>
+            </ScrollView>
+
+            <Grid IsVisible="{Binding IsBusy}"
+                  BackgroundColor="#66000000"
+                  InputTransparent="False">
+                <VerticalStackLayout HorizontalOptions="Center"
+                                     VerticalOptions="Center"
+                                     Spacing="12">
+                    <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                       WidthRequest="40"
+                                       HeightRequest="40"
+                                       Color="White" />
+                    <Label Text="Inscription en cours..."
+                           TextColor="White"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Grid>
+        </Grid>
     </views:BasePage.PageContent>
 
 </views:BasePage>

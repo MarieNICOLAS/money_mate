@@ -1,21 +1,29 @@
-﻿using MoneyMate.ViewModels.Dashboard;
+﻿namespace MoneyMate.Views.Dashboard;
 
-namespace MoneyMate.Views.Dashboard
+using MoneyMate.Infrastructure;
+using MoneyMate.ViewModels.Dashboard;
+
+public partial class DashboardPage : BasePage
 {
-    public partial class DashboardPage : BasePage
+    private readonly DashboardViewModel _viewModel;
+
+    public DashboardPage()
+        : this(ServiceResolver.GetRequiredService<DashboardViewModel>())
     {
-        private DashboardViewModel ViewModel => (DashboardViewModel)BindingContext;
+    }
 
-        public DashboardPage(DashboardViewModel viewModel)
-        {
-            SetViewModel(viewModel);
-            InitializeComponent();
-        }
+    public DashboardPage(DashboardViewModel viewModel)
+    {
+        InitializeComponent();
+        BindingContext = viewModel;
+        _viewModel = viewModel;
+    }
 
-        protected override void OnAppearing()
-        {
-            base.OnAppearing();
-            _ = ViewModel.LoadAsync();
-        }
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+
+        // 🔥 CHARGEMENT APRES AFFICHAGE → ZERO FREEZE
+        await _viewModel.InitializeAsync();
     }
 }

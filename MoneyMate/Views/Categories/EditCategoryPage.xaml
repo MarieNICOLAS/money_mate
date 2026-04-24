@@ -1,16 +1,161 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
+                xmlns:components="clr-namespace:MoneyMate.Components"
+                xmlns:converters="clr-namespace:MoneyMate.Converters"
                 x:Class="MoneyMate.Views.Categories.EditCategoryPage"
-                Title="Modifier la Categorie"
+                x:Name="Page"
+                Title="Modifier la catégorie"
                 UseAuthenticatedFooter="True">
+
+    <views:BasePage.Resources>
+        <ResourceDictionary>
+            <converters:HexToColorConverter x:Key="HexToColorConverter" />
+        </ResourceDictionary>
+    </views:BasePage.Resources>
+
     <views:BasePage.PageContent>
-        <VerticalStackLayout Spacing="20" Padding="30">
-            <Label
-                Text="Modifier la Categorie"
-                Style="{StaticResource PageTitle}"
-                HorizontalOptions="Center" />
-        </VerticalStackLayout>
+        <ScrollView>
+            <VerticalStackLayout Style="{StaticResource MainContainer}">
+
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="{Binding Title}"
+                           Style="{StaticResource PageTitle}"
+                           Margin="0" />
+
+                    <Label Text="Modifiez une catégorie personnalisée existante."
+                           Style="{StaticResource BodyText}"
+                           TextColor="{StaticResource Secondary}" />
+                </VerticalStackLayout>
+
+                <Border Style="{StaticResource CardFrame}"
+                        Margin="0">
+                    <VerticalStackLayout Spacing="16">
+
+                        <Label Text="Aperçu"
+                               Style="{StaticResource SectionTitle}"
+                               Margin="0" />
+
+                        <components:CategoryBadge CategoryName="{Binding Name}"
+                                                  CategoryIcon="{Binding Icon}"
+                                                  CategoryColor="{Binding ColorHex, Converter={StaticResource HexToColorConverter}}" />
+
+                        <Label Text="Les catégories système ne doivent pas être modifiées depuis ce formulaire."
+                               Style="{StaticResource CaptionText}"
+                               TextColor="{StaticResource Secondary}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Style="{StaticResource CardFrame}"
+                        Margin="0">
+                    <VerticalStackLayout Spacing="12">
+
+                        <Label Text="Informations"
+                               Style="{StaticResource SectionTitle}"
+                               Margin="0" />
+
+                        <Label Text="Nom"
+                               Style="{StaticResource FormLabel}" />
+                        <Border Style="{StaticResource InputContainer}">
+                            <Entry Text="{Binding Name}"
+                                   Placeholder="Ex. Alimentation"
+                                   Style="{StaticResource EntryForm}"
+                                   ClearButtonVisibility="WhileEditing" />
+                        </Border>
+
+                        <Label Text="Description"
+                               Style="{StaticResource FormLabel}" />
+                        <Border Style="{StaticResource InputContainer}">
+                            <Editor Text="{Binding Description}"
+                                    Placeholder="Description optionnelle"
+                                    TextColor="{StaticResource TextDark}"
+                                    PlaceholderColor="{StaticResource Secondary}"
+                                    BackgroundColor="Transparent"
+                                    FontSize="15"
+                                    AutoSize="TextChanges"
+                                    MinimumHeightRequest="100" />
+                        </Border>
+
+                        <Label Text="Icône"
+                               Style="{StaticResource FormLabel}" />
+                        <Border Style="{StaticResource InputContainer}">
+                            <Entry Text="{Binding Icon}"
+                                   Placeholder="Ex. 💰"
+                                   Style="{StaticResource EntryForm}"
+                                   MaxLength="4" />
+                        </Border>
+
+                        <Label Text="Couleur (hexadécimal)"
+                               Style="{StaticResource FormLabel}" />
+                        <Border Style="{StaticResource InputContainer}">
+                            <Entry Text="{Binding ColorHex}"
+                                   Placeholder="#6B7A8F"
+                                   Style="{StaticResource EntryForm}"
+                                   ClearButtonVisibility="WhileEditing" />
+                        </Border>
+
+                        <Grid ColumnDefinitions="Auto,*"
+                              ColumnSpacing="12"
+                              VerticalOptions="Center">
+                            <Switch IsToggled="{Binding IsActive}"
+                                    OnColor="{StaticResource Success}" />
+                            <VerticalStackLayout Grid.Column="1"
+                                                 Spacing="2">
+                                <Label Text="Catégorie active"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource TextDark}" />
+                                <Label Text="Vous pouvez désactiver temporairement une catégorie sans la supprimer."
+                                       Style="{StaticResource CaptionText}"
+                                       TextColor="{StaticResource Secondary}" />
+                            </VerticalStackLayout>
+                        </Grid>
+
+                        <Label Text="{Binding ValidationMessage}"
+                               IsVisible="{Binding HasValidationErrors}"
+                               TextColor="{StaticResource Error}"
+                               FontAttributes="Bold" />
+
+                        <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                           IsVisible="{Binding IsBusy}"
+                                           Color="{StaticResource Primary}" />
+
+                    </VerticalStackLayout>
+                </Border>
+
+                <VerticalStackLayout Spacing="12">
+
+                    <Button Style="{StaticResource PrimaryButton}"
+                            Command="{Binding SaveCommand}">
+                        <Button.Triggers>
+                            <DataTrigger TargetType="Button"
+                                         Binding="{Binding IsEditMode}"
+                                         Value="True">
+                                <Setter Property="Text"
+                                        Value="Enregistrer les modifications" />
+                            </DataTrigger>
+                            <DataTrigger TargetType="Button"
+                                         Binding="{Binding IsEditMode}"
+                                         Value="False">
+                                <Setter Property="Text"
+                                        Value="Enregistrer" />
+                            </DataTrigger>
+                        </Button.Triggers>
+                    </Button>
+
+                    <Button Text="Supprimer la catégorie"
+                            BackgroundColor="{StaticResource Error}"
+                            TextColor="White"
+                            Command="{Binding DeleteCommand}"
+                            IsVisible="{Binding CanDelete}" />
+
+                    <Button Text="Annuler"
+                            Style="{StaticResource OutlineButton}"
+                            Command="{Binding CancelCommand}" />
+
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
     </views:BasePage.PageContent>
 </views:BasePage>

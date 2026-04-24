@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using MoneyMate.Configuration;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.Services.Results;
@@ -77,7 +78,7 @@ public class CategoryFormViewModelTests
             category.UserId == user.Id &&
             category.Name == "Sport" &&
             category.Color == "#654321")), Times.Once);
-        navigationServiceMock.Verify(x => x.NavigateToAsync("//CategoriesListPage"), Times.Once);
+        navigationServiceMock.Verify(x => x.NavigateToAsync(AppRoutes.CategoriesList), Times.Once);
     }
 
     [TestMethod]

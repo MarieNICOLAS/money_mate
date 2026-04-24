@@ -1,4 +1,5 @@
 ﻿using MoneyMate.Data.Context;
+using MoneyMate.Data.Context;
 using MoneyMate.Models;
 using MoneyMate.Services.Implementations;
 
@@ -56,7 +57,7 @@ namespace MoneyMate.Helpers
         /// </summary>
         public static async Task<bool> RunImmediateChecksAsync()
         {
-            MoneyMateDbContext? db = null;
+            IMoneyMateDbContext? db = null;
             int userId1 = 0;
             int userId2 = 0;
 
@@ -66,7 +67,7 @@ namespace MoneyMate.Helpers
 
                 ShowDatabasePath();
 
-                db = DatabaseService.Instance;
+                db = DbContextFactory.CreateDefault();
                 var authService = new AuthenticationService(new SessionManager());
 
                 string testEmail1 = $"test-db-1-{Guid.NewGuid():N}@moneymate.local";
@@ -529,7 +530,7 @@ namespace MoneyMate.Helpers
         {
             try
             {
-                var db = DatabaseService.Instance;
+                using var db = DbContextFactory.CreateDefault();
                 var allUsers = db.GetUsers();
 
                 System.Diagnostics.Debug.WriteLine("=== STATISTIQUES DATABASE ===");
@@ -564,9 +565,7 @@ namespace MoneyMate.Helpers
         /// <summary>
         /// Supprime un utilisateur de test si necessaire.
         /// </summary>
-        /// <param name="db">Contexte base de donnees.</param>
-        /// <param name="userId">Identifiant utilisateur.</param>
-        private static void TryCleanupUser(MoneyMateDbContext db, int userId)
+        private static void TryCleanupUser(IMoneyMateDbContext db, int userId)
         {
             try
             {
@@ -585,21 +584,12 @@ namespace MoneyMate.Helpers
             }
         }
 
-        /// <summary>
-        /// Ecrit un message d'information dans la sortie debug.
-        /// </summary>
         private static void WriteInfo(string message)
             => System.Diagnostics.Debug.WriteLine(message);
 
-        /// <summary>
-        /// Ecrit un message de succes dans la sortie debug.
-        /// </summary>
         private static void WriteSuccess(string message)
             => System.Diagnostics.Debug.WriteLine(message);
 
-        /// <summary>
-        /// Ecrit un message d'erreur dans la sortie debug.
-        /// </summary>
         private static void WriteError(string message)
             => System.Diagnostics.Debug.WriteLine(message);
     }

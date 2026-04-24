@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Microsoft.Maui.Graphics;
+using MoneyMate.Configuration;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 
@@ -26,7 +27,8 @@ public class CategoriesViewModel : AuthenticatedViewModelBase
         Categories = [];
 
         RefreshCommand = new Command(async () => await LoadAsync());
-        AddCategoryCommand = new Command(async () => await NavigationService.NavigateToAsync("//AddCategoryPage"));
+        AddCategoryCommand = new Command(async () => await NavigationService.NavigateToAsync(AppRoutes.AddCategory));
+        EditCategoryCommand = new Command<CategoryItemViewModel>(async category => await EditCategoryAsync(category));
         ToggleCategoryActiveCommand = new Command<CategoryItemViewModel>(async category => await ToggleCategoryActiveAsync(category));
         DeleteCategoryCommand = new Command<CategoryItemViewModel>(async category => await DeleteCategoryAsync(category));
     }
@@ -36,6 +38,7 @@ public class CategoriesViewModel : AuthenticatedViewModelBase
     public ICommand RefreshCommand { get; }
 
     public ICommand AddCategoryCommand { get; }
+    public ICommand EditCategoryCommand { get; }
 
     public ICommand ToggleCategoryActiveCommand { get; }
 
@@ -87,6 +90,22 @@ public class CategoriesViewModel : AuthenticatedViewModelBase
 
             RefreshState();
         }, "Une erreur est survenue lors du chargement des catégories.");
+    }
+
+    private async Task EditCategoryAsync(CategoryItemViewModel? category)
+    {
+        if (category == null || category.IsSystem)
+            return;
+
+        if (!EnsureCurrentUser())
+            return;
+
+        await NavigationService.NavigateToAsync(
+            AppRoutes.EditCategory,
+            new Dictionary<string, object>
+            {
+                [NavigationParameterKeys.CategoryId] = category.Id
+            });
     }
 
     private async Task ToggleCategoryActiveAsync(CategoryItemViewModel? category)
@@ -171,6 +190,9 @@ public sealed class CategoryItemViewModel
     public bool IsActive { get; init; }
 
     public bool CanManage => !IsSystem;
+    public bool CanEdit => !IsSystem;
+    public bool CanDelete => !IsSystem;
+    public bool CanToggleActive => !IsSystem;
 
     public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
 

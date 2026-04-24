@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Microsoft.Maui.Graphics;
+using MoneyMate.Configuration;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 
@@ -30,8 +31,8 @@ public class ExpensesListViewModel : AuthenticatedViewModelBase
         Expenses = [];
 
         RefreshCommand = new Command(async () => await LoadAsync());
-        AddExpenseCommand = new Command(async () => await NavigationService.NavigateToAsync("//AddExpensePage"));
-        QuickAddExpenseCommand = new Command(async () => await NavigationService.NavigateToAsync("//QuickAddExpensePage"));
+        AddExpenseCommand = new Command(async () => await NavigationService.NavigateToAsync(AppRoutes.AddExpense));
+        QuickAddExpenseCommand = new Command(async () => await NavigationService.NavigateToAsync(AppRoutes.QuickAddExpense));
         OpenExpenseDetailsCommand = new Command<ExpenseItemViewModel>(async expense => await OpenExpenseDetailsAsync(expense));
     }
 
@@ -111,7 +112,7 @@ public class ExpensesListViewModel : AuthenticatedViewModelBase
         if (expense == null)
             return;
 
-        await NavigationService.NavigateToAsync("//ExpenseDetailsPage", new Dictionary<string, object>
+        await NavigationService.NavigateToAsync(AppRoutes.ExpenseDetails, new Dictionary<string, object>
         {
             [NavigationParameterKeys.ExpenseId] = expense.Id
         });

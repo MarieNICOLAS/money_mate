@@ -10,12 +10,12 @@
                 Title="Catégories"
                 UseAuthenticatedFooter="True">
     <views:BasePage.PageContent>
-        <ScrollView>
-            <VerticalStackLayout Spacing="20" Padding="24">
-                <Label Text="{Binding Source={x:Reference Page}, Path=PageTitle}"
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="20" Padding="24">
+                <Label Grid.Row="0"
+                       Text="{Binding Source={x:Reference Page}, Path=PageTitle}"
                        Style="{StaticResource PageTitle}" />
 
-                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
                     <VerticalStackLayout Grid.Column="0" Spacing="4">
                         <Label Text="Organisez vos dépenses avec vos catégories système et personnalisées." TextColor="{StaticResource Secondary}" />
                     </VerticalStackLayout>
@@ -31,12 +31,14 @@
                             SemanticProperties.Description="Actualiser les catégories" />
                 </Grid>
 
-                <Label Text="{Binding ErrorMessage}"
+                <Label Grid.Row="2"
+                       Text="{Binding ErrorMessage}"
                        IsVisible="{Binding HasError}"
                        TextColor="#E57373"
                        FontAttributes="Bold" />
 
-                <Border Padding="14,10"
+                <Border Grid.Row="3"
+                        Padding="14,10"
                         Stroke="#D6E1EA"
                         StrokeThickness="1"
                         BackgroundColor="White">
@@ -60,10 +62,14 @@
                     </Grid>
                 </Border>
 
-                <CollectionView ItemsSource="{Binding Categories}"
-                                IsVisible="{Binding HasCategories}">
+                <CollectionView Grid.Row="4"
+                                ItemsSource="{Binding Categories}"
+                                IsVisible="{Binding HasCategories}"
+                                VerticalOptions="FillAndExpand"
+                                SelectionMode="None"
+                                Margin="0,0,0,12">
                     <CollectionView.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="viewModels:CategoryItemViewModel">
                             <Border Padding="16" Margin="0,4" Stroke="#D6E1EA" StrokeThickness="1">
                                 <Border.StrokeShape>
                                     <RoundRectangle CornerRadius="14" />
@@ -91,13 +97,27 @@
                                                LineBreakMode="TailTruncation"
                                                MaxLines="2" />
 
-                                        <HorizontalStackLayout Spacing="16">
-                                            <Label Text="{Binding TypeText}" TextColor="{StaticResource Secondary}" />
-                                            <Label Text="{Binding StatusText}" TextColor="{StaticResource Secondary}" />
-                                            <Label Text="{Binding AlertThresholdText}"
-                                                   TextColor="{StaticResource Secondary}"
-                                                   IsVisible="{Binding HasAlertThreshold}" />
-                                        </HorizontalStackLayout>
+                                        <FlexLayout Direction="Row"
+                                                    Wrap="Wrap"
+                                                    JustifyContent="Start"
+                                                    AlignItems="Center"
+                                                    BindableLayout.ItemsSource="{Binding Tags}">
+                                            <BindableLayout.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Padding="10,4"
+                                                            Margin="0,0,8,8"
+                                                            StrokeThickness="0"
+                                                            BackgroundColor="#F3F8FC">
+                                                        <Border.StrokeShape>
+                                                            <RoundRectangle CornerRadius="12" />
+                                                        </Border.StrokeShape>
+                                                        <Label Text="{Binding .}"
+                                                               FontSize="12"
+                                                               TextColor="{StaticResource Secondary}" />
+                                                    </Border>
+                                                </DataTemplate>
+                                            </BindableLayout.ItemTemplate>
+                                        </FlexLayout>
                                     </VerticalStackLayout>
 
                                     <VerticalStackLayout Grid.Row="0"
@@ -138,12 +158,12 @@
                     </CollectionView.ItemTemplate>
                 </CollectionView>
 
-                <components:EmptyStateView IsVisible="{Binding HasCategories, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"
+                <components:EmptyStateView Grid.Row="4"
+                                           IsVisible="{Binding HasCategories, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"
                                            Icon="🏷️"
                                            Message="Aucune catégorie disponible."
                                            ActionText="Créer une catégorie"
                                            ActionCommand="{Binding AddCategoryCommand}" />
-            </VerticalStackLayout>
-        </ScrollView>
+        </Grid>
     </views:BasePage.PageContent>
 </views:BasePage>

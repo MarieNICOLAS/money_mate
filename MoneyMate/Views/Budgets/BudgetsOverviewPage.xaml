@@ -10,12 +10,11 @@
                 Title="Budgets"
                 UseAuthenticatedFooter="True">
     <views:BasePage.PageContent>
-        <ScrollView>
-            <VerticalStackLayout Spacing="20" Padding="24">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*" RowSpacing="20" Padding="24">
                 <Label Text="{Binding Source={x:Reference Page}, Path=PageTitle}"
                        Style="{StaticResource PageTitle}" />
 
-                <VerticalStackLayout Spacing="12">
+                <VerticalStackLayout Grid.Row="1" Spacing="12">
                     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
                         <VerticalStackLayout Grid.Column="0" Spacing="4">
                             <Label Text="Surveillez vos enveloppes et les catégories à risque."
@@ -39,12 +38,13 @@
                             TextColor="{StaticResource TextDark}" />
                 </VerticalStackLayout>
 
-                <Label Text="{Binding ErrorMessage}"
+                <Label Grid.Row="2"
+                       Text="{Binding ErrorMessage}"
                        IsVisible="{Binding HasError}"
                        TextColor="#E57373"
                        FontAttributes="Bold" />
 
-                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="12">
                     <Border Grid.Column="0" Padding="16" StrokeThickness="0" BackgroundColor="#F3F8FC">
                         <Border.StrokeShape>
                             <RoundRectangle CornerRadius="14" />
@@ -66,7 +66,7 @@
                     </Border>
                 </Grid>
 
-                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Grid Grid.Row="4" ColumnDefinitions="*,*" ColumnSpacing="12">
                     <Border Grid.Column="0" Padding="16" StrokeThickness="0" BackgroundColor="#EEF7EE">
                         <Border.StrokeShape>
                             <RoundRectangle CornerRadius="14" />
@@ -88,10 +88,14 @@
                     </Border>
                 </Grid>
 
-                <CollectionView ItemsSource="{Binding Budgets}"
-                                IsVisible="{Binding HasBudgets}">
+                <CollectionView Grid.Row="5"
+                                ItemsSource="{Binding Budgets}"
+                                IsVisible="{Binding HasBudgets}"
+                                VerticalOptions="FillAndExpand"
+                                SelectionMode="None"
+                                Margin="0,0,0,12">
                     <CollectionView.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="viewModels:BudgetOverviewItemViewModel">
                             <Border Padding="16" Margin="0,4" Stroke="#D6E1EA" StrokeThickness="1">
                                 <Border.StrokeShape>
                                     <RoundRectangle CornerRadius="14" />
@@ -108,6 +112,10 @@
                                         <Label Grid.Column="1" Text="{Binding StatusText}" FontAttributes="Bold" TextColor="{StaticResource Secondary}" />
                                     </Grid>
 
+                                    <Label Text="{Binding SummaryLabel}"
+                                           TextColor="{StaticResource Secondary}"
+                                           FontSize="12" />
+
                                     <Button Text="{StaticResource IconEdit}"
                                             Command="{Binding Source={x:Reference Page}, Path=BindingContext.OpenEditBudgetCommand}"
                                             CommandParameter="{Binding .}"
@@ -120,12 +128,12 @@
                     </CollectionView.ItemTemplate>
                 </CollectionView>
 
-                <components:EmptyStateView IsVisible="{Binding HasBudgets, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"
+                <components:EmptyStateView Grid.Row="5"
+                                           IsVisible="{Binding HasBudgets, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"
                                            Icon="📊"
                                            Message="Aucun budget actif pour le moment."
                                            ActionText="Créer un budget"
                                            ActionCommand="{Binding AddBudgetCommand}" />
-            </VerticalStackLayout>
-        </ScrollView>
+        </Grid>
     </views:BasePage.PageContent>
 </views:BasePage>

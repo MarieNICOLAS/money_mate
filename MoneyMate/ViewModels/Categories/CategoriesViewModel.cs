@@ -286,6 +286,8 @@ public sealed class CategoryItemViewModel : INotifyPropertyChanged
 
     public string StatusText => IsActive ? "Active" : "Inactive";
 
+    public IReadOnlyList<string> Tags => BuildTags();
+
     public string ToggleActionText => IsActive ? "Off" : "On";
 
     public string ToggleActionIcon => IsActive ? "\uE9F5" : "\uE9F6";
@@ -323,5 +325,19 @@ public sealed class CategoryItemViewModel : INotifyPropertyChanged
         }
 
         return DefaultColor;
+    }
+
+    private IReadOnlyList<string> BuildTags()
+    {
+        List<string> tags =
+        [
+            TypeText,
+            StatusText
+        ];
+
+        if (HasAlertThreshold)
+            tags.Add(AlertThresholdText);
+
+        return tags;
     }
 }

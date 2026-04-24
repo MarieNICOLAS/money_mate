@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using MoneyMate.Configuration;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.Services.Results;
@@ -92,7 +93,7 @@ public class ExpenseDetailsViewModelTests
         viewModel.EditCommand.Execute(null);
         await Task.Delay(100);
 
-        navigationServiceMock.Verify(x => x.NavigateToAsync("//EditExpensePage", It.Is<Dictionary<string, object>>(parameters =>
+        navigationServiceMock.Verify(x => x.NavigateToAsync(AppRoutes.EditExpense, It.Is<Dictionary<string, object>>(parameters =>
             parameters.ContainsKey(NavigationParameterKeys.ExpenseId) &&
             (int)parameters[NavigationParameterKeys.ExpenseId] == 14)), Times.Once);
     }

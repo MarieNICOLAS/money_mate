@@ -1,4 +1,5 @@
-﻿using MoneyMate.Views.Alerts;
+﻿using MoneyMate.Configuration;
+using MoneyMate.Views.Alerts;
 using MoneyMate.Views.Auth;
 using MoneyMate.Views.Budgets;
 using MoneyMate.Views.Calendar;
@@ -48,13 +49,7 @@ public static class ShellRouteRegistry
     }
 
     public static string Normalize(string route)
-        => route switch
-        {
-            nameof(LoginPage) => "//LoginPage",
-            nameof(RegisterPage) => "//RegisterPage",
-            nameof(DashboardPage) => "//DashboardPage",
-            _ => route
-        };
+        => AppRoutes.Normalize(route);
 
     private static void Register<TPage>() where TPage : Page
         => Routing.RegisterRoute(typeof(TPage).Name, typeof(TPage));

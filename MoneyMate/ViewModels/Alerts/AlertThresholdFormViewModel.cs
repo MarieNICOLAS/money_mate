@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using MoneyMate.Configuration;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.ViewModels.Forms;
@@ -201,7 +202,7 @@ public class AlertThresholdFormViewModel : FormViewModelBase
             return false;
         }
 
-        await NavigationService.NavigateToAsync("//AlertThresholdPage");
+        await NavigationService.NavigateToAsync(AppRoutes.AlertThreshold);
         return true;
     }
 
@@ -226,7 +227,7 @@ public class AlertThresholdFormViewModel : FormViewModelBase
             return false;
         }
 
-        await NavigationService.NavigateToAsync("//AlertThresholdPage");
+        await NavigationService.NavigateToAsync(AppRoutes.AlertThreshold);
         return true;
     }
 }

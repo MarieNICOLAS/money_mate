@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using MoneyMate.Configuration;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.ViewModels.Forms;
@@ -228,7 +229,7 @@ public class FixedChargeFormViewModel : FormViewModelBase
             return false;
         }
 
-        await NavigationService.NavigateToAsync("//FixedChargesPage");
+        await NavigationService.NavigateToAsync(AppRoutes.FixedCharges);
         return true;
     }
 
@@ -253,7 +254,7 @@ public class FixedChargeFormViewModel : FormViewModelBase
             return false;
         }
 
-        await NavigationService.NavigateToAsync("//FixedChargesPage");
+        await NavigationService.NavigateToAsync(AppRoutes.FixedCharges);
         return true;
     }
 }

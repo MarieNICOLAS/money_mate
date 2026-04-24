@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Microsoft.Maui.Graphics;
+using MoneyMate.Configuration;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 
@@ -26,7 +27,7 @@ public class CategoriesViewModel : AuthenticatedViewModelBase
         Categories = [];
 
         RefreshCommand = new Command(async () => await LoadAsync());
-        AddCategoryCommand = new Command(async () => await NavigationService.NavigateToAsync("//AddCategoryPage"));
+        AddCategoryCommand = new Command(async () => await NavigationService.NavigateToAsync(AppRoutes.AddCategory));
         EditCategoryCommand = new Command<CategoryItemViewModel>(async category => await EditCategoryAsync(category));
         ToggleCategoryActiveCommand = new Command<CategoryItemViewModel>(async category => await ToggleCategoryActiveAsync(category));
         DeleteCategoryCommand = new Command<CategoryItemViewModel>(async category => await DeleteCategoryAsync(category));
@@ -100,7 +101,7 @@ public class CategoriesViewModel : AuthenticatedViewModelBase
             return;
 
         await NavigationService.NavigateToAsync(
-            "//EditCategoryPage",
+            AppRoutes.EditCategory,
             new Dictionary<string, object>
             {
                 [NavigationParameterKeys.CategoryId] = category.Id

@@ -76,7 +76,7 @@ namespace MoneyMate.Services.Implementations
 
         private string NormalizeRoute(string route)
         {
-            string normalizedRoute = ShellRouteRegistry.Normalize(route.Trim());
+            string normalizedRoute = AppRoutes.Normalize(route.Trim());
 
             if (!_authenticationService.CanAccessRoute(normalizedRoute))
                 return AppRoutes.Login;

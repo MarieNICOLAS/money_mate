@@ -1,4 +1,5 @@
 ﻿using System.Windows.Input;
+using MoneyMate.Configuration;
 using MoneyMate.Services.Interfaces;
 
 namespace MoneyMate.ViewModels.Profile
@@ -82,13 +83,13 @@ namespace MoneyMate.ViewModels.Profile
             Title = "Mon Profil";
 
             LogoutCommand              = new Command(async () => await LogoutAsync());
-            GoToChangePasswordCommand  = new Command(async () => await _navigationService.NavigateToAsync("//ChangePasswordPage"));
-            GoToDeleteAccountCommand   = new Command(async () => await _navigationService.NavigateToAsync("//DeleteAccountPage"));
-            GoHomeCommand              = new Command(async () => await _navigationService.NavigateToAsync("//DashboardPage"));
-            GoCalendarCommand          = new Command(async () => await _navigationService.NavigateToAsync("//CalendarPage"));
-            GoQuickAddExpenseCommand   = new Command(async () => await _navigationService.NavigateToAsync("//QuickAddExpensePage"));
-            GoBudgetCommand            = new Command(async () => await _navigationService.NavigateToAsync("//BudgetsOverviewPage"));
-            GoProfileCommand           = new Command(async () => await _navigationService.NavigateToAsync("//ProfilePage"));
+            GoToChangePasswordCommand  = new Command(async () => await _navigationService.NavigateToAsync(AppRoutes.ChangePassword));
+            GoToDeleteAccountCommand   = new Command(async () => await _navigationService.NavigateToAsync(AppRoutes.DeleteAccount));
+            GoHomeCommand              = new Command(async () => await _navigationService.NavigateToAsync(AppRoutes.Dashboard));
+            GoCalendarCommand          = new Command(async () => await _navigationService.NavigateToAsync(AppRoutes.Calendar));
+            GoQuickAddExpenseCommand   = new Command(async () => await _navigationService.NavigateToAsync(AppRoutes.QuickAddExpense));
+            GoBudgetCommand            = new Command(async () => await _navigationService.NavigateToAsync(AppRoutes.BudgetsOverview));
+            GoProfileCommand           = new Command(async () => await _navigationService.NavigateToAsync(AppRoutes.Profile));
         }
 
         /// <summary>
@@ -122,7 +123,7 @@ namespace MoneyMate.ViewModels.Profile
 
             await _authService.LogoutAsync();
 
-            await _navigationService.NavigateToAsync("//MainPage");
+            await _navigationService.NavigateToAsync(AppRoutes.Main);
         }
     }
 }

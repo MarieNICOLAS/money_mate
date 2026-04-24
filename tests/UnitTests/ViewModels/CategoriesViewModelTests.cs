@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using MoneyMate.Configuration;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.Services.Results;
@@ -82,7 +83,7 @@ public class CategoriesViewModelTests
         viewModel.AddCategoryCommand.Execute(null);
         await Task.Delay(100);
 
-        navigationServiceMock.Verify(x => x.NavigateToAsync("//AddCategoryPage"), Times.Once);
+        navigationServiceMock.Verify(x => x.NavigateToAsync(AppRoutes.AddCategory), Times.Once);
     }
 
     [TestMethod]

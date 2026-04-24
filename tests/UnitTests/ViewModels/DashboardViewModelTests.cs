@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using MoneyMate.Configuration;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.Services.Models;
 using MoneyMate.Services.Results;
@@ -69,7 +70,7 @@ public class DashboardViewModelTests
         await Task.Delay(100);
 
         authenticationServiceMock.Verify(x => x.LogoutAsync(true), Times.Once);
-        navigationServiceMock.Verify(x => x.NavigateToAsync("//MainPage"), Times.Once);
+        navigationServiceMock.Verify(x => x.NavigateToAsync(AppRoutes.Main), Times.Once);
     }
 
     [TestMethod]

@@ -2,6 +2,7 @@
 using System.Windows.Input;
 using Microsoft.Maui.Graphics;
 using MoneyMate.Components;
+using MoneyMate.Configuration;
 using MoneyMate.Helpers;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.Services.Models;
@@ -183,7 +184,7 @@ public class DashboardViewModel : AuthenticatedViewModelBase
             return;
 
         await AuthenticationService.LogoutAsync(true);
-        await NavigationService.NavigateToAsync("//MainPage");
+        await NavigationService.NavigateToAsync(AppRoutes.Main);
     }
 
     private void ApplySummary(DashboardSummary summary)

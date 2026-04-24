@@ -1,12 +1,14 @@
 ﻿using Microsoft.Maui.Controls;
 using MoneyMate.Configuration;
 using MoneyMate.Infrastructure;
+using MoneyMate.Services.Interfaces;
 using MoneyMate.ViewModels.Auth;
    
 namespace MoneyMate.Views.Auth
 {
     public partial class RegisterPage : BasePage
     {
+        private readonly INavigationService _navigationService;
         private RegisterViewModel ViewModel => (RegisterViewModel)BindingContext;
 
         private static readonly Color ColorOk   = Color.FromArgb("#4CAF50");
@@ -14,12 +16,15 @@ namespace MoneyMate.Views.Auth
         private static readonly Color ColorGrey = Color.FromArgb("#9E9E9E");
 
         public RegisterPage()
-            : this(ServiceResolver.GetRequiredService<RegisterViewModel>())
+            : this(
+                ServiceResolver.GetRequiredService<RegisterViewModel>(),
+                ServiceResolver.GetRequiredService<INavigationService>())
         {
         }
 
-        public RegisterPage(RegisterViewModel viewModel)
+        public RegisterPage(RegisterViewModel viewModel, INavigationService navigationService)
         {
+            _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
             SetViewModel(viewModel);
             InitializeComponent();
         }
@@ -175,12 +180,12 @@ namespace MoneyMate.Views.Auth
         // ── Navigation ────────────────────────────────────────────────────────
         private async void OnGoToLoginTapped(object sender, TappedEventArgs e)
         {
-            await Shell.Current.GoToAsync(AppRoutes.Login);
+            await _navigationService.NavigateToAsync(AppRoutes.Login);
         }
 
         private async void OnBackClicked(object sender, EventArgs e)
         {
-            await Shell.Current.GoToAsync(AppRoutes.Main);
+            await _navigationService.NavigateToAsync(AppRoutes.Main);
         }
     }
 }

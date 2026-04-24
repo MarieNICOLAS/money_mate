@@ -1,6 +1,8 @@
 ﻿using System.Windows.Input;
 using MoneyMate.Components;
 using MoneyMate.Configuration;
+using MoneyMate.Infrastructure;
+using MoneyMate.Services.Interfaces;
 using MoneyMate.ViewModels;
 
 namespace MoneyMate.Views
@@ -165,10 +167,8 @@ namespace MoneyMate.Views
 
         private static async Task NavigateToAsync(string route)
         {
-            if (Shell.Current == null)
-                return;
-
-            await Shell.Current.GoToAsync(route);
+            INavigationService navigationService = ServiceResolver.GetRequiredService<INavigationService>();
+            await navigationService.NavigateToAsync(route);
         }
     }
 

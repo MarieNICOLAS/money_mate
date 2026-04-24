@@ -1,4 +1,5 @@
-﻿using MoneyMate.Models;
+﻿using MoneyMate.Configuration;
+using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.ViewModels.Forms;
 using System.Collections.ObjectModel;
@@ -74,7 +75,7 @@ public class CategoryFormViewModel : FormViewModelBase
 
     protected override string EditParameterKey => NavigationParameterKeys.CategoryId;
 
-    protected override string? CancelNavigationFallbackRoute => "//CategoriesListPage";
+    protected override string? CancelNavigationFallbackRoute => AppRoutes.CategoriesList;
 
     protected override bool CanDeleteEntity => IsEditMode && !IsSystemCategory;
 
@@ -167,7 +168,7 @@ public class CategoryFormViewModel : FormViewModelBase
             return false;
         }
 
-        await NavigationService.NavigateToAsync("//CategoriesListPage");
+        await NavigationService.NavigateToAsync(AppRoutes.CategoriesList);
         return true;
     }
     private void SelectColor(string? colorHex)
@@ -206,7 +207,7 @@ public class CategoryFormViewModel : FormViewModelBase
             return false;
         }
 
-        await NavigationService.NavigateToAsync("//CategoriesListPage");
+        await NavigationService.NavigateToAsync(AppRoutes.CategoriesList);
         return true;
     }
     public ReadOnlyCollection<string> AvailableColors { get; } =

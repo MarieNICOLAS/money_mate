@@ -19,6 +19,7 @@ namespace MoneyMate.Services.Implementations
         };
 
         private const int MinPasswordLength = 8;
+        private const int PasswordHashWorkFactor = 10;
 
         private readonly IMoneyMateDbContext _dbContext;
         private readonly ISessionManager _sessionManager;
@@ -30,7 +31,7 @@ namespace MoneyMate.Services.Implementations
         }
 
         public AuthenticationService(ISessionManager sessionManager)
-            : this(DatabaseService.Instance, sessionManager)
+            : this(DbContextFactory.CreateDefault(), sessionManager)
         {
         }
 
@@ -151,7 +152,7 @@ namespace MoneyMate.Services.Implementations
                         "Cet email est déjà utilisé.");
                 }
 
-                string passwordHash = await Task.Run(() => BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12));
+                string passwordHash = await Task.Run(() => BCrypt.Net.BCrypt.HashPassword(password, workFactor: PasswordHashWorkFactor));
 
                 User newUser = new()
                 {
@@ -235,7 +236,7 @@ namespace MoneyMate.Services.Implementations
                         "Le nouveau mot de passe doit être différent de l'ancien.");
                 }
 
-                user.PasswordHash = await Task.Run(() => BCrypt.Net.BCrypt.HashPassword(newPassword, workFactor: 12));
+                user.PasswordHash = await Task.Run(() => BCrypt.Net.BCrypt.HashPassword(newPassword, workFactor: PasswordHashWorkFactor));
 
                 int updatedRows = await Task.Run(() => _dbContext.UpdateUser(user));
                 if (updatedRows != 1)

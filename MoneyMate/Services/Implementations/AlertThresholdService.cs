@@ -21,7 +21,7 @@ namespace MoneyMate.Services.Implementations
         private readonly IMoneyMateDbContext _dbContext;
 
         public AlertThresholdService()
-            : this(DatabaseService.Instance)
+            : this(DbContextFactory.CreateDefault())
         {
         }
 

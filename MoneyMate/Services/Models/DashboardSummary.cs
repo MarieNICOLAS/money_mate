@@ -35,6 +35,10 @@
         /// </summary>
         public int TriggeredAlertsCount { get; set; }
 
+        public decimal CurrentMonthBudget { get; set; }
+
+        public decimal CurrentMonthBalance { get; set; }
+
         /// <summary>
         /// Total des dépenses du mois précédent.
         /// </summary>
@@ -54,5 +58,7 @@
         /// Top catégories du mois courant par dépense.
         /// </summary>
         public List<DashboardCategorySpending> TopCategories { get; set; } = [];
+
+        public List<DashboardRecentTransaction> RecentTransactions { get; set; } = [];
     }
 }

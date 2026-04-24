@@ -15,6 +15,7 @@ namespace MoneyMate.Data.Context
 
         List<Category> GetCategories();
         List<Category> GetCategoriesByUserId(int userId);
+        List<Category> GetAllCategoriesByUserId(int userId);
         List<Category> GetCustomCategoriesByUserId(int userId);
         Category? GetCategoryById(int id);
         Category? GetCategoryById(int id, int userId);

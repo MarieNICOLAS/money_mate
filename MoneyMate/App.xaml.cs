@@ -1,52 +1,40 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿namespace MoneyMate;
+
 using MoneyMate.Services.Interfaces;
 
-namespace MoneyMate
+public partial class App : Application
 {
-    public partial class App : Application
+    private readonly IStartupCoordinator _startupCoordinator;
+    private bool _startupCompleted;
+
+    public App(AppShell appShell, IStartupCoordinator startupCoordinator)
     {
-        private readonly IServiceProvider _serviceProvider;
-        private readonly IAuthenticationService _authenticationService;
+        InitializeComponent();
 
-        private int _startupInitialized;
+        _startupCoordinator = startupCoordinator ?? throw new ArgumentNullException(nameof(startupCoordinator));
+        MainPage = appShell ?? throw new ArgumentNullException(nameof(appShell));
+    }
 
-        public App(IServiceProvider serviceProvider, IAuthenticationService authenticationService)
+    protected override Window CreateWindow(IActivationState? activationState)
+    {
+        Window window = base.CreateWindow(activationState);
+        window.Created += OnWindowCreated;
+        return window;
+    }
+
+    private async void OnWindowCreated(object? sender, EventArgs e)
+    {
+        if (_startupCompleted)
+            return;
+
+        _startupCompleted = true;
+
+        try
         {
-            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-            _authenticationService = authenticationService ?? throw new ArgumentNullException(nameof(authenticationService));
-
-            InitializeComponent();
+            await _startupCoordinator.InitializeAsync();
         }
-
-        protected override Window CreateWindow(IActivationState? activationState)
+        catch
         {
-            AppShell appShell = _serviceProvider.GetRequiredService<AppShell>();
-            Window window = new(appShell);
-
-            window.Created += async (_, _) => await InitializeStartupAsync(appShell);
-
-            return window;
-        }
-
-        private async Task InitializeStartupAsync(AppShell appShell)
-        {
-            if (Interlocked.Exchange(ref _startupInitialized, 1) == 1)
-                return;
-
-            try
-            {
-                await Task.Yield();
-
-                await _authenticationService.RestoreSessionAsync();
-                await appShell.InitializeForCurrentSessionAsync();
-            }
-            catch (Exception ex)
-            {
-#if DEBUG
-                System.Diagnostics.Debug.WriteLine($"[APP STARTUP] {ex}");
-#endif
-                await appShell.NavigateToPublicEntryAsync();
-            }
         }
     }
 }

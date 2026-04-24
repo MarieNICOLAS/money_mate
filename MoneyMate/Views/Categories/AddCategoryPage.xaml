@@ -1,16 +1,191 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
+                xmlns:components="clr-namespace:MoneyMate.Components"
+                xmlns:converters="clr-namespace:MoneyMate.Converters"
                 x:Class="MoneyMate.Views.Categories.AddCategoryPage"
-                Title="Ajouter une Categorie"
+                x:Name="Page"
+                Title="Nouvelle catégorie"
                 UseAuthenticatedFooter="True">
+
+    <views:BasePage.Resources>
+        <ResourceDictionary>
+            <converters:HexToColorConverter x:Key="HexToColorConverter" />
+        </ResourceDictionary>
+    </views:BasePage.Resources>
+
     <views:BasePage.PageContent>
-        <VerticalStackLayout Spacing="20" Padding="30">
-            <Label
-                Text="Ajouter une Categorie"
-                Style="{StaticResource PageTitle}"
-                HorizontalOptions="Center" />
-        </VerticalStackLayout>
+        <ScrollView>
+            <VerticalStackLayout Style="{StaticResource MainContainer}">
+
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="{Binding Title}"
+                           Style="{StaticResource PageTitle}"
+                           Margin="0" />
+
+                    <Label Text="Créez une catégorie personnalisée pour mieux organiser vos dépenses."
+                           Style="{StaticResource BodyText}"
+                           TextColor="{StaticResource Secondary}" />
+                </VerticalStackLayout>
+
+                <Border Style="{StaticResource CardFrame}"
+                        Margin="0">
+                    <VerticalStackLayout Spacing="16">
+
+                        <Label Text="Aperçu"
+                               Style="{StaticResource SectionTitle}"
+                               Margin="0" />
+
+                        <components:CategoryBadge CategoryName="{Binding Name}"
+                                                  CategoryIcon="{Binding Icon}"
+                                                  CategoryColor="{Binding ColorHex, Converter={StaticResource HexToColorConverter}}" />
+
+                        <Label Text="L’aperçu se met à jour automatiquement pendant la saisie."
+                               Style="{StaticResource CaptionText}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Style="{StaticResource CardFrame}"
+                        Margin="0">
+                    <VerticalStackLayout Spacing="12">
+
+                        <Label Text="Informations"
+                               Style="{StaticResource SectionTitle}"
+                               Margin="0" />
+
+                        <Label Text="Nom"
+                               Style="{StaticResource FormLabel}" />
+                        <Border Style="{StaticResource InputContainer}">
+                            <Entry Text="{Binding Name}"
+                                   Placeholder="Ex. Alimentation"
+                                   Style="{StaticResource EntryForm}"
+                                   ClearButtonVisibility="WhileEditing" />
+                        </Border>
+
+                        <Label Text="Description"
+                               Style="{StaticResource FormLabel}" />
+                        <Border Style="{StaticResource InputContainer}">
+                            <Editor Text="{Binding Description}"
+                                    Placeholder="Description optionnelle"
+                                    TextColor="{StaticResource TextDark}"
+                                    PlaceholderColor="{StaticResource Secondary}"
+                                    BackgroundColor="Transparent"
+                                    FontSize="15"
+                                    AutoSize="TextChanges"
+                                    MinimumHeightRequest="100" />
+                        </Border>
+
+                        <Label Text="Icône"
+                               Style="{StaticResource FormLabel}" />
+
+                        <FlexLayout BindableLayout.ItemsSource="{Binding AvailableIcons}"
+                                    Direction="Row"
+                                    Wrap="Wrap"
+                                    JustifyContent="Start"
+                                    AlignItems="Start">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Padding="8"
+                                            Margin="4"
+                                            BackgroundColor="#F3F8FC"
+                                            StrokeThickness="1"
+                                            Stroke="#D6E1EA">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="14" />
+                                        </Border.StrokeShape>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer
+                                                Command="{Binding Source={x:Reference Page}, Path=BindingContext.SelectIconCommand}"
+                                                CommandParameter="{Binding .}" />
+                                        </Border.GestureRecognizers>
+
+                                        <Label Text="{Binding .}"
+                                               FontSize="24"
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center" />
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </FlexLayout>
+
+                        <Label Text="Couleur"
+                               Style="{StaticResource FormLabel}" />
+
+                        <FlexLayout BindableLayout.ItemsSource="{Binding AvailableColors}"
+                                    Direction="Row"
+                                    Wrap="Wrap"
+                                    JustifyContent="Start"
+                                    AlignItems="Start">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Padding="4"
+                                            Margin="4"
+                                            Stroke="#D6E1EA"
+                                            StrokeThickness="2">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="18" />
+                                        </Border.StrokeShape>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer
+                                                Command="{Binding Source={x:Reference Page}, Path=BindingContext.SelectColorCommand}"
+                                                CommandParameter="{Binding .}" />
+                                        </Border.GestureRecognizers>
+
+                                        <Border WidthRequest="32"
+                                                HeightRequest="32"
+                                                BackgroundColor="{Binding ., Converter={StaticResource HexToColorConverter}}"
+                                                StrokeThickness="0">
+                                            <Border.StrokeShape>
+                                                <RoundRectangle CornerRadius="16" />
+                                            </Border.StrokeShape>
+                                        </Border>
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </FlexLayout>
+
+                        <Grid ColumnDefinitions="Auto,*"
+                              ColumnSpacing="12"
+                              VerticalOptions="Center">
+                            <Switch IsToggled="{Binding IsActive}"
+                                    OnColor="{StaticResource Success}" />
+                            <VerticalStackLayout Grid.Column="1"
+                                                 Spacing="2">
+                                <Label Text="Catégorie active"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource TextDark}" />
+                                <Label Text="Une catégorie inactive reste conservée mais n’est plus proposée dans les sélections."
+                                       Style="{StaticResource CaptionText}"
+                                       TextColor="{StaticResource Secondary}" />
+                            </VerticalStackLayout>
+                        </Grid>
+
+                        <Label Text="{Binding ValidationMessage}"
+                               IsVisible="{Binding HasValidationErrors}"
+                               TextColor="{StaticResource Error}"
+                               FontAttributes="Bold" />
+
+                        <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                           IsVisible="{Binding IsBusy}"
+                                           Color="{StaticResource Primary}" />
+
+                    </VerticalStackLayout>
+                </Border>
+
+                <VerticalStackLayout Spacing="12">
+
+                    <Button Text="Enregistrer"
+                            Style="{StaticResource PrimaryButton}"
+                            Command="{Binding SaveCommand}" />
+
+                    <Button Text="Annuler"
+                            Style="{StaticResource OutlineButton}"
+                            Command="{Binding CancelCommand}" />
+
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
     </views:BasePage.PageContent>
 </views:BasePage>

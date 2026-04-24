@@ -15,18 +15,20 @@ namespace MoneyMate.Services.Common
             string fallbackErrorCode,
             string fallbackMessage)
         {
-            try
+            return Task.Run(() =>
             {
-                ServiceResult result = action();
-                return Task.FromResult(result);
-            }
-            catch (Exception ex)
-            {
-                LogException(operationName, ex);
-                return Task.FromResult(ServiceResult.Failure(
-                    fallbackErrorCode,
-                    fallbackMessage));
-            }
+                try
+                {
+                    return action();
+                }
+                catch (Exception ex)
+                {
+                    LogException(operationName, ex);
+                    return ServiceResult.Failure(
+                        fallbackErrorCode,
+                        fallbackMessage);
+                }
+            });
         }
 
         public static Task<ServiceResult<T>> ExecuteAsync<T>(
@@ -35,18 +37,20 @@ namespace MoneyMate.Services.Common
             string fallbackErrorCode,
             string fallbackMessage)
         {
-            try
+            return Task.Run(() =>
             {
-                ServiceResult<T> result = action();
-                return Task.FromResult(result);
-            }
-            catch (Exception ex)
-            {
-                LogException(operationName, ex);
-                return Task.FromResult(ServiceResult<T>.Failure(
-                    fallbackErrorCode,
-                    fallbackMessage));
-            }
+                try
+                {
+                    return action();
+                }
+                catch (Exception ex)
+                {
+                    LogException(operationName, ex);
+                    return ServiceResult<T>.Failure(
+                        fallbackErrorCode,
+                        fallbackMessage);
+                }
+            });
         }
 
         public static Task<ServiceResult<T>> ExecuteAsync<T>(
@@ -55,18 +59,21 @@ namespace MoneyMate.Services.Common
             string fallbackErrorCode,
             string fallbackMessage)
         {
-            try
+            return Task.Run(() =>
             {
-                T data = action();
-                return Task.FromResult(ServiceResult<T>.Success(data));
-            }
-            catch (Exception ex)
-            {
-                LogException(operationName, ex);
-                return Task.FromResult(ServiceResult<T>.Failure(
-                    fallbackErrorCode,
-                    fallbackMessage));
-            }
+                try
+                {
+                    T data = action();
+                    return ServiceResult<T>.Success(data);
+                }
+                catch (Exception ex)
+                {
+                    LogException(operationName, ex);
+                    return ServiceResult<T>.Failure(
+                        fallbackErrorCode,
+                        fallbackMessage);
+                }
+            });
         }
 
         public static ServiceResult Execute(

@@ -1,17 +1,26 @@
 ﻿using MoneyMate.Services.Interfaces;
 
+using MoneyMate.Configuration;
+
 namespace MoneyMate.Services.Implementations
 {
     public class NavigationService : INavigationService
     {
         private readonly SemaphoreSlim _navigationLock = new(1, 1);
+        private readonly IAuthenticationService _authenticationService;
+
+        public NavigationService(IAuthenticationService authenticationService)
+        {
+            _authenticationService = authenticationService ?? throw new ArgumentNullException(nameof(authenticationService));
+        }
 
         public Task NavigateToAsync(string route)
         {
             if (string.IsNullOrWhiteSpace(route))
                 throw new ArgumentException("La route de navigation est requise.", nameof(route));
 
-            return ExecuteShellNavigationAsync(() => Shell.Current!.GoToAsync(route));
+            string normalizedRoute = NormalizeRoute(route);
+            return ExecuteShellNavigationAsync(() => Shell.Current!.GoToAsync(normalizedRoute));
         }
 
         public Task NavigateToAsync(string route, Dictionary<string, object> parameters)
@@ -21,21 +30,25 @@ namespace MoneyMate.Services.Implementations
 
             parameters ??= [];
 
-            return ExecuteShellNavigationAsync(() => Shell.Current!.GoToAsync(route, parameters));
+            string normalizedRoute = NormalizeRoute(route);
+
+            return ExecuteShellNavigationAsync(() => Shell.Current!.GoToAsync(normalizedRoute, parameters));
         }
 
         public Task GoBackAsync()
             => ExecuteShellNavigationAsync(() => Shell.Current!.GoToAsync(".."));
 
         public Task NavigateToMainAsync()
-            => ExecuteShellNavigationAsync(() => Shell.Current!.GoToAsync("//DashboardPage"));
+            => NavigateToAsync(_authenticationService.IsAuthenticated ? AppRoutes.Dashboard : AppRoutes.Main);
 
         public Task PresentModalAsync(string route)
         {
             if (string.IsNullOrWhiteSpace(route))
                 throw new ArgumentException("La route de navigation est requise.", nameof(route));
 
-            return ExecuteShellNavigationAsync(() => Shell.Current!.GoToAsync(route));
+            string normalizedRoute = NormalizeRoute(route);
+
+            return ExecuteShellNavigationAsync(() => Shell.Current!.GoToAsync(normalizedRoute));
         }
 
         public Task DismissModalAsync()
@@ -59,6 +72,16 @@ namespace MoneyMate.Services.Implementations
             {
                 _navigationLock.Release();
             }
+        }
+
+        private string NormalizeRoute(string route)
+        {
+            string normalizedRoute = ShellRouteRegistry.Normalize(route.Trim());
+
+            if (!_authenticationService.CanAccessRoute(normalizedRoute))
+                return AppRoutes.Login;
+
+            return normalizedRoute;
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Windows.Input;
+using MoneyMate.Configuration;
 using MoneyMate.Helpers;
 using MoneyMate.Services.Interfaces;
 
@@ -130,8 +131,8 @@ namespace MoneyMate.ViewModels.Auth
             Title = "Inscription";
 
             RegisterCommand  = new Command(async () => await RegisterAsync(), CanRegister);
-            GoToLoginCommand = new Command(async () => await _navigationService.NavigateToAsync("//LoginPage"));
-            GoBackCommand    = new Command(async () => await _navigationService.NavigateToAsync("//MainPage"));
+            GoToLoginCommand = new Command(async () => await _navigationService.NavigateToAsync(AppRoutes.Login));
+            GoBackCommand    = new Command(async () => await _navigationService.NavigateToAsync(AppRoutes.Main));
         }
 
         /// <summary>
@@ -189,7 +190,7 @@ namespace MoneyMate.ViewModels.Auth
                             : result.Message,
                         "OK");
 
-                    await _navigationService.NavigateToAsync("//LoginPage");
+                    await _navigationService.NavigateToAsync(AppRoutes.Login);
                 }
                 else
                 {

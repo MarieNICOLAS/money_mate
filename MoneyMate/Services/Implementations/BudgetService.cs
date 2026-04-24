@@ -16,7 +16,7 @@ namespace MoneyMate.Services.Implementations
         private readonly IMoneyMateDbContext _dbContext;
 
         public BudgetService()
-            : this(DatabaseService.Instance)
+            : this(DbContextFactory.CreateDefault())
         {
         }
 

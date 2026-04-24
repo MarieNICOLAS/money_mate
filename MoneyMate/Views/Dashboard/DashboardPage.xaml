@@ -1,9 +1,11 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
                 xmlns:components="clr-namespace:MoneyMate.Components"
+                xmlns:viewModels="clr-namespace:MoneyMate.ViewModels.Dashboard"
                 x:Class="MoneyMate.Views.Dashboard.DashboardPage"
+                x:DataType="viewModels:DashboardViewModel"
                 Title="Tableau de Bord"
                 ShowHeader="False"
                 ShowFooter="False"
@@ -17,7 +19,7 @@
                                             LogoutCommand="{Binding LogoutCommand}" />
 
             <ScrollView Grid.Row="1">
-                <VerticalStackLayout Spacing="20" Padding="24">
+                <VerticalStackLayout Spacing="20" Padding="24,20,24,32">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                         <VerticalStackLayout Grid.Column="0" Spacing="4">
                             <Label Text="Bonjour"
@@ -32,6 +34,10 @@
                                 BackgroundColor="{StaticResource Primary}"
                                 TextColor="White" />
                     </Grid>
+
+                    <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                       IsVisible="{Binding IsBusy}"
+                                       Color="{StaticResource Primary}" />
 
                     <Label Text="{Binding ErrorMessage}"
                            IsVisible="{Binding HasError}"
@@ -49,40 +55,154 @@
                         <components:StatCard Grid.Row="3" Grid.Column="1" Title="Écart vs mois dernier" Value="{Binding PreviousMonthDeltaDisplay}" Icon="📈" CardColor="#4DB6AC" />
                     </Grid>
 
+                    <Border Padding="18" Stroke="#D6E1EA" StrokeThickness="1" BackgroundColor="White">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="18" />
+                        </Border.StrokeShape>
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                            <VerticalStackLayout Spacing="6">
+                                <Label Text="Budget du mois"
+                                       TextColor="{StaticResource Secondary}"
+                                       FontAttributes="Bold" />
+                                <Label Text="{Binding CurrentMonthBudgetDisplay}"
+                                       FontSize="22"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Primary}" />
+                            </VerticalStackLayout>
+
+                            <VerticalStackLayout Grid.Column="1" Spacing="6">
+                                <Label Text="Solde estimé"
+                                       TextColor="{StaticResource Secondary}"
+                                       FontAttributes="Bold" />
+                                <Label Text="{Binding CurrentMonthBalanceDisplay}"
+                                       FontSize="22"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Accent}" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Border>
+
                     <Label Text="Top catégories du mois"
                            Style="{StaticResource SectionTitle}" />
 
-                    <CollectionView ItemsSource="{Binding TopCategories}"
-                                    IsVisible="{Binding HasTopCategories}">
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <Border Padding="16" Margin="0,4" Stroke="#D6E1EA" StrokeThickness="1">
-                                    <Border.StrokeShape>
-                                        <RoundRectangle CornerRadius="14" />
-                                    </Border.StrokeShape>
+                    <Grid ColumnDefinitions="Auto,*"
+                          ColumnSpacing="18"
+                          IsVisible="{Binding HasTopCategories}">
+                        <components:DonutChartView Segments="{Binding TopCategorySegments}"
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Start" />
 
-                                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="6" ColumnSpacing="12">
-                                        <Label Grid.Row="0" Grid.Column="0"
-                                               Text="{Binding CategoryName}"
-                                               FontAttributes="Bold"
-                                               FontSize="16" />
-                                        <components:AmountDisplay Grid.Row="0" Grid.Column="1"
-                                                                  Amount="{Binding TotalAmount}"
-                                                                  Devise="{Binding Devise}"
-                                                                  FontSize="16"
-                                                                  TextColor="{StaticResource Accent}" />
-                                        <Label Grid.Row="1" Grid.Column="0"
-                                               Text="{Binding ExpensesCountText}"
-                                               TextColor="{StaticResource Secondary}" />
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
-                    </CollectionView>
+                        <VerticalStackLayout Grid.Column="1"
+                                             Spacing="10"
+                                             BindableLayout.ItemsSource="{Binding TopCategories}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="viewModels:DashboardCategoryItemViewModel">
+                                    <Border Padding="14" Stroke="#D6E1EA" StrokeThickness="1" BackgroundColor="White">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="14" />
+                                        </Border.StrokeShape>
+
+                                        <Grid ColumnDefinitions="Auto,*,Auto"
+                                              RowDefinitions="Auto,Auto"
+                                              ColumnSpacing="12"
+                                              RowSpacing="4">
+                                            <BoxView Grid.RowSpan="2"
+                                                     WidthRequest="10"
+                                                     HeightRequest="48"
+                                                     VerticalOptions="Center"
+                                                     Color="{Binding SegmentColor}" />
+
+                                            <Label Grid.Column="1"
+                                                   Text="{Binding CategoryName}"
+                                                   FontAttributes="Bold"
+                                                   FontSize="16" />
+
+                                            <Label Grid.Column="2"
+                                                   Text="{Binding AmountDisplay}"
+                                                   FontAttributes="Bold"
+                                                   FontSize="15"
+                                                   TextColor="{StaticResource Accent}" />
+
+                                            <Label Grid.Row="1"
+                                                   Grid.Column="1"
+                                                   Text="{Binding ExpensesCountText}"
+                                                   TextColor="{StaticResource Secondary}" />
+
+                                            <Label Grid.Row="1"
+                                                   Grid.Column="2"
+                                                   Text="{Binding PercentageDisplay}"
+                                                   TextColor="{StaticResource Secondary}" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                    </Grid>
 
                     <components:EmptyStateView IsVisible="{Binding HasTopCategories, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"
                                                Icon="📭"
                                                Message="Aucune dépense à afficher pour ce mois." />
+
+                    <Label Text="Transactions récentes"
+                           Style="{StaticResource SectionTitle}" />
+
+                    <VerticalStackLayout Spacing="10"
+                                         IsVisible="{Binding HasRecentTransactions}"
+                                         BindableLayout.ItemsSource="{Binding RecentTransactions}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="viewModels:RecentTransactionItemViewModel">
+                                <Border Padding="14" Stroke="#D6E1EA" StrokeThickness="1" BackgroundColor="White">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="14" />
+                                    </Border.StrokeShape>
+
+                                    <Grid ColumnDefinitions="Auto,*,Auto"
+                                          RowDefinitions="Auto,Auto"
+                                          ColumnSpacing="12"
+                                          RowSpacing="4">
+                                        <Border Grid.RowSpan="2"
+                                                WidthRequest="42"
+                                                HeightRequest="42"
+                                                BackgroundColor="{Binding AccentColor}">
+                                            <Border.StrokeShape>
+                                                <RoundRectangle CornerRadius="21" />
+                                            </Border.StrokeShape>
+                                            <Label Text="{Binding Icon}"
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Center"
+                                                   FontSize="18" />
+                                        </Border>
+
+                                        <Label Grid.Column="1"
+                                               Text="{Binding Title}"
+                                               FontAttributes="Bold"
+                                               LineBreakMode="TailTruncation" />
+
+                                        <Label Grid.Column="2"
+                                               Text="{Binding AmountDisplay}"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource Accent}" />
+
+                                        <Label Grid.Row="1"
+                                               Grid.Column="1"
+                                               Text="{Binding Subtitle}"
+                                               TextColor="{StaticResource Secondary}"
+                                               LineBreakMode="TailTruncation" />
+
+                                        <Label Grid.Row="1"
+                                               Grid.Column="2"
+                                               Text="{Binding DateDisplay}"
+                                               TextColor="{StaticResource Secondary}" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+
+                    <components:EmptyStateView IsVisible="{Binding HasRecentTransactions, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"
+                                               Icon="🧾"
+                                               Message="Aucune transaction récente à afficher." />
                 </VerticalStackLayout>
             </ScrollView>
         </Grid>

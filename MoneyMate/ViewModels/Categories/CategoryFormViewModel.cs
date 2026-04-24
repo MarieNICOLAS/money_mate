@@ -1,6 +1,8 @@
 ﻿using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.ViewModels.Forms;
+using System.Collections.ObjectModel;
+using System.Windows.Input;
 
 namespace MoneyMate.ViewModels.Categories;
 
@@ -27,6 +29,8 @@ public class CategoryFormViewModel : FormViewModelBase
     {
         _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
         Title = "Catégorie";
+        SelectColorCommand = new Command<string>(SelectColor);
+        SelectIconCommand = new Command<string>(SelectIcon);
         RefreshFormState();
     }
 
@@ -70,6 +74,8 @@ public class CategoryFormViewModel : FormViewModelBase
 
     protected override string EditParameterKey => NavigationParameterKeys.CategoryId;
 
+    protected override string? CancelNavigationFallbackRoute => "//CategoriesListPage";
+
     protected override bool CanDeleteEntity => IsEditMode && !IsSystemCategory;
 
     protected override Task InitializeForCreateAsync()
@@ -83,6 +89,7 @@ public class CategoryFormViewModel : FormViewModelBase
         IsSystemCategory = false;
         _createdAt = DateTime.UtcNow;
         OnPropertyChanged(nameof(IsCustomCategory));
+        OnPropertyChanged(nameof(CanEditSystemCategory));
         return Task.CompletedTask;
     }
 
@@ -104,7 +111,9 @@ public class CategoryFormViewModel : FormViewModelBase
         IsActive = category.IsActive;
         IsSystemCategory = category.IsSystem;
         _createdAt = category.CreatedAt;
+
         OnPropertyChanged(nameof(IsCustomCategory));
+        OnPropertyChanged(nameof(CanEditSystemCategory));
     }
 
     protected override string ValidateForm()
@@ -161,7 +170,21 @@ public class CategoryFormViewModel : FormViewModelBase
         await NavigationService.NavigateToAsync("//CategoriesListPage");
         return true;
     }
+    private void SelectColor(string? colorHex)
+    {
+        if (string.IsNullOrWhiteSpace(colorHex))
+            return;
 
+        ColorHex = colorHex;
+    }
+
+    private void SelectIcon(string? icon)
+    {
+        if (string.IsNullOrWhiteSpace(icon))
+            return;
+
+        Icon = icon;
+    }
     protected override async Task<bool> DeleteCoreAsync()
     {
         if (!IsEditMode || IsSystemCategory)
@@ -186,4 +209,31 @@ public class CategoryFormViewModel : FormViewModelBase
         await NavigationService.NavigateToAsync("//CategoriesListPage");
         return true;
     }
+    public ReadOnlyCollection<string> AvailableColors { get; } =
+    new(new[]
+    {
+        "#6B7A8F",
+        "#6793AE",
+        "#26658C",
+        "#4F7993",
+        "#6CC57C",
+        "#F6B092",
+        "#E58DA3",
+        "#E57373",
+        "#9C89B8",
+        "#F4C95D"
+    });
+
+    public ReadOnlyCollection<string> AvailableIcons { get; } =
+        new(new[]
+        {
+        "💰", "🛒", "🍔", "🏠", "🚗",
+        "🎉", "🎓", "💊", "🐶", "📱",
+        "🧾", "✈️", "🎁", "👕", "⚡"
+        });
+
+    public ICommand SelectColorCommand { get; }
+    public ICommand SelectIconCommand { get; }
+
+    public bool CanEditSystemCategory => !IsSystemCategory;
 }

@@ -16,7 +16,7 @@ namespace MoneyMate.Services.Implementations
         private readonly IMoneyMateDbContext _dbContext;
 
         public CategoryService()
-            : this(DatabaseService.Instance)
+            : this(DbContextFactory.CreateDefault())
         {
         }
 
@@ -53,7 +53,7 @@ namespace MoneyMate.Services.Implementations
                             "CATEGORY_INVALID_USER",
                             ServiceMessages.InvalidUser);
 
-                    List<Category> categories = _dbContext.GetCategoriesByUserId(userId)
+                    List<Category> categories = _dbContext.GetAllCategoriesByUserId(userId)
                         .Where(category => !category.IsActive)
                         .OrderBy(category => category.DisplayOrder)
                         .ThenBy(category => category.Name)
@@ -155,7 +155,7 @@ namespace MoneyMate.Services.Implementations
 
                     category.CreatedAt = DateTime.UtcNow;
                     category.IsSystem = false;
-                    category.IsActive = true;
+                    category.IsActive = category.IsActive;
                     category.DisplayOrder = ResolveNextDisplayOrder(category.UserId.Value);
 
                     int categoryId = _dbContext.InsertCategory(category);
@@ -427,7 +427,7 @@ namespace MoneyMate.Services.Implementations
 
             string normalizedCategoryName = categoryName.Trim();
 
-            bool exists = _dbContext.GetCategoriesByUserId(userId)
+            bool exists = _dbContext.GetAllCategoriesByUserId(userId)
                 .Where(category => !excludedCategoryId.HasValue || category.Id != excludedCategoryId.Value)
                 .Any(category => string.Equals(category.Name.Trim(), normalizedCategoryName, StringComparison.OrdinalIgnoreCase));
 
@@ -451,7 +451,8 @@ namespace MoneyMate.Services.Implementations
 
         private int ResolveNextDisplayOrder(int userId)
         {
-            return _dbContext.GetCustomCategoriesByUserId(userId)
+            return _dbContext.GetAllCategoriesByUserId(userId)
+                .Where(category => !category.IsSystem && category.UserId == userId)
                 .Select(category => category.DisplayOrder)
                 .DefaultIfEmpty(0)
                 .Max() + 1;

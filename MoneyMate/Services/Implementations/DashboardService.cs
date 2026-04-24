@@ -18,7 +18,7 @@ namespace MoneyMate.Services.Implementations
         private readonly IMoneyMateDbContext _dbContext;
 
         public DashboardService()
-            : this(DatabaseService.Instance)
+            : this(DbContextFactory.CreateDefault())
         {
         }
 
@@ -48,6 +48,8 @@ namespace MoneyMate.Services.Implementations
                     List<Budget> budgets = _dbContext.GetBudgetsByUserId(userId);
                     List<AlertThreshold> alertThresholds = _dbContext.GetAlertThresholdsByUserId(userId);
                     int activeFixedChargesCount = _dbContext.GetActiveFixedChargesCountByUserId(userId);
+                    Dictionary<int, Category> categoriesById = _dbContext.GetCategoriesByUserId(userId)
+                        .ToDictionary(category => category.Id, category => category);
 
                     foreach (Budget budget in budgets)
                         budget.NormalizeToMonthlyPeriod();
@@ -63,13 +65,19 @@ namespace MoneyMate.Services.Implementations
                     decimal currentMonthExpensesAmount = currentMonthExpenses.Sum(expense => expense.Amount);
                     decimal previousMonthExpensesAmount = previousMonthExpenses.Sum(expense => expense.Amount);
 
-                    Dictionary<int, string> categoriesById = _dbContext.GetCategoriesByUserId(userId)
-                        .ToDictionary(category => category.Id, category => category.Name);
-
                     List<DashboardCategorySpending> topCategories = BuildTopCategories(
                         currentMonthExpenses,
                         categoriesById,
                         topCount: 5);
+
+                    decimal currentMonthBudget = budgets
+                        .Where(budget => budget.StartDate < nextMonthStart && (budget.EndDate ?? DateTime.MaxValue) >= monthStart)
+                        .Sum(budget => budget.Amount);
+
+                    List<DashboardRecentTransaction> recentTransactions = BuildRecentTransactions(
+                        currentMonthExpenses,
+                        categoriesById,
+                        take: 5);
 
                     int budgetsAtRiskCount = budgets.Count(budget =>
                         IsBudgetAtRisk(budget, allExpenses));
@@ -80,6 +88,10 @@ namespace MoneyMate.Services.Implementations
                     DashboardSummary summary = new()
                     {
                         CurrentMonthExpenses = currentMonthExpensesAmount,
+                        CurrentMonthBudget = currentMonthBudget,
+                        CurrentMonthBalance = currentMonthBudget > 0
+                            ? currentMonthBudget - currentMonthExpensesAmount
+                            : -currentMonthExpensesAmount,
                         CurrentMonthExpensesCount = currentMonthExpenses.Count,
                         PreviousMonthExpenses = previousMonthExpensesAmount,
                         ExpensesDeltaFromPreviousMonth = currentMonthExpensesAmount - previousMonthExpensesAmount,
@@ -88,7 +100,8 @@ namespace MoneyMate.Services.Implementations
                         ActiveAlertsCount = alertThresholds.Count,
                         TriggeredAlertsCount = triggeredAlertsCount,
                         BudgetsAtRiskCount = budgetsAtRiskCount,
-                        TopCategories = topCategories
+                        TopCategories = topCategories,
+                        RecentTransactions = recentTransactions
                     };
 
                     return ServiceResult<DashboardSummary>.Success(summary);
@@ -121,8 +134,8 @@ namespace MoneyMate.Services.Implementations
                         .Where(expense => expense.DateOperation >= monthStart && expense.DateOperation < nextMonthStart)
                         .ToList();
 
-                    Dictionary<int, string> categoriesById = _dbContext.GetCategoriesByUserId(userId)
-                        .ToDictionary(category => category.Id, category => category.Name);
+                    Dictionary<int, Category> categoriesById = _dbContext.GetCategoriesByUserId(userId)
+                        .ToDictionary(category => category.Id, category => category);
 
                     List<DashboardCategorySpending> categories = BuildTopCategories(
                         currentMonthExpenses,
@@ -136,9 +149,39 @@ namespace MoneyMate.Services.Implementations
                 fallbackMessage: "Une erreur est survenue lors du chargement des catégories du tableau de bord.");
         }
 
+        public Task<ServiceResult<List<DashboardRecentTransaction>>> GetRecentTransactionsAsync(int userId, int take = 5)
+        {
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
+                {
+                    if (userId <= 0)
+                    {
+                        return ServiceResult<List<DashboardRecentTransaction>>.Failure(
+                            "DASHBOARD_INVALID_USER",
+                            ServiceMessages.InvalidUser);
+                    }
+
+                    if (take <= 0)
+                        return ServiceResult<List<DashboardRecentTransaction>>.Success([]);
+
+                    Dictionary<int, Category> categoriesById = _dbContext.GetCategoriesByUserId(userId)
+                        .ToDictionary(category => category.Id, category => category);
+
+                    List<DashboardRecentTransaction> transactions = BuildRecentTransactions(
+                        _dbContext.GetExpensesByUserId(userId),
+                        categoriesById,
+                        take);
+
+                    return ServiceResult<List<DashboardRecentTransaction>>.Success(transactions);
+                },
+                operationName: nameof(GetRecentTransactionsAsync),
+                fallbackErrorCode: "DASHBOARD_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors du chargement des transactions récentes.");
+        }
+
         private static List<DashboardCategorySpending> BuildTopCategories(
             IEnumerable<Expense> expenses,
-            IReadOnlyDictionary<int, string> categoriesById,
+            IReadOnlyDictionary<int, Category> categoriesById,
             int topCount)
         {
             return expenses
@@ -146,15 +189,47 @@ namespace MoneyMate.Services.Implementations
                 .Select(group => new DashboardCategorySpending
                 {
                     CategoryId = group.Key,
-                    CategoryName = categoriesById.TryGetValue(group.Key, out string? categoryName)
-                        ? categoryName
+                    CategoryName = categoriesById.TryGetValue(group.Key, out Category? category)
+                        ? category.Name
                         : "Catégorie inconnue",
+                    CategoryColor = categoriesById.TryGetValue(group.Key, out category)
+                        ? category.Color
+                        : "#6B7A8F",
+                    CategoryIcon = categoriesById.TryGetValue(group.Key, out category)
+                        ? category.Icon
+                        : "💰",
                     TotalAmount = group.Sum(expense => expense.Amount),
                     ExpensesCount = group.Count()
                 })
                 .OrderByDescending(item => item.TotalAmount)
                 .ThenByDescending(item => item.ExpensesCount)
                 .Take(topCount)
+                .ToList();
+        }
+
+        private static List<DashboardRecentTransaction> BuildRecentTransactions(
+            IEnumerable<Expense> expenses,
+            IReadOnlyDictionary<int, Category> categoriesById,
+            int take)
+        {
+            return expenses
+                .OrderByDescending(expense => expense.DateOperation)
+                .Take(take)
+                .Select(expense =>
+                {
+                    categoriesById.TryGetValue(expense.CategoryId, out Category? category);
+
+                    return new DashboardRecentTransaction
+                    {
+                        ExpenseId = expense.Id,
+                        CategoryName = category?.Name ?? "Catégorie inconnue",
+                        CategoryColor = category?.Color ?? "#6B7A8F",
+                        CategoryIcon = category?.Icon ?? "💰",
+                        Note = expense.Note,
+                        Amount = expense.Amount,
+                        DateOperation = expense.DateOperation
+                    };
+                })
                 .ToList();
         }
 

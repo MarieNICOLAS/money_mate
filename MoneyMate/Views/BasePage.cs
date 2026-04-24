@@ -1,5 +1,6 @@
-using System.Windows.Input;
+﻿using System.Windows.Input;
 using MoneyMate.Components;
+using MoneyMate.Configuration;
 using MoneyMate.ViewModels;
 
 namespace MoneyMate.Views
@@ -108,11 +109,11 @@ namespace MoneyMate.Views
 
         protected BasePage()
         {
-            GoHomeCommand = new Command(async () => await NavigateToAsync("//DashboardPage"));
-            GoCalendarCommand = new Command(async () => await NavigateToAsync("//CalendarPage"));
-            GoQuickAddExpenseCommand = new Command(async () => await NavigateToAsync("//QuickAddExpensePage"));
-            GoBudgetCommand = new Command(async () => await NavigateToAsync("//BudgetsOverviewPage"));
-            GoProfileCommand = new Command(async () => await NavigateToAsync("//ProfilePage"));
+            GoHomeCommand = new Command(async () => await NavigateToAsync(AppRoutes.Dashboard));
+            GoCalendarCommand = new Command(async () => await NavigateToAsync(AppRoutes.Calendar));
+            GoQuickAddExpenseCommand = new Command(async () => await NavigateToAsync(AppRoutes.QuickAddExpense));
+            GoBudgetCommand = new Command(async () => await NavigateToAsync(AppRoutes.BudgetsOverview));
+            GoProfileCommand = new Command(async () => await NavigateToAsync(AppRoutes.Profile));
 
             _authenticatedFooter = new AuthenticatedFooter
             {

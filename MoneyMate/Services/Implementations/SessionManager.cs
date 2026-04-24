@@ -48,7 +48,7 @@ namespace MoneyMate.Services.Implementations
         private User? _currentUser;
 
         public SessionManager()
-            : this(DatabaseService.Instance)
+            : this(DbContextFactory.CreateDefault())
         {
         }
 

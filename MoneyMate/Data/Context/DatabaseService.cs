@@ -1,50 +1,68 @@
-﻿namespace MoneyMate.Data.Context
+﻿using MoneyMate.Data.Repositories;
+using MoneyMate.Models;
+using MoneyMate.Services.Common;
+
+namespace MoneyMate.Data.Context;
+
+public class DatabaseService
 {
-    /// <summary>
-    /// Service de configuration de la base SQLite.
-    /// Fournit une instance singleton partagée du contexte.
-    /// </summary>
-    public static class DatabaseService
+    private readonly IDataRepository<User> _userRepo;
+    private readonly IDataRepository<Expense> _expenseRepo;
+    private readonly IMemoryCacheService _cache;
+
+    public DatabaseService(
+        IDataRepository<User> userRepo,
+        IDataRepository<Expense> expenseRepo,
+        IMemoryCacheService cache)
     {
-        private static readonly object SyncRoot = new();
-        private static IMoneyMateDbContext? _instance;
+        _userRepo = userRepo;
+        _expenseRepo = expenseRepo;
+        _cache = cache;
+    }
 
-        /// <summary>
-        /// Instance singleton du contexte de base de données.
-        /// </summary>
-        public static IMoneyMateDbContext Instance
-        {
-            get
-            {
-                if (_instance is not null)
-                    return _instance;
+    // ========================
+    // USERS (cached)
+    // ========================
+    public async Task<List<User>> GetUsersAsync()
+    {
+        const string cacheKey = "users";
 
-                lock (SyncRoot)
-                {
-                    if (_instance is not null)
-                        return _instance;
+        var cached = _cache.Get<List<User>>(cacheKey);
+        if (cached != null)
+            return cached;
 
-                    string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                    string dbPath = Path.Combine(localAppData, "MoneyMate.db3");
+        var users = await _userRepo.GetAllAsync();
 
-                    _instance = new Data.Context.MoneyMateDbContext(dbPath);
-                    return _instance;
-                }
-            }
-        }
+        _cache.Set(cacheKey, users);
 
-        /// <summary>
-        /// Ferme explicitement la connexion SQLite.
-        /// </summary>
-        public static void CloseConnection()
-        {
-            lock (SyncRoot)
-            {
-                if (_instance is IDisposable disposable)
-                    disposable.Dispose();
+        return users;
+    }
 
-                _instance = null;
-            }
-        }
+    // ========================
+    // EXPENSES (optimized)
+    // ========================
+    public async Task<List<Expense>> GetExpensesByUserAsync(int userId)
+    {
+        var cacheKey = $"expenses_{userId}";
+
+        var cached = _cache.Get<List<Expense>>(cacheKey);
+        if (cached != null)
+            return cached;
+
+        var data = await _expenseRepo.FindAsync(e => e.UserId == userId);
+
+        var result = data
+            .OrderByDescending(e => e.DateOperation)
+            .Take(200) // 🔥 LIMIT PERF
+            .ToList();
+
+        _cache.Set(cacheKey, result);
+
+        return result;
+    }
+
+    public void InvalidateUserCache(int userId)
+    {
+        _cache.Remove($"expenses_{userId}");
     }
 }

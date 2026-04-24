@@ -1,4 +1,5 @@
 ﻿using MoneyMate.Data.Context;
+using MoneyMate.Data.Context;
 using MoneyMate.Models;
 using MoneyMate.Services.Implementations;
 
@@ -66,7 +67,7 @@ namespace MoneyMate.Helpers
 
                 ShowDatabasePath();
 
-                db = DatabaseService.Instance;
+                db = DbContextFactory.CreateDefault();
                 var authService = new AuthenticationService(new SessionManager());
 
                 string testEmail1 = $"test-db-1-{Guid.NewGuid():N}@moneymate.local";
@@ -529,7 +530,7 @@ namespace MoneyMate.Helpers
         {
             try
             {
-                var db = DatabaseService.Instance;
+                using var db = DbContextFactory.CreateDefault();
                 var allUsers = db.GetUsers();
 
                 System.Diagnostics.Debug.WriteLine("=== STATISTIQUES DATABASE ===");

@@ -1,4 +1,6 @@
 ﻿using Microsoft.Maui.Controls;
+using MoneyMate.Configuration;
+using MoneyMate.Infrastructure;
 using MoneyMate.ViewModels.Auth;
    
 namespace MoneyMate.Views.Auth
@@ -10,6 +12,11 @@ namespace MoneyMate.Views.Auth
         private static readonly Color ColorOk   = Color.FromArgb("#4CAF50");
         private static readonly Color ColorFail = Color.FromArgb("#F44336");
         private static readonly Color ColorGrey = Color.FromArgb("#9E9E9E");
+
+        public RegisterPage()
+            : this(ServiceResolver.GetRequiredService<RegisterViewModel>())
+        {
+        }
 
         public RegisterPage(RegisterViewModel viewModel)
         {
@@ -168,12 +175,12 @@ namespace MoneyMate.Views.Auth
         // ── Navigation ────────────────────────────────────────────────────────
         private async void OnGoToLoginTapped(object sender, TappedEventArgs e)
         {
-            await Shell.Current.GoToAsync("//LoginPage");
+            await Shell.Current.GoToAsync(AppRoutes.Login);
         }
 
         private async void OnBackClicked(object sender, EventArgs e)
         {
-            await Shell.Current.GoToAsync("//MainPage");
+            await Shell.Current.GoToAsync(AppRoutes.Main);
         }
     }
 }

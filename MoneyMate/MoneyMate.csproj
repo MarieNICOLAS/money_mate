@@ -73,7 +73,6 @@
     </ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Data\Repositories\" />
 	  <Folder Include="Views\Support\" />
 	  <Folder Include="Views\Settings\" />
 	  <Folder Include="Views\Stats\" />

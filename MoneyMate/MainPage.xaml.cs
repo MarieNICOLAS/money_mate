@@ -1,5 +1,7 @@
 ﻿using MoneyMate.Helpers;
 using MoneyMate.Services.Interfaces;
+using MoneyMate.Configuration;
+using MoneyMate.Infrastructure;
 using MoneyMate.Views;
 
 namespace MoneyMate
@@ -12,6 +14,11 @@ namespace MoneyMate
     {
         private readonly INavigationService _navigationService;
 
+        public MainPage()
+            : this(ServiceResolver.GetRequiredService<INavigationService>())
+        {
+        }
+
         public MainPage(INavigationService navigationService)
         {
             _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
@@ -20,12 +27,12 @@ namespace MoneyMate
 
         private async void OnLoginClicked(object sender, EventArgs e)
         {
-            await _navigationService.NavigateToAsync("//LoginPage");
+            await _navigationService.NavigateToAsync(AppRoutes.Login);
         }
 
         private async void OnSignupClicked(object sender, EventArgs e)
         {
-            await _navigationService.NavigateToAsync("//RegisterPage");
+            await _navigationService.NavigateToAsync(AppRoutes.Register);
         }
     }
 }

@@ -22,11 +22,8 @@
                                  Phone="Fill" Tablet="Center" Desktop="Center" />
                     </VerticalStackLayout.HorizontalOptions>
 
-                     <Label Text="{Binding Source={x:Reference self}, Path=Title}"
-                           FontSize="24"
-                           FontAttributes="Bold"
-                           TextColor="{StaticResource Primary}"
-                           HorizontalOptions="Start" />
+                     <Label Text="{Binding Source={x:Reference self}, Path=PageTitle}"
+                            Style="{StaticResource PageTitle}" />
 
                     <Border BackgroundColor="#FFF3F3"
                             Padding="16"

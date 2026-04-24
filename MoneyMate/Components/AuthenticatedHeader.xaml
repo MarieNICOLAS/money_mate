@@ -14,7 +14,7 @@
                     Command="{Binding Source={x:Reference this}, Path=BackCommand}"
                     IsVisible="{Binding Source={x:Reference this}, Path=ShowBackButton}"
                     BackgroundColor="Transparent"
-                    TextColor="{StaticResource TextLight}"
+                    TextColor="{StaticResource Primary}"
                     FontSize="24"
                     WidthRequest="36"
                     HeightRequest="36"
@@ -33,7 +33,7 @@
                 <Label Text="{Binding Source={x:Reference this}, Path=PageTitle}"
                        FontSize="18"
                        FontAttributes="Bold"
-                       TextColor="{StaticResource TextLight}"
+                       TextColor="{StaticResource Primary}"
                        LineBreakMode="TailTruncation" />
             </VerticalStackLayout>
 
@@ -42,7 +42,7 @@
                     FontFamily="MaterialIcons"
                     Command="{Binding Source={x:Reference this}, Path=LogoutCommand}"
                     BackgroundColor="Transparent"
-                    TextColor="{StaticResource TextLight}"
+                    TextColor="{StaticResource Primary}"
                     FontSize="22"
                     WidthRequest="36"
                     HeightRequest="36"

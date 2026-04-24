@@ -20,11 +20,8 @@
     <views:BasePage.PageContent>
         <ScrollView>
             <VerticalStackLayout Style="{StaticResource MainContainer}">
-                <Label Text="{Binding Source={x:Reference Page}, Path=Title}"
-                       FontSize="24"
-                       FontAttributes="Bold"
-                       TextColor="{StaticResource TextDark}"
-                       HorizontalOptions="Start" />
+                <Label Text="{Binding Source={x:Reference Page}, Path=PageTitle}"
+                       Style="{StaticResource PageTitle}" />
 
                 <VerticalStackLayout Spacing="4">
                     <Label Text="Créez une catégorie personnalisée pour mieux organiser vos dépenses."

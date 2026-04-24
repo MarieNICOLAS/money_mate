@@ -11,11 +11,8 @@
     <views:BasePage.PageContent>
         <ScrollView>
             <VerticalStackLayout Style="{StaticResource MainContainer}" Spacing="18">
-                <Label Text="{Binding Source={x:Reference Page}, Path=Title}"
-                       FontSize="24"
-                       FontAttributes="Bold"
-                       TextColor="{StaticResource TextDark}"
-                       HorizontalOptions="Start" />
+                <Label Text="{Binding Source={x:Reference Page}, Path=PageTitle}"
+                       Style="{StaticResource PageTitle}" />
 
                 <Border Style="{StaticResource CardFrame}" Margin="0,0,0,8">
                     <VerticalStackLayout Spacing="16">

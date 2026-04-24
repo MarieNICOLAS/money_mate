@@ -12,11 +12,8 @@
     <views:BasePage.PageContent>
         <ScrollView>
             <VerticalStackLayout Spacing="20" Padding="24">
-                <Label Text="{Binding Source={x:Reference Page}, Path=Title}"
-                       FontSize="24"
-                       FontAttributes="Bold"
-                       TextColor="{StaticResource TextDark}"
-                       HorizontalOptions="Start" />
+                <Label Text="{Binding Source={x:Reference Page}, Path=PageTitle}"
+                       Style="{StaticResource PageTitle}" />
 
                 <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
                     <VerticalStackLayout Grid.Column="0" Spacing="4">

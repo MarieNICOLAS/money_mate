@@ -96,7 +96,7 @@
                                 Margin="0,0,0,12">
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="viewModels:BudgetOverviewItemViewModel">
-                            <Border Padding="16" Margin="0,4" Stroke="#D6E1EA" StrokeThickness="1">
+                            <Border Padding="16" Margin="0,0,0,12" Stroke="#D6E1EA" StrokeThickness="1">
                                 <Border.StrokeShape>
                                     <RoundRectangle CornerRadius="14" />
                                 </Border.StrokeShape>

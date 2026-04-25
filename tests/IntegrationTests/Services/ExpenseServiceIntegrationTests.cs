@@ -12,6 +12,7 @@ namespace IntegrationTests.Services
         {
             int userId = CreateUser();
             Category category = CreateCategory(userId);
+            _ = CreateBudget(userId, category.Id, DateTime.Today.AddDays(-5), DateTime.Today.AddDays(25));
 
             ExpenseService service = new(DbContext);
 
@@ -37,10 +38,11 @@ namespace IntegrationTests.Services
         }
 
         [TestMethod]
-        public async Task CreateExpenseAsync_WithInactiveCategory_ReturnsCategoryNotFound()
+        public async Task CreateExpenseAsync_WithInactiveCategory_DoesNotCreateExpense()
         {
             int userId = CreateUser();
             Category category = CreateCategory(userId, isActive: false);
+            _ = CreateBudget(userId, category.Id, DateTime.Today.AddDays(-5), DateTime.Today.AddDays(25));
 
             ExpenseService service = new(DbContext);
 
@@ -55,7 +57,28 @@ namespace IntegrationTests.Services
             var result = await service.CreateExpenseAsync(expense);
 
             Assert.IsFalse(result.IsSuccess);
-            Assert.AreEqual("EXPENSE_CATEGORY_NOT_FOUND", result.ErrorCode);
+        }
+
+        [TestMethod]
+        public async Task CreateExpenseAsync_WithoutBudget_ReturnsBudgetRequired()
+        {
+            int userId = CreateUser();
+            Category category = CreateCategory(userId);
+
+            ExpenseService service = new(DbContext);
+
+            Expense expense = new()
+            {
+                UserId = userId,
+                CategoryId = category.Id,
+                Amount = 9.99m,
+                DateOperation = DateTime.Now.AddMinutes(-1)
+            };
+
+            var result = await service.CreateExpenseAsync(expense);
+
+            Assert.IsFalse(result.IsSuccess);
+            Assert.AreEqual("EXPENSE_BUDGET_REQUIRED", result.ErrorCode);
         }
     }
 }

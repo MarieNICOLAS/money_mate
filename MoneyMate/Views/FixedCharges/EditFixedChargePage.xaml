@@ -1,0 +1,145 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                xmlns:views="clr-namespace:MoneyMate.Views"
+                xmlns:viewModels="clr-namespace:MoneyMate.ViewModels.FixedCharges"
+                x:Class="MoneyMate.Views.FixedCharges.EditFixedChargePage"
+                x:Name="Page"
+                x:DataType="viewModels:FixedChargeFormViewModel"
+                Title="Modifier la charge fixe"
+                UseAuthenticatedFooter="True">
+    <views:BasePage.PageContent>
+        <ScrollView>
+            <VerticalStackLayout Style="{StaticResource MainContainer}" Spacing="18">
+                <Label Text="{Binding Source={x:Reference Page}, Path=PageTitle}"
+                       Style="{StaticResource PageTitle}" />
+
+                <Border Style="{StaticResource CardFrame}" Margin="0,0,0,8">
+                    <VerticalStackLayout Spacing="16">
+                        <Label Text="Mettez à jour votre charge récurrente sans alourdir le parcours mobile."
+                               Style="{StaticResource BodyText}"
+                               TextColor="{StaticResource Secondary}" />
+
+                        <Label Text="Nom"
+                               Style="{StaticResource FormLabel}" />
+                        <Border Style="{StaticResource InputContainer}">
+                            <Entry Text="{Binding Name}"
+                                   Placeholder="Ex. Loyer"
+                                   Style="{StaticResource EntryForm}" />
+                        </Border>
+
+                        <Label Text="Description"
+                               Style="{StaticResource FormLabel}" />
+                        <Border Style="{StaticResource InputContainer}">
+                            <Editor Text="{Binding Description}"
+                                    Placeholder="Optionnelle"
+                                    AutoSize="TextChanges"
+                                    MinimumHeightRequest="80" />
+                        </Border>
+
+                        <Label Text="Montant"
+                               Style="{StaticResource FormLabel}" />
+                        <Border Style="{StaticResource InputContainer}">
+                            <Entry Text="{Binding AmountText}"
+                                   Placeholder="0,00"
+                                   Keyboard="Numeric"
+                                   Style="{StaticResource EntryForm}" />
+                        </Border>
+
+                        <Label Text="Catégorie"
+                               Style="{StaticResource FormLabel}" />
+                        <Border Style="{StaticResource InputContainer}">
+                            <Picker ItemsSource="{Binding Categories}"
+                                    ItemDisplayBinding="{Binding Name}"
+                                    SelectedItem="{Binding SelectedCategory}"
+                                    Title="Sélectionnez une catégorie" />
+                        </Border>
+
+                        <Label Text="Fréquence"
+                               Style="{StaticResource FormLabel}" />
+                        <Border Style="{StaticResource InputContainer}">
+                            <Picker ItemsSource="{Binding Frequencies}"
+                                    SelectedItem="{Binding SelectedFrequency}"
+                                    Title="Choisissez une fréquence" />
+                        </Border>
+
+                        <Label Text="Jour du mois"
+                               Style="{StaticResource FormLabel}" />
+                        <Border Style="{StaticResource InputContainer}">
+                            <Entry Text="{Binding DayOfMonthText}"
+                                   Placeholder="1"
+                                   Keyboard="Numeric"
+                                   Style="{StaticResource EntryForm}" />
+                        </Border>
+
+                        <Label Text="Début"
+                               Style="{StaticResource FormLabel}" />
+                        <DatePicker Date="{Binding StartDate}" />
+
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                            <Switch IsToggled="{Binding HasEndDate}" />
+                            <Label Grid.Column="1"
+                                   Text="Définir une date de fin"
+                                   VerticalTextAlignment="Center"
+                                   TextColor="{StaticResource TextDark}" />
+                        </Grid>
+
+                        <DatePicker Date="{Binding EndDate}"
+                                    IsVisible="{Binding HasEndDate}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Style="{StaticResource CardFrame}">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Options"
+                               Style="{StaticResource SectionTitle}" />
+
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                            <Switch IsToggled="{Binding AutoCreateExpense}" />
+                            <Label Grid.Column="1"
+                                   Text="Générer automatiquement la dépense"
+                                   VerticalTextAlignment="Center"
+                                   TextColor="{StaticResource TextDark}" />
+                        </Grid>
+
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                            <Switch IsToggled="{Binding IsActive}" />
+                            <Label Grid.Column="1"
+                                   Text="Charge fixe active"
+                                   VerticalTextAlignment="Center"
+                                   TextColor="{StaticResource TextDark}" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Label Text="{Binding ValidationMessage}"
+                       IsVisible="{Binding HasValidationErrors}"
+                       TextColor="{StaticResource Error}"
+                       FontAttributes="Bold" />
+
+                <Label Text="{Binding ErrorMessage}"
+                       IsVisible="{Binding HasError}"
+                       TextColor="{StaticResource Error}"
+                       FontAttributes="Bold" />
+
+                <Grid ColumnDefinitions="Auto,*,*" ColumnSpacing="12">
+                    <Button Grid.Column="0"
+                            Text="{StaticResource IconDelete}"
+                            Command="{Binding DeleteCommand}"
+                            IsVisible="{Binding CanDelete}"
+                            Style="{StaticResource DangerIconButton}"
+                            SemanticProperties.Description="Supprimer la charge fixe" />
+                    <Button Grid.Column="1"
+                            Text="Annuler"
+                            Command="{Binding CancelCommand}"
+                            Style="{StaticResource OutlineButton}" />
+                    <Button Grid.Column="2"
+                            Text="Enregistrer"
+                            Command="{Binding SaveCommand}"
+                            IsEnabled="{Binding CanSave}"
+                            Style="{StaticResource PrimaryButton}" />
+                </Grid>
+            </VerticalStackLayout>
+        </ScrollView>
+    </views:BasePage.PageContent>
+</views:BasePage>

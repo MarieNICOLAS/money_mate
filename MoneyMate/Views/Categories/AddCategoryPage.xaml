@@ -4,8 +4,10 @@
                 xmlns:views="clr-namespace:MoneyMate.Views"
                 xmlns:components="clr-namespace:MoneyMate.Components"
                 xmlns:converters="clr-namespace:MoneyMate.Converters"
+                 xmlns:viewModels="clr-namespace:MoneyMate.ViewModels.Categories"
                 x:Class="MoneyMate.Views.Categories.AddCategoryPage"
                 x:Name="Page"
+                 x:DataType="viewModels:CategoryFormViewModel"
                 Title="Nouvelle catégorie"
                 UseAuthenticatedFooter="True">
 
@@ -18,12 +20,10 @@
     <views:BasePage.PageContent>
         <ScrollView>
             <VerticalStackLayout Style="{StaticResource MainContainer}">
+                <Label Text="{Binding Source={x:Reference Page}, Path=PageTitle}"
+                       Style="{StaticResource PageTitle}" />
 
                 <VerticalStackLayout Spacing="4">
-                    <Label Text="{Binding Title}"
-                           Style="{StaticResource PageTitle}"
-                           Margin="0" />
-
                     <Label Text="Créez une catégorie personnalisée pour mieux organiser vos dépenses."
                            Style="{StaticResource BodyText}"
                            TextColor="{StaticResource Secondary}" />
@@ -79,17 +79,24 @@
                         <Label Text="Icône"
                                Style="{StaticResource FormLabel}" />
 
+                        <Border Style="{StaticResource InputContainer}">
+                            <Entry Text="{Binding Icon}"
+                                   Placeholder="Ex. 💰"
+                                   Style="{StaticResource EntryForm}"
+                                   ClearButtonVisibility="WhileEditing" />
+                        </Border>
+
                         <FlexLayout BindableLayout.ItemsSource="{Binding AvailableIcons}"
                                     Direction="Row"
                                     Wrap="Wrap"
                                     JustifyContent="Start"
                                     AlignItems="Start">
                             <BindableLayout.ItemTemplate>
-                                <DataTemplate>
+                                <DataTemplate x:DataType="x:String">
                                     <Border Padding="8"
                                             Margin="4"
                                             BackgroundColor="#F3F8FC"
-                                            StrokeThickness="1"
+                                            StrokeThickness="2"
                                             Stroke="#D6E1EA">
                                         <Border.StrokeShape>
                                             <RoundRectangle CornerRadius="14" />
@@ -118,13 +125,13 @@
                                     JustifyContent="Start"
                                     AlignItems="Start">
                             <BindableLayout.ItemTemplate>
-                                <DataTemplate>
+                                <DataTemplate x:DataType="x:String">
                                     <Border Padding="4"
                                             Margin="4"
                                             Stroke="#D6E1EA"
                                             StrokeThickness="2">
                                         <Border.StrokeShape>
-                                            <RoundRectangle CornerRadius="18" />
+                                            <RoundRectangle CornerRadius="20" />
                                         </Border.StrokeShape>
                                         <Border.GestureRecognizers>
                                             <TapGestureRecognizer
@@ -132,12 +139,12 @@
                                                 CommandParameter="{Binding .}" />
                                         </Border.GestureRecognizers>
 
-                                        <Border WidthRequest="32"
-                                                HeightRequest="32"
+                                        <Border WidthRequest="34"
+                                                HeightRequest="34"
                                                 BackgroundColor="{Binding ., Converter={StaticResource HexToColorConverter}}"
                                                 StrokeThickness="0">
                                             <Border.StrokeShape>
-                                                <RoundRectangle CornerRadius="16" />
+                                                <RoundRectangle CornerRadius="17" />
                                             </Border.StrokeShape>
                                         </Border>
                                     </Border>

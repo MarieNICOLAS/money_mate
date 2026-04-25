@@ -41,6 +41,8 @@ public static class ShellRouteRegistry
         Register<AddBudgetPage>();
         Register<EditBudgetPage>();
         Register<FixedChargesPage>();
+        Register<AddFixedChargePage>();
+        Register<EditFixedChargePage>();
         Register<AlertThresholdPage>();
         Register<CalendarPage>();
         Register<ErrorPage>();

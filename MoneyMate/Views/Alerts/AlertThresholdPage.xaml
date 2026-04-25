@@ -3,20 +3,27 @@
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
                 xmlns:components="clr-namespace:MoneyMate.Components"
+                xmlns:viewModels="clr-namespace:MoneyMate.ViewModels.Alerts"
                 x:Class="MoneyMate.Views.Alerts.AlertThresholdPage"
                 x:Name="Page"
-                Title="Seuils d Alerte"
+                x:DataType="viewModels:AlertThresholdsViewModel"
+                Title="Alertes"
                 UseAuthenticatedFooter="True">
     <views:BasePage.PageContent>
         <ScrollView>
             <VerticalStackLayout Spacing="20" Padding="24">
+                <Label Text="{Binding Source={x:Reference Page}, Path=PageTitle}"
+                       Style="{StaticResource PageTitle}" />
+
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                     <VerticalStackLayout Grid.Column="0" Spacing="4">
-                        <Label Text="Alertes"
-                               Style="{StaticResource PageTitle}" />
                         <Label Text="Contrôlez vos seuils et repérez les budgets déclenchés." TextColor="{StaticResource Secondary}" />
                     </VerticalStackLayout>
-                    <Button Grid.Column="1" Text="Actualiser" Command="{Binding RefreshCommand}" BackgroundColor="{StaticResource Primary}" TextColor="White" />
+                    <Button Grid.Column="1"
+                            Text="{StaticResource IconRefresh}"
+                            Command="{Binding RefreshCommand}"
+                            Style="{StaticResource PrimaryIconButton}"
+                            SemanticProperties.Description="Actualiser les alertes" />
                 </Grid>
 
                 <Label Text="{Binding ErrorMessage}"
@@ -61,17 +68,17 @@
                                         <Label Text="{Binding AlertTypeLabel}" TextColor="{StaticResource Secondary}" />
                                     </VerticalStackLayout>
 
-                                    <VerticalStackLayout Grid.Row="0" Grid.Column="1" Grid.RowSpan="4" Spacing="8">
-                                        <Button Text="Évaluer"
+                                     <VerticalStackLayout Grid.Row="0" Grid.Column="1" Grid.RowSpan="4" Spacing="8">
+                                         <Button Text="{StaticResource IconEvaluate}"
                                                 Command="{Binding Source={x:Reference Page}, Path=BindingContext.EvaluateAlertCommand}"
                                                 CommandParameter="{Binding .}"
-                                                BackgroundColor="{StaticResource Accent}"
-                                                TextColor="White" />
-                                        <Button Text="{Binding ToggleActionText}"
+                                                 Style="{StaticResource AccentIconButton}"
+                                                 SemanticProperties.Description="Évaluer l’alerte" />
+                                         <Button Text="{Binding ToggleActionIcon}"
                                                 Command="{Binding Source={x:Reference Page}, Path=BindingContext.ToggleAlertActiveCommand}"
                                                 CommandParameter="{Binding .}"
-                                                BackgroundColor="{StaticResource Primary}"
-                                                TextColor="White" />
+                                                 Style="{StaticResource PrimaryIconButton}"
+                                                 SemanticProperties.Description="Activer ou désactiver l’alerte" />
                                     </VerticalStackLayout>
 
                                     <HorizontalStackLayout Grid.Row="1" Grid.Column="0" Spacing="16">

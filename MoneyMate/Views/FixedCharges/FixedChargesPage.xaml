@@ -3,30 +3,38 @@
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
                 xmlns:components="clr-namespace:MoneyMate.Components"
+                xmlns:viewModels="clr-namespace:MoneyMate.ViewModels.FixedCharges"
                 x:Class="MoneyMate.Views.FixedCharges.FixedChargesPage"
                 x:Name="Page"
+                x:DataType="viewModels:FixedChargesViewModel"
                 Title="Charges fixes"
                 UseAuthenticatedFooter="True">
     <views:BasePage.PageContent>
         <ScrollView>
             <VerticalStackLayout Spacing="20" Padding="24">
-                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                <Label Text="{Binding Source={x:Reference Page}, Path=PageTitle}"
+                       Style="{StaticResource PageTitle}" />
+
+                <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
                     <VerticalStackLayout Grid.Column="0" Spacing="4">
-                        <Label Text="Charges fixes"
-                               Style="{StaticResource PageTitle}" />
                         <Label Text="Suivez vos prélèvements récurrents et générez les dépenses attendues."
                                TextColor="{StaticResource Secondary}" />
                     </VerticalStackLayout>
                     <Button Grid.Column="1"
-                            Text="Générer"
+                            Text="{StaticResource IconGenerate}"
                             Command="{Binding GenerateExpensesCommand}"
-                            BackgroundColor="{StaticResource Accent}"
-                            TextColor="White" />
+                            Style="{StaticResource AccentIconButton}"
+                            SemanticProperties.Description="Générer les dépenses récurrentes" />
                     <Button Grid.Column="2"
-                            Text="Actualiser"
+                            Text="{StaticResource IconAdd}"
+                            Command="{Binding AddFixedChargeCommand}"
+                            Style="{StaticResource AccentIconButton}"
+                            SemanticProperties.Description="Ajouter une charge fixe" />
+                    <Button Grid.Column="3"
+                            Text="{StaticResource IconRefresh}"
                             Command="{Binding RefreshCommand}"
-                            BackgroundColor="{StaticResource Primary}"
-                            TextColor="White" />
+                            Style="{StaticResource PrimaryIconButton}"
+                            SemanticProperties.Description="Actualiser les charges fixes" />
                 </Grid>
 
                 <Label Text="{Binding ErrorMessage}"
@@ -72,7 +80,7 @@
                 <CollectionView ItemsSource="{Binding FixedCharges}"
                                 IsVisible="{Binding HasFixedCharges}">
                     <CollectionView.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="viewModels:FixedChargeItemViewModel">
                             <Border Padding="16" Margin="0,4" Stroke="#D6E1EA" StrokeThickness="1">
                                 <Border.StrokeShape>
                                     <RoundRectangle CornerRadius="14" />
@@ -107,12 +115,18 @@
                                                TextColor="{StaticResource Secondary}" />
                                     </HorizontalStackLayout>
 
-                                    <Button Grid.Row="2" Grid.Column="1"
-                                            Text="{Binding ToggleActionText}"
-                                            Command="{Binding Source={x:Reference Page}, Path=BindingContext.ToggleFixedChargeActiveCommand}"
-                                            CommandParameter="{Binding .}"
-                                            BackgroundColor="{StaticResource Primary}"
-                                            TextColor="White" />
+                                    <HorizontalStackLayout Grid.Row="2" Grid.Column="1" Spacing="8">
+                                        <Button Text="{StaticResource IconEdit}"
+                                                Command="{Binding Source={x:Reference Page}, Path=BindingContext.EditFixedChargeCommand}"
+                                                CommandParameter="{Binding .}"
+                                                Style="{StaticResource IconButton}"
+                                                SemanticProperties.Description="Modifier la charge fixe" />
+                                        <Button Text="{Binding ToggleActionIcon}"
+                                                Command="{Binding Source={x:Reference Page}, Path=BindingContext.ToggleFixedChargeActiveCommand}"
+                                                CommandParameter="{Binding .}"
+                                                Style="{StaticResource PrimaryIconButton}"
+                                                SemanticProperties.Description="Activer ou désactiver la charge fixe" />
+                                    </HorizontalStackLayout>
                                 </Grid>
                             </Border>
                         </DataTemplate>

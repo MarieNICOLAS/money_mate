@@ -99,6 +99,8 @@ public static class MauiProgram
         builder.Services.AddTransient<AddBudgetPage>();
         builder.Services.AddTransient<EditBudgetPage>();
         builder.Services.AddTransient<FixedChargesPage>();
+        builder.Services.AddTransient<AddFixedChargePage>();
+        builder.Services.AddTransient<EditFixedChargePage>();
         builder.Services.AddTransient<AlertThresholdPage>();
         builder.Services.AddTransient<CalendarPage>();
         builder.Services.AddTransient<ErrorPage>();

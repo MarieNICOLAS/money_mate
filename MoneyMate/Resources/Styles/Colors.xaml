@@ -27,5 +27,15 @@
     <x:String x:Key="IconLogout">&#xE9BA;</x:String>
     <x:String x:Key="IconEyeOpen">&#xE8F4;</x:String>
     <x:String x:Key="IconEyeClosed">&#xE8F5;</x:String>
+    <x:String x:Key="IconBack">&#xE5C4;</x:String>
+    <x:String x:Key="IconRefresh">&#xE5D5;</x:String>
+    <x:String x:Key="IconAdd">&#xE145;</x:String>
+    <x:String x:Key="IconEdit">&#xE3C9;</x:String>
+    <x:String x:Key="IconDelete">&#xE872;</x:String>
+    <x:String x:Key="IconGenerate">&#xE863;</x:String>
+    <x:String x:Key="IconToggleOn">&#xE9F6;</x:String>
+    <x:String x:Key="IconToggleOff">&#xE9F5;</x:String>
+    <x:String x:Key="IconQuickAdd">&#xE148;</x:String>
+    <x:String x:Key="IconEvaluate">&#xE86C;</x:String>
 
 </ResourceDictionary>

@@ -126,7 +126,7 @@ public sealed class BudgetOverviewItemViewModel
 
     public string PeriodLabel { get; init; } = string.Empty;
 
-    public string CategoryName => PeriodLabel;
+    public string CategoryName => "Budget global";
 
     public string SummaryLabel { get; init; } = string.Empty;
 

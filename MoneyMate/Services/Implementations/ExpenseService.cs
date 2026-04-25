@@ -165,6 +165,13 @@ namespace MoneyMate.Services.Implementations
                             validationResult.ErrorCode,
                             validationResult.Message);
 
+                    if (!HasActiveBudgetForDate(expense.UserId, expense.DateOperation))
+                    {
+                        return ServiceResult<Expense>.Failure(
+                            "EXPENSE_BUDGET_REQUIRED",
+                            "Un budget actif est requis pour la date de cette dépense.");
+                    }
+
                     if (!CategoryExistsForUser(expense.UserId, expense.CategoryId))
                     {
                         return ServiceResult<Expense>.Failure(
@@ -397,6 +404,13 @@ namespace MoneyMate.Services.Implementations
                             validationResult.Message);
                     }
 
+                    if (!HasActiveBudgetForDate(duplicatedExpense.UserId, duplicatedExpense.DateOperation))
+                    {
+                        return ServiceResult<Expense>.Failure(
+                            "EXPENSE_BUDGET_REQUIRED",
+                            "Un budget actif est requis pour la date de cette dépense.");
+                    }
+
                     if (!CategoryExistsForUser(duplicatedExpense.UserId, duplicatedExpense.CategoryId))
                     {
                         return ServiceResult<Expense>.Failure(
@@ -437,6 +451,20 @@ namespace MoneyMate.Services.Implementations
                 return ServiceResult.Failure("EXPENSE_INVALID_DATE", "La date de la dépense ne peut pas être dans le futur.");
 
             return ServiceResult.Success();
+        }
+
+        private bool HasActiveBudgetForDate(int userId, DateTime expenseDate)
+        {
+            DateTime targetDate = expenseDate.Date;
+
+            return _dbContext.GetBudgetsByUserId(userId)
+                .Where(budget => budget.IsActive)
+                .Any(budget =>
+                {
+                    DateTime startDate = new DateTime(budget.StartDate.Year, budget.StartDate.Month, 1);
+                    DateTime endDate = (budget.EndDate ?? startDate.AddMonths(1).AddDays(-1)).Date;
+                    return targetDate >= startDate.Date && targetDate <= endDate;
+                });
         }
 
         private static IEnumerable<Expense> ApplyExpenseFilter(IEnumerable<Expense> expenses, ExpenseFilter filter)

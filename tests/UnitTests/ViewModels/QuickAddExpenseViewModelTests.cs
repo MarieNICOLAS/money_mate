@@ -15,7 +15,14 @@ public class QuickAddExpenseViewModelTests
     {
         User user = ViewModelTestHelper.CreateUser();
         Mock<IExpenseService> expenseServiceMock = new();
+        Mock<IBudgetService> budgetServiceMock = new();
         Mock<ICategoryService> categoryServiceMock = new();
+
+        budgetServiceMock.Setup(x => x.GetBudgetsAsync(user.Id))
+            .ReturnsAsync(ServiceResult<List<Budget>>.Success(new List<Budget>
+            {
+                new() { Id = 1, UserId = user.Id, Amount = 100m, StartDate = DateTime.Today, EndDate = DateTime.Today.AddDays(27), IsActive = true }
+            }));
 
         categoryServiceMock.Setup(x => x.GetCategoriesAsync(user.Id))
             .ReturnsAsync(ServiceResult<List<Category>>.Success(new List<Category>
@@ -28,6 +35,7 @@ public class QuickAddExpenseViewModelTests
 
         QuickAddExpenseViewModel viewModel = new(
             expenseServiceMock.Object,
+            budgetServiceMock.Object,
             categoryServiceMock.Object,
             ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
             ViewModelTestHelper.CreateDialogServiceMock().Object,

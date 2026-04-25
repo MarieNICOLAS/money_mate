@@ -6,7 +6,9 @@
 
     <Border StrokeThickness="0"
             Padding="10,6"
-            HorizontalOptions="Start">
+            HorizontalOptions="Start"
+            MinimumHeightRequest="44"
+            MinimumWidthRequest="44">
         <Border.StrokeShape>
             <RoundRectangle CornerRadius="16" />
         </Border.StrokeShape>
@@ -22,8 +24,10 @@
                    VerticalOptions="Center" />
             <Label Text="{Binding Source={x:Reference this}, Path=CategoryName}"
                    FontSize="13"
-                   FontFamily="OpenSans"
+                   FontFamily="OpenSansRegular"
                    TextColor="{StaticResource TextLight}"
+                    LineBreakMode="TailTruncation"
+                    MaxLines="1"
                    VerticalOptions="Center" />
         </HorizontalStackLayout>
     </Border>

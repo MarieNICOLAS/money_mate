@@ -3,22 +3,37 @@
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
                 xmlns:components="clr-namespace:MoneyMate.Components"
+                xmlns:viewModels="clr-namespace:MoneyMate.ViewModels.Expenses"
                 x:Class="MoneyMate.Views.Expenses.ExpensesListPage"
                 x:Name="Page"
-                Title="Mes Depenses"
+                x:DataType="viewModels:ExpensesListViewModel"
+                Title="Dépenses"
                 UseAuthenticatedFooter="True">
     <views:BasePage.PageContent>
         <ScrollView>
             <VerticalStackLayout Spacing="20" Padding="24">
+                <Label Text="{Binding Source={x:Reference Page}, Path=PageTitle}"
+                       Style="{StaticResource PageTitle}" />
+
                 <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
                     <VerticalStackLayout Grid.Column="0" Spacing="4">
-                        <Label Text="Dépenses"
-                               Style="{StaticResource PageTitle}" />
                         <Label Text="Consultez vos opérations récentes et vos totaux." TextColor="{StaticResource Secondary}" />
                     </VerticalStackLayout>
-                    <Button Grid.Column="1" Text="Ajouter" Command="{Binding AddExpenseCommand}" BackgroundColor="{StaticResource Accent}" TextColor="White" />
-                    <Button Grid.Column="2" Text="Rapide" Command="{Binding QuickAddExpenseCommand}" BackgroundColor="#6793AE" TextColor="White" />
-                    <Button Grid.Column="3" Text="Actualiser" Command="{Binding RefreshCommand}" BackgroundColor="{StaticResource Primary}" TextColor="White" />
+                    <Button Grid.Column="1"
+                            Text="{StaticResource IconAdd}"
+                            Command="{Binding AddExpenseCommand}"
+                            Style="{StaticResource AccentIconButton}"
+                            SemanticProperties.Description="Ajouter une dépense" />
+                    <Button Grid.Column="2"
+                            Text="{StaticResource IconQuickAdd}"
+                            Command="{Binding QuickAddExpenseCommand}"
+                            Style="{StaticResource AccentIconButton}"
+                            SemanticProperties.Description="Ajout rapide" />
+                    <Button Grid.Column="3"
+                            Text="{StaticResource IconRefresh}"
+                            Command="{Binding RefreshCommand}"
+                            Style="{StaticResource PrimaryIconButton}"
+                            SemanticProperties.Description="Actualiser les dépenses" />
                 </Grid>
 
                 <Label Text="{Binding ErrorMessage}"

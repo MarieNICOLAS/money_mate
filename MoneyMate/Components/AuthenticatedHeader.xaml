@@ -6,34 +6,48 @@
 
     <Border BackgroundColor="{StaticResource PrimaryLight}"
             Padding="16,12">
-        <Grid ColumnDefinitions="*,Auto">
+        <Grid ColumnDefinitions="Auto,Auto,*,Auto"
+              ColumnSpacing="10">
+            <Button Text="{StaticResource IconBack}"
+                    FontFamily="MaterialIcons"
+                    Grid.Column="0"
+                    Command="{Binding Source={x:Reference this}, Path=BackCommand}"
+                    IsVisible="{Binding Source={x:Reference this}, Path=ShowBackButton}"
+                    BackgroundColor="Transparent"
+                    TextColor="{StaticResource Primary}"
+                    FontSize="24"
+                    WidthRequest="36"
+                    HeightRequest="36"
+                    Padding="0"
+                    CornerRadius="18" />
 
-            <!-- Logo + nom utilisateur -->
-            <HorizontalStackLayout Spacing="10"
-                                   VerticalOptions="Center">
-                <Image Source="money_mate_icon.png"
-                       WidthRequest="32"
-                       HeightRequest="32"
-                       VerticalOptions="Center" />
-                <Label Text="{Binding Source={x:Reference this}, Path=UserName}"
-                       FontSize="16"
+            <Image Grid.Column="1"
+                   Source="money_mate_icon.png"
+                   WidthRequest="30"
+                   HeightRequest="30"
+                   VerticalOptions="Center" />
+
+            <VerticalStackLayout Grid.Column="2"
+                                 Spacing="0"
+                                 VerticalOptions="Center">
+                <Label Text="{Binding Source={x:Reference this}, Path=PageTitle}"
+                       FontSize="18"
                        FontAttributes="Bold"
-                       TextColor="{StaticResource TextLight}"
-                       VerticalOptions="Center" />
-            </HorizontalStackLayout>
+                       TextColor="{StaticResource Primary}"
+                       LineBreakMode="TailTruncation" />
+            </VerticalStackLayout>
 
-            <!-- Bouton deconnexion -->
-            <Button Grid.Column="1"
-                    Text="D&#233;connexion"
+            <Button Grid.Column="3"
+                    Text="{StaticResource IconLogout}"
+                    FontFamily="MaterialIcons"
                     Command="{Binding Source={x:Reference this}, Path=LogoutCommand}"
                     BackgroundColor="Transparent"
-                    TextColor="{StaticResource TextLight}"
-                    FontSize="13"
-                    BorderColor="{StaticResource TextLight}"
-                    BorderWidth="1"
-                    CornerRadius="6"
-                    Padding="10,5" />
-
+                    TextColor="{StaticResource Primary}"
+                    FontSize="22"
+                    WidthRequest="36"
+                    HeightRequest="36"
+                    Padding="0"
+                    CornerRadius="18" />
         </Grid>
     </Border>
 

@@ -1,10 +1,14 @@
 ﻿using MoneyMate.Models;
+using MoneyMate.Models;
 using SQLite;
 
 namespace MoneyMate.Data.Context
 {
     public sealed class MoneyMateDbContext : IMoneyMateDbContext, IDisposable
     {
+        private const string DemoUserEmail = "demo@moneymate.fr";
+        private const string DemoUserPasswordHash = "$2a$11$X8zrnOfReIlonKzWevCyG.KLPFtTyHKM2sjphReMlX5G0xo7c2/wS";
+
         private readonly string _dbPath;
         private readonly object _dbLock = new();
 
@@ -612,6 +616,7 @@ namespace MoneyMate.Data.Context
             EnsureBudgetCategoryColumn(connection);
             CreateIndexes(connection);
             SeedCategories(connection);
+            SeedDemoData(connection);
         }
 
         private static void EnsureBudgetCategoryColumn(SQLiteConnection connection)
@@ -636,18 +641,267 @@ namespace MoneyMate.Data.Context
 
         private static void SeedCategories(SQLiteConnection connection)
         {
-            if (connection.Table<Category>().Any(category => category.IsSystem))
-                return;
+            List<Category> existingSystemCategories = connection.Table<Category>()
+                .Where(category => category.IsSystem)
+                .ToList();
 
-            List<Category> categories =
+            Dictionary<string, Category> existingByName = existingSystemCategories
+                .GroupBy(category => category.Name.Trim(), StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+
+            List<Category> expectedCategories =
             [
-                new() { Name = "Alimentation", Color = "#F4B183", Icon = "🛒", DisplayOrder = 1, IsSystem = true, IsActive = true },
-                new() { Name = "Loisirs", Color = "#7C92C3", Icon = "🎉", DisplayOrder = 2, IsSystem = true, IsActive = true },
-                new() { Name = "Transport", Color = "#8EC9D3", Icon = "🚌", DisplayOrder = 3, IsSystem = true, IsActive = true },
-                new() { Name = "Logement", Color = "#D9E2F3", Icon = "🏠", DisplayOrder = 4, IsSystem = true, IsActive = true }
+                new() { Name = "Alimentation", Description = "Courses, boulangerie et repas du quotidien.", Color = "#F4B183", Icon = "🛒", DisplayOrder = 1, IsSystem = true, IsActive = true },
+                new() { Name = "Logement", Description = "Loyer, énergie et dépenses liées au logement.", Color = "#D9E2F3", Icon = "🏠", DisplayOrder = 2, IsSystem = true, IsActive = true },
+                new() { Name = "Transport", Description = "Essence, transports et mobilité.", Color = "#8EC9D3", Icon = "🚗", DisplayOrder = 3, IsSystem = true, IsActive = true },
+                new() { Name = "Santé", Description = "Médecin, pharmacie et bien-être.", Color = "#F8CBAD", Icon = "💊", DisplayOrder = 4, IsSystem = true, IsActive = true },
+                new() { Name = "Loisirs", Description = "Sorties, culture et moments de détente.", Color = "#7C92C3", Icon = "🎉", DisplayOrder = 5, IsSystem = true, IsActive = true },
+                new() { Name = "Abonnements", Description = "Internet, streaming et services récurrents.", Color = "#B4A7D6", Icon = "📺", DisplayOrder = 6, IsSystem = true, IsActive = true },
+                new() { Name = "Famille & cadeaux", Description = "Anniversaires, fêtes et cadeaux.", Color = "#F4CCCC", Icon = "🎁", DisplayOrder = 7, IsSystem = true, IsActive = true },
+                new() { Name = "Vie quotidienne", Description = "Maison, entretien et achats utiles du quotidien.", Color = "#CFE2F3", Icon = "🧺", DisplayOrder = 8, IsSystem = true, IsActive = true }
             ];
 
-            connection.InsertAll(categories);
+            connection.RunInTransaction(() =>
+            {
+                foreach (Category expectedCategory in expectedCategories)
+                {
+                    if (existingByName.TryGetValue(expectedCategory.Name, out Category? existingCategory))
+                    {
+                        existingCategory.Description = expectedCategory.Description;
+                        existingCategory.Color = expectedCategory.Color;
+                        existingCategory.Icon = expectedCategory.Icon;
+                        existingCategory.DisplayOrder = expectedCategory.DisplayOrder;
+                        existingCategory.IsActive = true;
+                        existingCategory.IsSystem = true;
+                        existingCategory.UserId = null;
+                        connection.Update(existingCategory);
+                        continue;
+                    }
+
+                    connection.Insert(expectedCategory);
+                }
+            });
+        }
+
+        private static void SeedDemoData(SQLiteConnection connection)
+        {
+            User demoUser = EnsureDemoUser(connection);
+            if (demoUser.Id <= 0)
+                return;
+
+            bool hasExistingDemoData = connection.Table<Budget>().Any(budget => budget.UserId == demoUser.Id)
+                || connection.Table<Expense>().Any(expense => expense.UserId == demoUser.Id)
+                || connection.Table<FixedCharge>().Any(fixedCharge => fixedCharge.UserId == demoUser.Id);
+
+            if (hasExistingDemoData)
+                return;
+
+            Dictionary<string, Category> categoriesByName = connection.Table<Category>()
+                .Where(category => category.IsSystem && category.IsActive)
+                .ToDictionary(category => category.Name, category => category, StringComparer.OrdinalIgnoreCase);
+
+            string[] requiredCategoryNames =
+            [
+                "Alimentation",
+                "Logement",
+                "Transport",
+                "Santé",
+                "Loisirs",
+                "Abonnements",
+                "Famille & cadeaux",
+                "Vie quotidienne"
+            ];
+
+            if (requiredCategoryNames.Any(name => !categoriesByName.ContainsKey(name)))
+                return;
+
+            DateTime today = DateTime.Today;
+            DateTime firstSeedMonth = new(today.Year - 1, 12, 1);
+            DateTime lastSeedMonth = today.Month >= 4
+                ? new(today.Year, 4, 1)
+                : new(today.Year, today.Month, 1);
+
+            if (lastSeedMonth < firstSeedMonth)
+                return;
+
+            List<DateTime> seededMonths = [];
+            for (DateTime month = firstSeedMonth; month <= lastSeedMonth; month = month.AddMonths(1))
+                seededMonths.Add(month);
+
+            List<(string Name, string Description, decimal Amount, string CategoryName, int DayOfMonth)> fixedChargeDefinitions =
+            [
+                ("Loyer", "Appartement T2 en périphérie", 690m, "Logement", 5),
+                ("Électricité", "Prélèvement énergie", 62.50m, "Logement", 12),
+                ("Fibre", "Abonnement internet maison", 29.99m, "Abonnements", 7),
+                ("Forfait mobile", "Téléphone mobile", 15.99m, "Abonnements", 18),
+                ("Netflix", "Abonnement streaming", 13.49m, "Abonnements", 22),
+                ("Assurance auto", "Cotisation mensuelle auto", 58.90m, "Transport", 14)
+            ];
+
+            List<Budget> budgets = seededMonths
+                .Select(month => CreateDemoBudget(demoUser.Id, month))
+                .ToList();
+
+            List<FixedCharge> fixedCharges = fixedChargeDefinitions
+                .Select(definition => new FixedCharge
+                {
+                    UserId = demoUser.Id,
+                    Name = definition.Name,
+                    Description = definition.Description,
+                    Amount = definition.Amount,
+                    CategoryId = categoriesByName[definition.CategoryName].Id,
+                    Frequency = "Monthly",
+                    DayOfMonth = definition.DayOfMonth,
+                    StartDate = firstSeedMonth,
+                    EndDate = null,
+                    IsActive = true,
+                    AutoCreateExpense = true,
+                    CreatedAt = firstSeedMonth.AddDays(definition.DayOfMonth - 1)
+                })
+                .ToList();
+
+            List<Expense> expenses = [];
+            foreach (DateTime month in seededMonths)
+            {
+                expenses.AddRange(fixedChargeDefinitions.Select(definition => new Expense
+                {
+                    UserId = demoUser.Id,
+                    CategoryId = categoriesByName[definition.CategoryName].Id,
+                    Amount = definition.Amount,
+                    Note = definition.Name,
+                    DateOperation = CreateDemoDate(month, definition.DayOfMonth),
+                    IsFixedCharge = true
+                }));
+
+                foreach ((int Day, decimal Amount, string CategoryName, string Note) expense in GetDemoMonthlyExpenses(month))
+                {
+                    expenses.Add(new Expense
+                    {
+                        UserId = demoUser.Id,
+                        CategoryId = categoriesByName[expense.CategoryName].Id,
+                        Amount = expense.Amount,
+                        Note = expense.Note,
+                        DateOperation = CreateDemoDate(month, expense.Day),
+                        IsFixedCharge = false
+                    });
+                }
+            }
+
+            connection.RunInTransaction(() =>
+            {
+                connection.InsertAll(budgets);
+                connection.InsertAll(fixedCharges);
+                connection.InsertAll(expenses);
+            });
+        }
+
+        private static User EnsureDemoUser(SQLiteConnection connection)
+        {
+            User? existingUser = connection.Table<User>()
+                .FirstOrDefault(user => user.Email.ToLower() == DemoUserEmail);
+
+            if (existingUser is not null)
+                return existingUser;
+
+            User demoUser = new()
+            {
+                Email = DemoUserEmail,
+                PasswordHash = DemoUserPasswordHash,
+                Devise = "EUR",
+                BudgetStartDay = 1,
+                Role = "User",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            connection.Insert(demoUser);
+            return demoUser;
+        }
+
+        private static Budget CreateDemoBudget(int userId, DateTime month)
+        {
+            decimal amount = month.Month switch
+            {
+                12 => 2125m,
+                1 => 1810m,
+                2 => 1825m,
+                3 => 1835m,
+                4 => 1855m,
+                _ => 1810m
+            };
+
+            DateTime monthStart = new(month.Year, month.Month, 1);
+
+            return new Budget
+            {
+                UserId = userId,
+                Amount = amount,
+                PeriodType = "Monthly",
+                StartDate = monthStart,
+                EndDate = monthStart.AddMonths(1).AddDays(-1),
+                IsActive = true,
+                CreatedAt = monthStart.AddDays(1),
+                CategoryId = 0
+            };
+        }
+
+        private static IEnumerable<(int Day, decimal Amount, string CategoryName, string Note)> GetDemoMonthlyExpenses(DateTime month)
+            => month.Month switch
+            {
+                12 =>
+                [
+                    (6, 245.30m, "Alimentation", "Courses de décembre et produits pour les fêtes"),
+                    (9, 41.80m, "Vie quotidienne", "Produits maison et déco de saison"),
+                    (12, 96.40m, "Transport", "Plein d'essence avant les trajets familiaux"),
+                    (14, 279.90m, "Famille & cadeaux", "Cadeaux de Noël pour la famille"),
+                    (21, 52.00m, "Loisirs", "Marché de Noël et sortie en ville"),
+                    (24, 118.60m, "Alimentation", "Repas de Noël en famille"),
+                    (27, 23.40m, "Santé", "Pharmacie hiver"),
+                    (30, 64.50m, "Famille & cadeaux", "Étrennes et petits cadeaux de fin d'année")
+                ],
+                1 =>
+                [
+                    (4, 218.45m, "Alimentation", "Courses de reprise après les fêtes"),
+                    (8, 18.90m, "Santé", "Pharmacie pour rhume hivernal"),
+                    (11, 105.70m, "Transport", "Plein d'essence après la hausse des prix"),
+                    (18, 79.00m, "Famille & cadeaux", "Cadeau d'anniversaire pour maman"),
+                    (22, 26.40m, "Vie quotidienne", "Entretien de la maison"),
+                    (25, 34.20m, "Loisirs", "Restaurant simple du week-end")
+                ],
+                2 =>
+                [
+                    (3, 226.10m, "Alimentation", "Courses du mois"),
+                    (10, 111.80m, "Transport", "Essence avec inflation persistante"),
+                    (14, 46.30m, "Loisirs", "Soirée de Saint-Valentin à la maison"),
+                    (16, 55.00m, "Famille & cadeaux", "Cadeau d'anniversaire pour un ami proche"),
+                    (21, 29.90m, "Vie quotidienne", "Lessive et entretien courant"),
+                    (24, 24.00m, "Loisirs", "Cinéma du dimanche")
+                ],
+                3 =>
+                [
+                    (3, 232.75m, "Alimentation", "Courses du mois"),
+                    (8, 109.40m, "Transport", "Carburant pour trajets travail et famille"),
+                    (12, 89.00m, "Famille & cadeaux", "Cadeau d'anniversaire pour le frère"),
+                    (17, 62.50m, "Alimentation", "Repas familial du dimanche"),
+                    (22, 67.20m, "Vie quotidienne", "Chaussures et achats utiles du printemps"),
+                    (28, 26.00m, "Santé", "Consultation médecin généraliste")
+                ],
+                4 =>
+                [
+                    (4, 238.20m, "Alimentation", "Courses du mois"),
+                    (9, 116.30m, "Transport", "Essence après la hausse liée au détroit d'Ormuz"),
+                    (12, 38.00m, "Famille & cadeaux", "Chocolats de Pâques pour les enfants"),
+                    (20, 92.40m, "Alimentation", "Repas familial de Pâques"),
+                    (23, 27.50m, "Loisirs", "Sortie parc et café"),
+                    (26, 31.80m, "Vie quotidienne", "Produits ménagers et rangement de printemps")
+                ],
+                _ => []
+            };
+
+        private static DateTime CreateDemoDate(DateTime month, int day)
+        {
+            int safeDay = Math.Min(day, DateTime.DaysInMonth(month.Year, month.Month));
+            return new DateTime(month.Year, month.Month, safeDay, 12, 0, 0);
         }
 
         private TResult Execute<TResult>(Func<SQLiteConnection, TResult> action)

@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Windows.Input;
 using Microsoft.Maui.Graphics;
 using MoneyMate.Components;
@@ -16,6 +17,8 @@ public class DashboardViewModel : AuthenticatedViewModelBase
     private readonly IDashboardService _dashboardService;
 
     private bool _isInitialized;
+    private string _greetingText = "Bonjour";
+    private string _todayDisplay = string.Empty;
     private string _userName = string.Empty;
     private string _devise = "EUR";
     private string _currentMonthExpensesDisplay = CurrencyHelper.Format(0m);
@@ -38,14 +41,14 @@ public class DashboardViewModel : AuthenticatedViewModelBase
     {
         _dashboardService = dashboardService ?? throw new ArgumentNullException(nameof(dashboardService));
 
-        Title = "Tableau de Bord";
+        Title = "Tableau de bord";
         TopCategories = [];
         RecentTransactions = [];
         TopCategorySegments = [];
 
         RefreshCommand = new Command(async () => await LoadAsync());
         LogoutCommand = new Command(async () => await LogoutAsync());
-        OpenCalendarCommand = new Command(async () => await NavigationService.NavigateToAsync(AppRoutes.Calendar));
+        OpenCategoriesCommand = new Command(async () => await NavigationService.NavigateToAsync(AppRoutes.CategoriesList));
         OpenFixedChargesCommand = new Command(async () => await NavigationService.NavigateToAsync(AppRoutes.FixedCharges));
         OpenAlertsCommand = new Command(async () => await NavigationService.NavigateToAsync(AppRoutes.AlertThreshold));
 
@@ -63,7 +66,7 @@ public class DashboardViewModel : AuthenticatedViewModelBase
 
     public ICommand LogoutCommand { get; }
 
-    public ICommand OpenCalendarCommand { get; }
+    public ICommand OpenCategoriesCommand { get; }
 
     public ICommand OpenFixedChargesCommand { get; }
 
@@ -73,6 +76,18 @@ public class DashboardViewModel : AuthenticatedViewModelBase
     {
         get => _userName;
         private set => SetProperty(ref _userName, value);
+    }
+
+    public string GreetingText
+    {
+        get => _greetingText;
+        private set => SetProperty(ref _greetingText, value);
+    }
+
+    public string TodayDisplay
+    {
+        get => _todayDisplay;
+        private set => SetProperty(ref _todayDisplay, value);
     }
 
     public string Devise
@@ -216,7 +231,27 @@ public class DashboardViewModel : AuthenticatedViewModelBase
     private void UpdateCurrentUserContext()
     {
         Devise = CurrentDevise;
-        UserName = CurrentUser?.Email ?? string.Empty;
+        UserName = BuildUserName(CurrentUser?.Email);
+        GreetingText = string.IsNullOrWhiteSpace(UserName) ? "Bonjour" : $"Bonjour {UserName}";
+        TodayDisplay = FormatToday(DateTime.Today);
+    }
+
+    private static string BuildUserName(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return string.Empty;
+
+        string[] parts = email.Split('@', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return parts.Length == 0 ? string.Empty : parts[0];
+    }
+
+    private static string FormatToday(DateTime date)
+    {
+        CultureInfo culture = CultureInfo.GetCultureInfo("fr-FR");
+        string text = date.ToString("dddd d MMMM yyyy", culture);
+        return string.IsNullOrWhiteSpace(text)
+            ? string.Empty
+            : char.ToUpper(text[0], culture) + text[1..];
     }
 
     private void UpdateTopCategories(IEnumerable<DashboardCategorySpending> categories)

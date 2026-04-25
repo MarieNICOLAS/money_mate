@@ -80,7 +80,7 @@ namespace MoneyMate.ViewModels.Profile
             _authService = authService;
             _dialogService = dialogService;
             _navigationService = navigationService;
-            Title = "Mon Profil";
+            Title = "Profil";
 
             LogoutCommand              = new Command(async () => await LogoutAsync());
             GoToChangePasswordCommand  = new Command(async () => await _navigationService.NavigateToAsync(AppRoutes.ChangePassword));

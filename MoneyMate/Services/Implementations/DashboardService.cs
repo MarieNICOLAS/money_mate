@@ -45,7 +45,9 @@ namespace MoneyMate.Services.Implementations
                     DateTime previousMonthStart = monthStart.AddMonths(-1);
 
                     List<Expense> allExpenses = _dbContext.GetExpensesByUserId(userId);
-                    List<Budget> budgets = _dbContext.GetBudgetsByUserId(userId);
+                    List<Budget> budgets = _dbContext.GetBudgetsByUserId(userId)
+                        .Where(budget => budget.IsActive)
+                        .ToList();
                     List<AlertThreshold> alertThresholds = _dbContext.GetAlertThresholdsByUserId(userId);
                     int activeFixedChargesCount = _dbContext.GetActiveFixedChargesCountByUserId(userId);
                     Dictionary<int, Category> categoriesById = _dbContext.GetCategoriesByUserId(userId)

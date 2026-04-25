@@ -1,16 +1,18 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
+                xmlns:viewModels="clr-namespace:MoneyMate.ViewModels.Expenses"
                 x:Class="MoneyMate.Views.Expenses.EditExpensePage"
-                Title="Modifier une dépense"
+                x:Name="Page"
+                x:DataType="viewModels:ExpenseFormViewModel"
+                Title="Modifier la dépense"
                 UseAuthenticatedFooter="True">
     <views:BasePage.PageContent>
         <ScrollView>
             <VerticalStackLayout Style="{StaticResource MainContainer}" Spacing="18">
-                <Label Text="Modifier la dépense"
-                       Style="{StaticResource PageTitle}"
-                       Margin="0,8,0,0" />
+                <Label Text="{Binding Source={x:Reference Page}, Path=PageTitle}"
+                       Style="{StaticResource PageTitle}" />
 
                 <Border Style="{StaticResource CardFrame}" Margin="0,0,0,8">
                     <VerticalStackLayout Spacing="16">
@@ -73,11 +75,11 @@
                       ColumnSpacing="12"
                       Margin="0,8,0,0">
                     <Button Grid.Column="0"
-                            Text="Supprimer"
+                            Text="{StaticResource IconDelete}"
                             Command="{Binding DeleteCommand}"
                             IsVisible="{Binding CanDelete}"
-                            BackgroundColor="#FFF0F0"
-                            TextColor="{StaticResource Error}" />
+                            Style="{StaticResource DangerIconButton}"
+                            SemanticProperties.Description="Supprimer la dépense" />
                     <Button Grid.Column="1"
                             Text="Annuler"
                             Command="{Binding CancelCommand}"

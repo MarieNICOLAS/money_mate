@@ -70,19 +70,18 @@
                                 Margin="0,0,0,12">
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="viewModels:CategoryItemViewModel">
-                            <Border Padding="16" Margin="0,4" Stroke="#D6E1EA" StrokeThickness="1">
+                            <Border Padding="16" Margin="0,0,0,12" Stroke="#D6E1EA" StrokeThickness="1">
                                 <Border.StrokeShape>
                                     <RoundRectangle CornerRadius="14" />
                                 </Border.StrokeShape>
 
-                                <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="12">
+                                <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" RowSpacing="10" ColumnSpacing="12">
                                     <components:CategoryBadge Grid.Row="0" Grid.Column="0"
                                                               CategoryIcon="{Binding Icon}"
                                                               CategoryColor="{Binding CategoryColor}" />
 
                                     <VerticalStackLayout Grid.Row="0"
                                                          Grid.Column="1"
-                                                         Grid.RowSpan="3"
                                                          Spacing="6"
                                                          VerticalOptions="Center">
                                         <Label Text="{Binding Name}"
@@ -103,9 +102,9 @@
                                                     AlignItems="Center"
                                                     BindableLayout.ItemsSource="{Binding Tags}">
                                             <BindableLayout.ItemTemplate>
-                                                <DataTemplate>
+                                                <DataTemplate x:DataType="x:String">
                                                     <Border Padding="10,4"
-                                                            Margin="0,0,8,8"
+                                                            Margin="0,0,8,4"
                                                             StrokeThickness="0"
                                                             BackgroundColor="#F3F8FC">
                                                         <Border.StrokeShape>
@@ -120,11 +119,11 @@
                                         </FlexLayout>
                                     </VerticalStackLayout>
 
-                                    <VerticalStackLayout Grid.Row="0"
-                                                         Grid.Column="2"
-                                                         Grid.RowSpan="3"
-                                                         Spacing="8"
-                                                         HorizontalOptions="End">
+                                    <HorizontalStackLayout Grid.Row="1"
+                                                           Grid.Column="0"
+                                                           Grid.ColumnSpan="3"
+                                                           Spacing="8"
+                                                           HorizontalOptions="End">
 
                                         <Button Text="{StaticResource IconEdit}"
                                                 Command="{Binding Source={RelativeSource AncestorType={x:Type views:BasePage}}, Path=BindingContext.EditCategoryCommand}"
@@ -151,7 +150,7 @@
                                                 IsVisible="{Binding CanDelete}"
                                                 Style="{StaticResource DangerIconButton}"
                                                 SemanticProperties.Description="Supprimer la catégorie" />
-                                    </VerticalStackLayout>
+                                    </HorizontalStackLayout>
                                 </Grid>
                             </Border>
                         </DataTemplate>

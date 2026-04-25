@@ -33,6 +33,12 @@ public partial class ExpenseCard : ContentView
         BindableProperty.Create(nameof(CategoryName), typeof(string), typeof(ExpenseCard), string.Empty);
 
     /// <summary>
+    /// Libellé principal de la dépense.
+    /// </summary>
+    public static readonly BindableProperty DisplayNameProperty =
+        BindableProperty.Create(nameof(DisplayName), typeof(string), typeof(ExpenseCard), string.Empty);
+
+    /// <summary>
     /// Icône de la catégorie.
     /// </summary>
     public static readonly BindableProperty CategoryIconProperty =
@@ -55,6 +61,12 @@ public partial class ExpenseCard : ContentView
     /// </summary>
     public static readonly BindableProperty TapCommandProperty =
         BindableProperty.Create(nameof(TapCommand), typeof(ICommand), typeof(ExpenseCard), null);
+
+    /// <summary>
+    /// Paramètre transmis à la commande de tap.
+    /// </summary>
+    public static readonly BindableProperty TapCommandParameterProperty =
+        BindableProperty.Create(nameof(TapCommandParameter), typeof(object), typeof(ExpenseCard), null);
 
     /// <summary>
     /// Date de l'opération.
@@ -93,6 +105,15 @@ public partial class ExpenseCard : ContentView
     }
 
     /// <summary>
+    /// Libellé principal de la dépense.
+    /// </summary>
+    public string DisplayName
+    {
+        get => (string)GetValue(DisplayNameProperty);
+        set => SetValue(DisplayNameProperty, value);
+    }
+
+    /// <summary>
     /// Icône de la catégorie.
     /// </summary>
     public string CategoryIcon
@@ -126,6 +147,15 @@ public partial class ExpenseCard : ContentView
     {
         get => (ICommand?)GetValue(TapCommandProperty);
         set => SetValue(TapCommandProperty, value);
+    }
+
+    /// <summary>
+    /// Paramètre transmis à la commande de tap.
+    /// </summary>
+    public object? TapCommandParameter
+    {
+        get => GetValue(TapCommandParameterProperty);
+        set => SetValue(TapCommandParameterProperty, value);
     }
 
     public ExpenseCard()

@@ -36,17 +36,17 @@
                                  Spacing="2"
                                  HorizontalOptions="Center"
                                  VerticalOptions="Center">
-                <Label Text="{StaticResource IconCalendar}"
+                <Label Text="{StaticResource IconExpense}"
                        FontFamily="MaterialIcons"
                        FontSize="22"
                        TextColor="White"
                        HorizontalOptions="Center" />
-                <Label Text="Calendrier"
+                <Label Text="Dépenses"
                        FontSize="11"
                        TextColor="White"
                        HorizontalOptions="Center" />
                 <VerticalStackLayout.GestureRecognizers>
-                    <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoCalendarCommand}" />
+                    <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoExpensesCommand}" />
                 </VerticalStackLayout.GestureRecognizers>
             </VerticalStackLayout>
 

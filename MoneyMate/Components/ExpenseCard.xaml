@@ -15,12 +15,12 @@
         </Border.StrokeShape>
 
         <Grid ColumnDefinitions="Auto,*,Auto"
-              RowDefinitions="Auto,Auto"
+              RowDefinitions="Auto,Auto,Auto"
               ColumnSpacing="12"
               RowSpacing="4">
 
             <!-- Icône catégorie -->
-            <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
+            <Border Grid.Row="0" Grid.RowSpan="3" Grid.Column="0"
                     WidthRequest="42" HeightRequest="42"
                     StrokeThickness="0"
                     VerticalOptions="Center">
@@ -36,9 +36,9 @@
                        VerticalOptions="Center" />
             </Border>
 
-            <!-- Nom catégorie -->
+            <!-- Libellé -->
             <Label Grid.Row="0" Grid.Column="1"
-                   Text="{Binding Source={x:Reference this}, Path=CategoryName}"
+                   Text="{Binding Source={x:Reference this}, Path=DisplayName}"
                    FontSize="15"
                    FontFamily="OpenSans"
                    FontAttributes="Bold"
@@ -46,8 +46,17 @@
                    VerticalOptions="End"
                    LineBreakMode="TailTruncation" />
 
-            <!-- Note -->
+            <!-- Catégorie -->
             <Label Grid.Row="1" Grid.Column="1"
+                   Text="{Binding Source={x:Reference this}, Path=CategoryName}"
+                   FontSize="12"
+                   FontFamily="OpenSans"
+                   TextColor="{StaticResource TextDark}"
+                   VerticalOptions="Start"
+                   LineBreakMode="TailTruncation" />
+
+            <!-- Note -->
+            <Label Grid.Row="2" Grid.Column="1"
                    Text="{Binding Source={x:Reference this}, Path=Note}"
                    FontSize="12"
                    FontFamily="OpenSans"
@@ -66,6 +75,7 @@
 
             <!-- Date -->
             <Label Grid.Row="1" Grid.Column="2"
+                   Grid.RowSpan="2"
                    Text="{Binding Source={x:Reference this}, Path=ExpenseDate, StringFormat='{0:dd/MM/yyyy}'}"
                    FontSize="11"
                    FontFamily="OpenSans"
@@ -76,7 +86,8 @@
         </Grid>
 
         <Border.GestureRecognizers>
-            <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=TapCommand}" />
+            <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=TapCommand}"
+                                  CommandParameter="{Binding Source={x:Reference this}, Path=TapCommandParameter}" />
         </Border.GestureRecognizers>
 
     </Border>

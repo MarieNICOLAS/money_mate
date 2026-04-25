@@ -1,5 +1,6 @@
 ﻿namespace MoneyMate;
 
+using System.Diagnostics;
 using MoneyMate.Services.Interfaces;
 
 public partial class App : Application
@@ -33,8 +34,9 @@ public partial class App : Application
         {
             await _startupCoordinator.InitializeAsync();
         }
-        catch
+        catch (Exception ex)
         {
+            Debug.WriteLine($"Erreur initialisation application : {ex}");
         }
     }
 }

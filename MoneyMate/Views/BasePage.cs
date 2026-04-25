@@ -110,9 +110,11 @@ namespace MoneyMate.Views
             set => SetValue(ShowAuthenticatedBackButtonProperty, value);
         }
 
-        public string PageTitle => string.IsNullOrWhiteSpace(Title) ? _trackedViewModel?.Title ?? string.Empty : Title;
+        public string PageTitle => string.IsNullOrWhiteSpace(_trackedViewModel?.Title) ? Title : _trackedViewModel.Title;
 
         protected ICommand GoHomeCommand { get; }
+
+        protected ICommand GoExpensesCommand { get; }
 
         protected ICommand GoCalendarCommand { get; }
 
@@ -131,6 +133,7 @@ namespace MoneyMate.Views
         protected BasePage()
         {
             GoHomeCommand = new Command(async () => await NavigateToAsync(AppRoutes.Dashboard));
+            GoExpensesCommand = new Command(async () => await NavigateToAsync(AppRoutes.ExpensesList));
             GoCalendarCommand = new Command(async () => await NavigateToAsync(AppRoutes.Calendar));
             GoQuickAddExpenseCommand = new Command(async () => await NavigateToAsync(AppRoutes.QuickAddExpense));
             GoBudgetCommand = new Command(async () => await NavigateToAsync(AppRoutes.BudgetsOverview));
@@ -139,6 +142,7 @@ namespace MoneyMate.Views
             _authenticatedFooter = new AuthenticatedFooter
             {
                 GoHomeCommand = GoHomeCommand,
+                GoExpensesCommand = GoExpensesCommand,
                 GoCalendarCommand = GoCalendarCommand,
                 GoQuickAddExpenseCommand = GoQuickAddExpenseCommand,
                 GoBudgetCommand = GoBudgetCommand,
@@ -237,7 +241,7 @@ namespace MoneyMate.Views
 
         private void UpdateAuthenticatedHeaderTitle()
         {
-            string title = _trackedViewModel?.Title;
+            string? title = _trackedViewModel?.Title;
             _authenticatedHeader.PageTitle = string.IsNullOrWhiteSpace(title) ? Title : title;
         }
 

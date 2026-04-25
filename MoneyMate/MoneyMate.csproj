@@ -192,7 +192,9 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(TargetFramework)' == 'net9.0-android' and '$(Configuration)' == 'Debug'">
-		<EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+		<RuntimeIdentifier>android-x64</RuntimeIdentifier>
+		<EmbedAssembliesIntoApk>false</EmbedAssembliesIntoApk>
+		<UseAppHost>false</UseAppHost>
 	</PropertyGroup>
 
 </Project>

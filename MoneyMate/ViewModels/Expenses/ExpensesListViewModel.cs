@@ -2,6 +2,7 @@
 using System.Windows.Input;
 using Microsoft.Maui.Graphics;
 using MoneyMate.Configuration;
+using MoneyMate.Helpers;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 
@@ -38,10 +39,10 @@ public class ExpensesListViewModel : AuthenticatedViewModelBase
         RefreshCommand = new Command(async () => await LoadAsync());
         AddExpenseCommand = new Command(async () => await NavigateToExpenseCreationAsync(AppRoutes.AddExpense));
         QuickAddExpenseCommand = new Command(async () => await NavigateToExpenseCreationAsync(AppRoutes.QuickAddExpense));
-        OpenExpenseDetailsCommand = new Command<ExpenseItemViewModel>(async expense => await OpenExpenseDetailsAsync(expense));
+        OpenExpenseDetailsCommand = new Command<ExpenseListItemViewModel>(async expense => await OpenExpenseDetailsAsync(expense));
     }
 
-    public ObservableCollection<ExpenseItemViewModel> Expenses { get; }
+    public ObservableCollection<ExpenseListItemViewModel> Expenses { get; }
 
     public ICommand RefreshCommand { get; }
 
@@ -98,7 +99,11 @@ public class ExpensesListViewModel : AuthenticatedViewModelBase
 
             Expenses.Clear();
             foreach (Expense expense in expenses)
-                Expenses.Add(ExpenseItemViewModel.FromModel(expense, categoriesById, Devise));
+            {
+                ExpenseListItemViewModel item = ExpenseListItemViewModel.FromModel(expense, categoriesById, Devise);
+                item.OpenCommand = OpenExpenseDetailsCommand;
+                Expenses.Add(item);
+            }
 
             TotalExpenses = expenses.Sum(expense => expense.Amount);
             RefreshState();
@@ -112,7 +117,7 @@ public class ExpensesListViewModel : AuthenticatedViewModelBase
         OnPropertyChanged(nameof(Devise));
     }
 
-    private async Task OpenExpenseDetailsAsync(ExpenseItemViewModel? expense)
+    private async Task OpenExpenseDetailsAsync(ExpenseListItemViewModel? expense)
     {
         if (expense == null)
             return;
@@ -149,7 +154,7 @@ public class ExpensesListViewModel : AuthenticatedViewModelBase
 /// <summary>
 /// Représentation UI d'une dépense.
 /// </summary>
-public sealed class ExpenseItemViewModel
+public class ExpenseListItemViewModel
 {
     private static readonly Color DefaultColor = Color.FromArgb("#6B7A8F");
 
@@ -161,6 +166,8 @@ public sealed class ExpenseItemViewModel
 
     public string Note { get; init; } = string.Empty;
 
+    public string DisplayName { get; init; } = string.Empty;
+
     public string CategoryName { get; init; } = string.Empty;
 
     public string CategoryIcon { get; init; } = "💰";
@@ -169,24 +176,42 @@ public sealed class ExpenseItemViewModel
 
     public string Devise { get; init; } = "EUR";
 
-    public static ExpenseItemViewModel FromModel(Expense expense, IReadOnlyDictionary<int, Category> categoriesById, string devise)
+    public ICommand? OpenCommand { get; set; }
+
+    public string AmountDisplay => CurrencyHelper.Format(Amount, Devise);
+
+    public string DateDisplay => ExpenseDate.ToString("dd/MM/yyyy");
+
+    public static ExpenseListItemViewModel FromModel(Expense expense, IReadOnlyDictionary<int, Category> categoriesById, string devise)
     {
         ArgumentNullException.ThrowIfNull(expense);
 
+        categoriesById ??= new Dictionary<int, Category>();
         categoriesById.TryGetValue(expense.CategoryId, out Category? category);
 
-        return new ExpenseItemViewModel
+        string categoryName = string.IsNullOrWhiteSpace(category?.Name)
+            ? "Catégorie inconnue"
+            : category!.Name.Trim();
+
+        string note = string.IsNullOrWhiteSpace(expense.Note)
+            ? (expense.IsFixedCharge ? "Charge fixe" : "Sans note")
+            : expense.Note.Trim();
+
+        string displayName = string.IsNullOrWhiteSpace(expense.Note)
+            ? categoryName
+            : expense.Note.Trim();
+
+        return new ExpenseListItemViewModel
         {
             Id = expense.Id,
             Amount = expense.Amount,
             ExpenseDate = expense.DateOperation,
-            Note = string.IsNullOrWhiteSpace(expense.Note)
-                ? (expense.IsFixedCharge ? "Charge fixe" : "Sans note")
-                : expense.Note,
-            CategoryName = category?.Name ?? "Catégorie inconnue",
+            Note = note,
+            DisplayName = displayName,
+            CategoryName = categoryName,
             CategoryIcon = string.IsNullOrWhiteSpace(category?.Icon) ? "💰" : category!.Icon,
             CategoryColor = TryCreateColor(category?.Color),
-            Devise = devise
+            Devise = string.IsNullOrWhiteSpace(devise) ? "EUR" : devise.Trim().ToUpperInvariant()
         };
     }
 
@@ -205,4 +230,8 @@ public sealed class ExpenseItemViewModel
 
         return DefaultColor;
     }
+}
+
+public sealed class ExpenseItemViewModel : ExpenseListItemViewModel
+{
 }

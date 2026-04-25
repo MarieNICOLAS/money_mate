@@ -1,5 +1,4 @@
 ﻿using MoneyMate.Models;
-using MoneyMate.Models;
 using SQLite;
 
 namespace MoneyMate.Data.Context
@@ -33,6 +32,9 @@ namespace MoneyMate.Data.Context
                 return GetOrCreateConnection();
             }
         }
+
+        public void EnsureCreated()
+            => Execute(connection => 0);
 
         public List<User> GetUsers()
             => Execute(connection => connection.Table<User>()

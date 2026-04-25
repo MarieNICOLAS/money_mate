@@ -79,8 +79,56 @@ dotnet workload install maui
 
 ``` bash
 dotnet build
-dotnet maui run -f net9.0-android
+dotnet build MoneyMate/MoneyMate.csproj -f net9.0-android
 ```
+
+------------------------------------------------------------------------
+
+## 📱 Android et démarrage mobile-first
+
+Android est la cible prioritaire. Le profil `Debug` Android est optimisé
+pour l'émulateur Pixel API 35 x86_64 :
+
+-   `RuntimeIdentifier=android-x64`
+-   `EmbedAssembliesIntoApk=false`
+-   `UseAppHost=false`
+
+Ces réglages réduisent le coût du build/déploiement Debug et évitent le
+calcul multi-ABI inutile pendant l'émulation. Pour un appareil physique ARM,
+il faudra adapter le Runtime Identifier ou utiliser une configuration dédiée.
+
+Principes de démarrage :
+
+-   afficher le premier écran le plus vite possible ;
+-   garder les constructeurs de pages et ViewModels légers ;
+-   charger les données via `InitializeAsync()` / `LoadAsync()` après affichage ;
+-   éviter de charger dépenses, budgets, graphiques et charges fixes avant le
+    premier rendu ;
+-   initialiser SQLite et la seed en arrière-plan quand la session n'en dépend pas.
+
+Diagnostics Android utiles :
+
+``` bash
+dotnet build MoneyMate/MoneyMate.csproj -f net9.0-android --no-restore
+"C:\Program Files (x86)\Android\android-sdk\emulator\emulator.exe" -list-avds
+"C:\Program Files (x86)\Android\android-sdk\emulator\emulator.exe" -accel-check
+"C:\Program Files (x86)\Android\android-sdk\platform-tools\adb.exe" devices -l
+```
+
+Si Visual Studio reste bloqué sur `emulator.exe -avd ...`, le problème est
+probablement côté AVD avant l'exécution de l'application. Vérifier :
+
+-   image système x86_64 ;
+-   WHPX/Hyper-V actif ;
+-   Cold Boot de l'AVD ;
+-   Wipe Data si le snapshot ou `userdata-qemu.img` est corrompu ;
+-   test sur appareil Android physique si l'AVD reste instable.
+
+Références Microsoft Learn consultées :
+
+-   [Performance .NET MAUI](https://learn.microsoft.com/dotnet/maui/deployment/performance)
+-   [Compiled bindings .NET MAUI](https://learn.microsoft.com/dotnet/maui/fundamentals/data-binding/compiled-bindings)
+-   [Accélération matérielle Android Emulator](https://learn.microsoft.com/dotnet/maui/android/emulator/hardware-acceleration)
 
 ------------------------------------------------------------------------
 
@@ -89,6 +137,8 @@ dotnet maui run -f net9.0-android
 L'application utilise **SQLite en local**.
 
 -   La base est créée automatiquement au premier lancement
+-   Les données de démonstration incluent `demo@moneymate.fr`
+-   L'initialisation est déclenchée au démarrage sans bloquer le premier écran
 -   Les tables sont générées via les modèles
 -   Le fichier `.db` est stocké dans le dossier local de l'application
 
@@ -128,6 +178,8 @@ Principe :
 -   ViewModels → logique de présentation
 -   Services → logique métier & accès BDD
 -   Models → entités mappées SQLite
+-   DTO/ViewModels d'affichage pour les listes complexes, afin de ne pas exposer
+    directement les entités SQLite à l'UI
 
 ------------------------------------------------------------------------
 
@@ -152,6 +204,20 @@ Logs accessibles via :
 
 -   Output Visual Studio
 -   Logcat Android
+
+### Vérifications récentes
+
+-   Build Windows `net9.0-windows10.0.19041.0` : OK
+-   Build Android `net9.0-android` : OK avec warnings existants
+-   Tests unitaires mapping dépenses : OK (`7/7`)
+
+Warnings XAML encore à traiter en priorité :
+
+-   `AlertThresholdPage`
+-   `AddExpensePage`
+-   `EditExpensePage`
+-   `ExpenseDetailsPage`
+-   `FixedChargesPage`
 
 ------------------------------------------------------------------------
 

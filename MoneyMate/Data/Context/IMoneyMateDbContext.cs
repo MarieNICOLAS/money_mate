@@ -7,6 +7,8 @@ namespace MoneyMate.Data.Context
     /// </summary>
     public interface IMoneyMateDbContext : IDisposable
     {
+        void EnsureCreated();
+
         List<User> GetUsers();
         User? GetUserById(int id);
         User? GetUserByEmail(string email);

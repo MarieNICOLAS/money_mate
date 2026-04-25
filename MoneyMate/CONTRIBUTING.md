@@ -34,6 +34,7 @@ Money Mate est une application mobile de gestion budgétaire personnelle.
 | Toolkit | CommunityToolkit.Maui (`UseMauiCommunityToolkit()`) |
 | DI | `Microsoft.Extensions.DependencyInjection` (via `MauiApp.CreateBuilder()`) |
 | Polices | OpenSans, MaterialIcons, Lora, FunnelDisplay |
+| Cible Debug Android | `android-x64` pour émulateur x86_64 |
 
 ---
 
@@ -71,6 +72,8 @@ Money Mate est une application mobile de gestion budgétaire personnelle.
 - ✅ Services injectés via constructeur (DI)
 - ✅ `async/await` pour toutes les opérations longues
 - ✅ XML doc (`/// <summary>`) sur toutes les classes et méthodes publiques
+- ✅ Constructeurs légers : aucun chargement SQLite, graphique ou liste lourde dans un constructeur
+- ✅ Chargements UI via `InitializeAsync()` / `LoadAsync()` après le premier affichage
 
 ---
 
@@ -258,14 +261,16 @@ public interface IXxxService
 // Implémentation dans Services/Implementations/
 public class XxxService : IXxxService
 {
-    private readonly MoneyMateDbContext _dbContext;
+    private readonly IMoneyMateDbContext _dbContext;
 
-    public XxxService()
+    public XxxService(IMoneyMateDbContext dbContext)
     {
-        _dbContext = DatabaseService.Instance;
+        _dbContext = dbContext;
     }
 }
 ```
+
+Les constructeurs sans paramètre ne sont tolérés que pour préserver une compatibilité existante ou pour des tests ciblés. Le flux applicatif normal doit utiliser la DI.
 
 ### 6.4 Injection de dépendances (MauiProgram.cs)
 
@@ -284,9 +289,11 @@ builder.Services.AddTransient<XxxPage>();
 
 ### 6.5 Navigation Shell
 
-- Toutes les routes sont définies dans `AppShell.xaml` via `<ShellContent Route="XxxPage">`
+- Les routes racines publiques restent dans `AppShell.xaml`
+- Les routes applicatives sont enregistrées dans `ShellRouteRegistry`
 - Navigation : `await Shell.Current.GoToAsync("//XxxPage")`
 - Pattern `//` pour navigation absolue (reset de la pile)
+- Les pages doivent être résolues à la demande ; pas de préchargement massif dans `AppShell`
 
 ### 6.6 Commandes de navigation
 
@@ -513,12 +520,14 @@ Exigences minimales (vérifiées par `AuthenticationService.ValidatePasswordStre
 
 | Fonctionnalité | Routes | État |
 |---------------|--------|------|
-| Liste chronologique | `ExpensesListPage` | 🔧 En cours |
+| Liste chronologique | `ExpensesListPage` | ✅ Implémenté |
 | Ajout dépense | `AddExpensePage` | 🔧 En cours |
 | Modification | `EditExpensePage` | 🔧 En cours |
 | Détails | `ExpenseDetailsPage` | 🔧 En cours |
 | Ajout rapide | `QuickAddExpensePage` | 🔧 En cours |
 | Filtrage (catégorie, période, charge fixe) | — | 📋 À faire |
+
+La liste dépenses utilise un ViewModel d'affichage (`ExpenseListItemViewModel`) pour exposer à la CollectionView le libellé, la catégorie, la note, le montant formaté, la date et la commande d'ouverture. Ne pas binder directement une CollectionView complexe sur les entités SQLite.
 
 ### MODULE 3 — Catégories
 
@@ -734,12 +743,54 @@ Le champ `User.Role` existe déjà (`"User"` par défaut, `"Admin"` possible).
 
 | Exigence | Critère |
 |----------|---------|
-| Performance | Temps de chargement < 2 secondes |
+| Performance | Premier écran utile < 2 secondes sur mobile cible |
 | Réactivité UI | Mise à jour graphique immédiate |
 | Sécurité | MDP hashé, aucune donnée sensible en clair, RGPD |
 | Maintenabilité | MVVM strict, code documenté, testable |
 | Navigation | Shell cohérente |
 | Compatibilité | Android (prioritaire), iOS (extensible) |
+
+### 18.1 Règles startup mobile-first
+
+Le démarrage mobile doit rester minimal :
+
+- charger uniquement ce qui est nécessaire pour afficher le premier écran ;
+- ne jamais bloquer le thread UI avec SQLite, seed, graphiques ou calculs de dashboard ;
+- lancer l'initialisation locale en arrière-plan quand elle n'est pas indispensable à la navigation ;
+- restaurer la session avant de charger le dashboard complet ;
+- afficher un dashboard minimal puis remplir les blocs progressivement ;
+- préférer des routes Shell et pages `Transient` créées à la demande ;
+- profiler en Release avant les gros refactors de performance.
+
+Configuration Android Debug actuelle :
+
+```xml
+<PropertyGroup Condition="'$(TargetFramework)' == 'net9.0-android' and '$(Configuration)' == 'Debug'">
+    <RuntimeIdentifier>android-x64</RuntimeIdentifier>
+    <EmbedAssembliesIntoApk>false</EmbedAssembliesIntoApk>
+    <UseAppHost>false</UseAppHost>
+</PropertyGroup>
+```
+
+Cette configuration cible l'AVD x86_64. Pour tester un téléphone physique ARM, utiliser une configuration dédiée afin de ne pas casser l'expérience émulateur.
+
+### 18.2 Bindings XAML
+
+Les compiled bindings sont prioritaires sur les pages mobiles critiques. Chaque `DataTemplate` doit déclarer son propre `x:DataType`.
+
+Warnings à corriger avant stabilisation :
+
+- `XC0022` : binding non compilé ;
+- `XC0024` : `x:DataType` hérité d'un mauvais scope ;
+- `XC0045` : propriété bindée absente ou mauvais type de ViewModel.
+
+Ne pas masquer ces warnings avec `x:DataType="x:Object"` : corriger le type ou le binding.
+
+Références Microsoft Learn :
+
+- [Improve app performance - .NET MAUI](https://learn.microsoft.com/dotnet/maui/deployment/performance)
+- [Compiled bindings - .NET MAUI](https://learn.microsoft.com/dotnet/maui/fundamentals/data-binding/compiled-bindings)
+- [Android emulator hardware acceleration](https://learn.microsoft.com/dotnet/maui/android/emulator/hardware-acceleration)
 
 ---
 

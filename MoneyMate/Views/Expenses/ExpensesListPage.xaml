@@ -69,15 +69,17 @@
                 <CollectionView ItemsSource="{Binding Expenses}"
                                 IsVisible="{Binding HasExpenses}">
                     <CollectionView.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="viewModels:ExpenseListItemViewModel">
                             <components:ExpenseCard ExpenseDate="{Binding ExpenseDate}"
                                                     Amount="{Binding Amount}"
                                                     Devise="{Binding Devise}"
+                                                    DisplayName="{Binding DisplayName}"
                                                     CategoryName="{Binding CategoryName}"
                                                     CategoryIcon="{Binding CategoryIcon}"
                                                     CategoryColor="{Binding CategoryColor}"
                                                     Note="{Binding Note}"
-                                                    TapCommand="{Binding Source={x:Reference Page}, Path=BindingContext.OpenExpenseDetailsCommand}" />
+                                                    TapCommand="{Binding OpenCommand}"
+                                                    TapCommandParameter="{Binding .}" />
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
                 </CollectionView>

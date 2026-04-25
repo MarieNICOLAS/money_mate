@@ -60,6 +60,61 @@ public class ExpensesListViewModelTests
     }
 
     [TestMethod]
+    public void FromModel_WithCategoryAndNote_MapsDisplayFields()
+    {
+        Expense expense = new()
+        {
+            Id = 7,
+            UserId = 1,
+            CategoryId = 10,
+            Amount = 19.99m,
+            Note = "Restaurant",
+            DateOperation = new DateTime(2026, 4, 20)
+        };
+
+        Dictionary<int, Category> categoriesById = new()
+        {
+            [10] = new Category { Id = 10, Name = "Repas", Color = "#4CAF50", Icon = "🍽️" }
+        };
+
+        ExpenseListItemViewModel item = ExpenseListItemViewModel.FromModel(expense, categoriesById, "usd");
+
+        Assert.AreEqual(7, item.Id);
+        Assert.AreEqual("Restaurant", item.DisplayName);
+        Assert.AreEqual("Restaurant", item.Note);
+        Assert.AreEqual("Repas", item.CategoryName);
+        Assert.AreEqual("🍽️", item.CategoryIcon);
+        Assert.AreEqual("USD", item.Devise);
+        Assert.AreEqual("20/04/2026", item.DateDisplay);
+        Assert.IsTrue(item.AmountDisplay.Contains("$"));
+    }
+
+    [TestMethod]
+    public void FromModel_WithNullLikeValues_UsesSafeFallbacks()
+    {
+        Expense expense = new()
+        {
+            Id = 8,
+            UserId = 1,
+            CategoryId = 99,
+            Amount = 42m,
+            Note = null!,
+            IsFixedCharge = true,
+            DateOperation = new DateTime(2026, 4, 21)
+        };
+
+        ExpenseListItemViewModel item = ExpenseListItemViewModel.FromModel(expense, new Dictionary<int, Category>(), string.Empty);
+
+        Assert.AreEqual("Catégorie inconnue", item.DisplayName);
+        Assert.AreEqual("Charge fixe", item.Note);
+        Assert.AreEqual("Catégorie inconnue", item.CategoryName);
+        Assert.AreEqual("💰", item.CategoryIcon);
+        Assert.AreEqual("EUR", item.Devise);
+        Assert.AreEqual("21/04/2026", item.DateDisplay);
+        Assert.IsTrue(item.AmountDisplay.Contains("€"));
+    }
+
+    [TestMethod]
     public async Task AddExpenseCommand_NavigatesToAddExpensePage()
     {
         User user = ViewModelTestHelper.CreateUser();

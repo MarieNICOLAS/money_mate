@@ -38,8 +38,17 @@ public abstract class BaseViewModel : INotifyPropertyChanged
 	public string Title
 	{
 		get => _title;
-		set => SetProperty(ref _title, value);
+		set
+		{
+			if (SetProperty(ref _title, value))
+				OnPropertyChanged(nameof(PageTitle));
+		}
 	}
+
+	/// <summary>
+	/// Alias de binding pour les pages qui affichent le titre applicatif.
+	/// </summary>
+	public string PageTitle => Title;
 
 	/// <summary>
 	/// Evenement declenche quand une propriete change

@@ -41,6 +41,9 @@ public static class MauiProgram
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
+                fonts.AddFont("OpenSans-Regular.ttf", "OpenSans");
+                fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemiBold");
+                fonts.AddFont("Lora-VariableFont_wght.ttf", "Lora");
                 fonts.AddFont("MaterialIcons-Regular.ttf", "MaterialIcons");
             });
 

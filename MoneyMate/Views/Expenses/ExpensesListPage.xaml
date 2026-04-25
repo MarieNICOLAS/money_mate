@@ -10,12 +10,15 @@
                 Title="Dépenses"
                 UseAuthenticatedFooter="True">
     <views:BasePage.PageContent>
-        <ScrollView>
-            <VerticalStackLayout Spacing="20" Padding="24">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,*"
+              RowSpacing="20"
+              Padding="24">
                 <Label Text="{Binding Source={x:Reference Page}, Path=PageTitle}"
                        Style="{StaticResource PageTitle}" />
 
-                <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
+                <Grid Grid.Row="1"
+                      ColumnDefinitions="*,Auto,Auto,Auto"
+                      ColumnSpacing="12">
                     <VerticalStackLayout Grid.Column="0" Spacing="4">
                         <Label Text="Consultez vos opérations récentes et vos totaux." TextColor="{StaticResource Secondary}" />
                     </VerticalStackLayout>
@@ -37,11 +40,14 @@
                 </Grid>
 
                 <Label Text="{Binding ErrorMessage}"
+                       Grid.Row="2"
                        IsVisible="{Binding HasError}"
                        TextColor="#E57373"
                        FontAttributes="Bold" />
 
-                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Grid Grid.Row="3"
+                      ColumnDefinitions="*,*"
+                      ColumnSpacing="12">
                     <Border Grid.Column="0" Padding="16" StrokeThickness="0" BackgroundColor="#F3F8FC">
                         <Border.StrokeShape>
                             <RoundRectangle CornerRadius="14" />
@@ -66,8 +72,10 @@
                     </Border>
                 </Grid>
 
-                <CollectionView ItemsSource="{Binding Expenses}"
-                                IsVisible="{Binding HasExpenses}">
+                <Grid Grid.Row="4">
+                    <CollectionView ItemsSource="{Binding Expenses}"
+                                    IsVisible="{Binding HasExpenses}"
+                                    ItemSizingStrategy="MeasureFirstItem">
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="viewModels:ExpenseListItemViewModel">
                             <components:ExpenseCard ExpenseDate="{Binding ExpenseDate}"
@@ -82,14 +90,14 @@
                                                     TapCommandParameter="{Binding .}" />
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
-                </CollectionView>
+                    </CollectionView>
 
-                <components:EmptyStateView IsVisible="{Binding HasExpenses, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"
-                                           Icon="💸"
-                                           Message="Aucune dépense enregistrée pour le moment."
-                                           ActionText="Ajouter une dépense"
-                                           ActionCommand="{Binding AddExpenseCommand}" />
-            </VerticalStackLayout>
-        </ScrollView>
+                    <components:EmptyStateView IsVisible="{Binding HasExpenses, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"
+                                               Icon="💸"
+                                               Message="Aucune dépense enregistrée pour le moment."
+                                               ActionText="Ajouter une dépense"
+                                               ActionCommand="{Binding AddExpenseCommand}" />
+                </Grid>
+        </Grid>
     </views:BasePage.PageContent>
 </views:BasePage>

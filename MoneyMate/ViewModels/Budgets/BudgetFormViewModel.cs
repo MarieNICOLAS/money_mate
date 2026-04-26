@@ -16,6 +16,7 @@ public class BudgetFormViewModel : FormViewModelBase
     private MonthOptionViewModel? _selectedMonth;
     private bool _isActive = true;
     private DateTime _createdAt = DateTime.UtcNow;
+    private string _saveNavigationRoute = AppRoutes.BudgetsOverview;
 
     public BudgetFormViewModel(
         IBudgetService budgetService,
@@ -60,6 +61,9 @@ public class BudgetFormViewModel : FormViewModelBase
     protected override string EditParameterKey => NavigationParameterKeys.BudgetId;
 
     protected override string? CancelNavigationFallbackRoute => AppRoutes.BudgetsOverview;
+
+    protected override void ApplyNavigationParameters(Dictionary<string, object>? parameters)
+        => _saveNavigationRoute = ResolveSaveNavigationRoute(parameters);
 
     protected override Task InitializeForCreateAsync()
     {
@@ -137,7 +141,7 @@ public class BudgetFormViewModel : FormViewModelBase
         }
 
         _appEventBus.PublishDataChanged(AppDataChangeKind.Budgets);
-        await NavigationService.NavigateToAsync(AppRoutes.BudgetsOverview);
+        await NavigationService.NavigateToAsync(_saveNavigationRoute);
         return true;
     }
 
@@ -165,6 +169,17 @@ public class BudgetFormViewModel : FormViewModelBase
         _appEventBus.PublishDataChanged(AppDataChangeKind.Budgets);
         await NavigationService.NavigateToAsync(AppRoutes.BudgetsOverview);
         return true;
+    }
+
+    private static string ResolveSaveNavigationRoute(Dictionary<string, object>? parameters)
+    {
+        if (parameters?.TryGetValue(NavigationParameterKeys.ReturnRoute, out object? value) != true)
+            return AppRoutes.BudgetsOverview;
+
+        string? route = value as string;
+        return string.Equals(route, AppRoutes.Dashboard, StringComparison.Ordinal)
+            ? AppRoutes.Dashboard
+            : AppRoutes.BudgetsOverview;
     }
 
     private static IReadOnlyList<MonthOptionViewModel> BuildMonthOptions()

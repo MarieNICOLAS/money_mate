@@ -39,6 +39,8 @@
 
         public decimal CurrentMonthBalance { get; set; }
 
+        public bool HasCurrentMonthBudget { get; set; }
+
         /// <summary>
         /// Total des dépenses du mois précédent.
         /// </summary>

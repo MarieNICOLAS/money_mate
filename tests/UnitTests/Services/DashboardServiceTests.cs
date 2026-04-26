@@ -127,9 +127,54 @@ namespace UnitTests.Services
             Assert.AreEqual(1, result.Data.ActiveAlertsCount);
             Assert.AreEqual(1, result.Data.TriggeredAlertsCount);
             Assert.AreEqual(1, result.Data.BudgetsAtRiskCount);
+            Assert.IsTrue(result.Data.HasCurrentMonthBudget);
             Assert.AreEqual(1, result.Data.TopCategories.Count);
             Assert.AreEqual("Courses", result.Data.TopCategories[0].CategoryName);
             Assert.AreEqual(150m, result.Data.TopCategories[0].TotalAmount);
+        }
+
+        [TestMethod]
+        public async Task GetDashboardSummaryAsync_WithInactiveCurrentMonthBudget_DetectsExistingBudgetWithoutActiveAmount()
+        {
+            Mock<IMoneyMateDbContext> dbContextMock = new();
+            DateTime now = DateTime.Now;
+
+            dbContextMock.Setup(x => x.GetExpensesByUserId(1))
+                .Returns(new List<Expense>());
+
+            dbContextMock.Setup(x => x.GetBudgetsByUserId(1))
+                .Returns(new List<Budget>
+                {
+                    new()
+                    {
+                        Id = 10,
+                        UserId = 1,
+                        Amount = 180m,
+                        PeriodType = "Monthly",
+                        StartDate = new DateTime(now.Year, now.Month, 1),
+                        IsActive = false,
+                        CreatedAt = DateTime.UtcNow
+                    }
+                });
+
+            dbContextMock.Setup(x => x.GetAlertThresholdsByUserId(1))
+                .Returns(new List<AlertThreshold>());
+
+            dbContextMock.Setup(x => x.GetActiveFixedChargesCountByUserId(1))
+                .Returns(0);
+
+            dbContextMock.Setup(x => x.GetCategoriesByUserId(1))
+                .Returns(new List<Category>());
+
+            DashboardService service = new(dbContextMock.Object);
+
+            var result = await service.GetDashboardSummaryAsync(1);
+
+            Assert.IsTrue(result.IsSuccess);
+            Assert.IsNotNull(result.Data);
+            Assert.IsTrue(result.Data.HasCurrentMonthBudget);
+            Assert.AreEqual(0m, result.Data.CurrentMonthBudget);
+            Assert.AreEqual(0, result.Data.ActiveBudgetsCount);
         }
 
         [TestMethod]

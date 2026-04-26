@@ -33,6 +33,8 @@ public class DashboardViewModel : AuthenticatedViewModelBase
     private string _previousMonthDeltaDisplay = CurrencyHelper.FormatSigned(0m);
     private string _currentMonthBudgetDisplay = CurrencyHelper.Format(0m);
     private string _currentMonthBalanceDisplay = CurrencyHelper.FormatSigned(0m);
+    private bool _hasCurrentMonthBudget;
+    private bool _isCurrentMonthBudgetMissing;
 
     public DashboardViewModel(
         IAuthenticationService authenticationService,
@@ -55,6 +57,7 @@ public class DashboardViewModel : AuthenticatedViewModelBase
         OpenCategoriesCommand = new Command(async () => await NavigationService.NavigateToAsync(AppRoutes.CategoriesList));
         OpenFixedChargesCommand = new Command(async () => await NavigationService.NavigateToAsync(AppRoutes.FixedCharges));
         OpenAlertsCommand = new Command(async () => await NavigationService.NavigateToAsync(AppRoutes.AlertThreshold));
+        CreateBudgetCommand = new Command(async () => await OpenAddBudgetAsync());
 
         UpdateCurrentUserContext();
         ApplySummary(new DashboardSummary());
@@ -75,6 +78,8 @@ public class DashboardViewModel : AuthenticatedViewModelBase
     public ICommand OpenFixedChargesCommand { get; }
 
     public ICommand OpenAlertsCommand { get; }
+
+    public ICommand CreateBudgetCommand { get; }
 
     public string UserName
     {
@@ -160,6 +165,18 @@ public class DashboardViewModel : AuthenticatedViewModelBase
         private set => SetProperty(ref _currentMonthBalanceDisplay, value);
     }
 
+    public bool HasCurrentMonthBudget
+    {
+        get => _hasCurrentMonthBudget;
+        private set => SetProperty(ref _hasCurrentMonthBudget, value);
+    }
+
+    public bool IsCurrentMonthBudgetMissing
+    {
+        get => _isCurrentMonthBudgetMissing;
+        private set => SetProperty(ref _isCurrentMonthBudgetMissing, value);
+    }
+
     public bool HasTopCategories => TopCategories.Count > 0;
 
     public bool HasRecentTransactions => RecentTransactions.Count > 0;
@@ -193,7 +210,7 @@ public class DashboardViewModel : AuthenticatedViewModelBase
                 return;
             }
 
-            ApplySummary(summaryResult.Data);
+            ApplySummary(summaryResult.Data, showCurrentMonthBudgetEmptyState: true);
             UpdateObservedRefreshVersion();
         }, "Une erreur est survenue lors du chargement du tableau de bord.");
     }
@@ -219,7 +236,17 @@ public class DashboardViewModel : AuthenticatedViewModelBase
         await NavigationService.NavigateToAsync(AppRoutes.Main);
     }
 
-    private void ApplySummary(DashboardSummary summary)
+    private async Task OpenAddBudgetAsync()
+    {
+        await NavigationService.NavigateToAsync(
+            AppRoutes.AddBudget,
+            new Dictionary<string, object>
+            {
+                [NavigationParameterKeys.ReturnRoute] = AppRoutes.Dashboard
+            });
+    }
+
+    private void ApplySummary(DashboardSummary summary, bool showCurrentMonthBudgetEmptyState = false)
     {
         CurrentMonthExpensesDisplay = CurrencyHelper.Format(summary.CurrentMonthExpenses, Devise);
         ExpensesCountDisplay = summary.CurrentMonthExpensesCount.ToString();
@@ -231,6 +258,8 @@ public class DashboardViewModel : AuthenticatedViewModelBase
         PreviousMonthDeltaDisplay = CurrencyHelper.FormatSigned(summary.ExpensesDeltaFromPreviousMonth, Devise);
         CurrentMonthBudgetDisplay = CurrencyHelper.Format(summary.CurrentMonthBudget, Devise);
         CurrentMonthBalanceDisplay = CurrencyHelper.FormatSigned(summary.CurrentMonthBalance, Devise);
+        HasCurrentMonthBudget = summary.HasCurrentMonthBudget;
+        IsCurrentMonthBudgetMissing = showCurrentMonthBudgetEmptyState && !summary.HasCurrentMonthBudget;
 
         UpdateTopCategories(summary.TopCategories ?? []);
         UpdateRecentTransactions(summary.RecentTransactions ?? []);

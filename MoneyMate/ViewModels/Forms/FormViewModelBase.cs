@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 
@@ -24,9 +25,9 @@ public abstract class FormViewModelBase : AuthenticatedViewModelBase
         INavigationService navigationService)
         : base(authenticationService, dialogService, navigationService)
     {
-        SaveCommand = new Command(async () => await SaveAsync(), () => CanSave);
-        CancelCommand = new Command(async () => await CancelAsync(), () => !IsBusy);
-        DeleteCommand = new Command(async () => await DeleteAsync(), () => CanDelete);
+        SaveCommand = new AsyncRelayCommand(SaveAsync, () => CanSave);
+        CancelCommand = new AsyncRelayCommand(CancelAsync, () => !IsBusy);
+        DeleteCommand = new AsyncRelayCommand(DeleteAsync, () => CanDelete);
     }
 
     public int EditingEntityId
@@ -104,6 +105,21 @@ public abstract class FormViewModelBase : AuthenticatedViewModelBase
         }, "Une erreur est survenue lors de l'initialisation du formulaire.");
     }
 
+    public async Task RefreshAsync()
+    {
+        await ExecuteBusyActionAsync(async () =>
+        {
+            if (!EnsureCurrentUser())
+            {
+                RefreshFormState();
+                return;
+            }
+
+            await LoadLookupsAsync();
+            RefreshFormState();
+        }, "Une erreur est survenue lors du rafraîchissement du formulaire.");
+    }
+
     protected virtual Task LoadLookupsAsync() => Task.CompletedTask;
 
     protected virtual Task InitializeForCreateAsync() => Task.CompletedTask;
@@ -133,14 +149,14 @@ public abstract class FormViewModelBase : AuthenticatedViewModelBase
         CanSave = !IsBusy && !HasValidationErrors;
         CanDelete = !IsBusy && CanDeleteEntity;
 
-        if (SaveCommand is Command saveCommand)
-            saveCommand.ChangeCanExecute();
+        if (SaveCommand is IRelayCommand saveCommand)
+            saveCommand.NotifyCanExecuteChanged();
 
-        if (DeleteCommand is Command deleteCommand)
-            deleteCommand.ChangeCanExecute();
+        if (DeleteCommand is IRelayCommand deleteCommand)
+            deleteCommand.NotifyCanExecuteChanged();
 
-        if (CancelCommand is Command cancelCommand)
-            cancelCommand.ChangeCanExecute();
+        if (CancelCommand is IRelayCommand cancelCommand)
+            cancelCommand.NotifyCanExecuteChanged();
     }
 
     public static bool TryGetEntityId(Dictionary<string, object>? parameters, string key, out int entityId)

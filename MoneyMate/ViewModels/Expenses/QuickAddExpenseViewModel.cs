@@ -84,9 +84,15 @@ public class QuickAddExpenseViewModel : FormViewModelBase
 
     public string BudgetRequirementMessage => BudgetRequiredMessage;
 
+    public bool HasBudgetRequirementError => ValidationMessage == BudgetRequiredMessage;
+
+    public bool HasFormValidationError => HasValidationErrors && !HasBudgetRequirementError;
+
     protected override string EditParameterKey => NavigationParameterKeys.ExpenseId;
 
     protected override bool CanDeleteEntity => false;
+
+    protected override string? CancelNavigationFallbackRoute => AppRoutes.Dashboard;
 
     protected override async Task LoadLookupsAsync()
     {
@@ -176,6 +182,7 @@ public class QuickAddExpenseViewModel : FormViewModelBase
             ErrorMessage = result.Message;
             _activeBudgets = [];
             OnPropertyChanged(nameof(HasAvailableBudget));
+            RefreshFormState();
             return;
         }
 
@@ -185,6 +192,18 @@ public class QuickAddExpenseViewModel : FormViewModelBase
             .ToList();
 
         OnPropertyChanged(nameof(HasAvailableBudget));
+        RefreshFormState();
+    }
+
+    protected override void OnPropertyChanged(string? propertyName = null)
+    {
+        base.OnPropertyChanged(propertyName);
+
+        if (propertyName == nameof(ValidationMessage))
+        {
+            OnPropertyChanged(nameof(HasBudgetRequirementError));
+            OnPropertyChanged(nameof(HasFormValidationError));
+        }
     }
 
     private bool HasBudgetForDate(DateTime date)

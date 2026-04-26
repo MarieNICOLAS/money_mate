@@ -19,7 +19,10 @@ namespace MoneyMate.Views.Expenses
             base.OnAppearing();
 
             if (_isInitialized)
+            {
+                await _viewModel.RefreshAsync();
                 return;
+            }
 
             _isInitialized = true;
             await _viewModel.InitializeAsync();

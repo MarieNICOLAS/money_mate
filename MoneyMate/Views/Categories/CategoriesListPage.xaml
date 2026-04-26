@@ -12,7 +12,7 @@
     <views:BasePage.PageContent>
         <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="20" Padding="24">
             <Label Grid.Row="0"
-                   Text="{Binding Source={x:Reference Page}, Path=PageTitle}"
+                   Text="{Binding PageTitle}"
                    Style="{StaticResource PageTitle}" />
 
             <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">

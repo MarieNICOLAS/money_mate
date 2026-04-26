@@ -13,19 +13,25 @@ namespace MoneyMate.ViewModels.Budgets;
 /// </summary>
 public class BudgetsOverviewViewModel : AuthenticatedViewModelBase
 {
+    private const AppDataChangeKind RefreshChangeKinds = AppDataChangeKind.Budgets | AppDataChangeKind.Expenses;
+
     private readonly IBudgetService _budgetService;
+    private readonly IAppEventBus _appEventBus;
     private decimal _totalBudgetAmount;
     private decimal _totalConsumedAmount;
+    private long _lastRefreshVersion = -1;
 
     public BudgetsOverviewViewModel(
         IBudgetService budgetService,
         ICategoryService categoryService,
         IAuthenticationService authenticationService,
         IDialogService dialogService,
-        INavigationService navigationService)
+        INavigationService navigationService,
+        IAppEventBus? appEventBus = null)
         : base(authenticationService, dialogService, navigationService)
     {
         _budgetService = budgetService ?? throw new ArgumentNullException(nameof(budgetService));
+        _appEventBus = appEventBus ?? NullAppEventBus.Instance;
 
         Title = "Budgets";
         Budgets = [];
@@ -68,38 +74,50 @@ public class BudgetsOverviewViewModel : AuthenticatedViewModelBase
 
     public async Task LoadAsync()
     {
-        await ExecuteBusyActionAsync(async () =>
-        {
-            if (!EnsureCurrentUser())
-                return;
-
-            var budgetsResult = await _budgetService.GetBudgetsAsync(CurrentUserId);
-            if (!budgetsResult.IsSuccess)
-            {
-                ErrorMessage = budgetsResult.Message;
-                RefreshState();
-                return;
-            }
-
-            List<BudgetOverviewItemViewModel> budgetItems = [];
-            foreach (Budget budget in (budgetsResult.Data ?? []).OrderByDescending(budget => budget.StartDate))
-            {
-                var summaryResult = await _budgetService.GetBudgetConsumptionSummaryAsync(budget.Id, CurrentUserId);
-                if (!summaryResult.IsSuccess || summaryResult.Data == null)
-                    continue;
-
-                budgetItems.Add(BudgetOverviewItemViewModel.FromData(budget, summaryResult.Data, Devise));
-            }
-
-            Budgets.Clear();
-            foreach (BudgetOverviewItemViewModel budgetItem in budgetItems)
-                Budgets.Add(budgetItem);
-
-            TotalBudgetAmount = budgetItems.Sum(item => item.BudgetAmount);
-            TotalConsumedAmount = budgetItems.Sum(item => item.ConsumedAmount);
-            RefreshState();
-        }, "Une erreur est survenue lors du chargement des budgets.");
+        await ExecuteBusyActionAsync(LoadCoreAsync, "Une erreur est survenue lors du chargement des budgets.");
     }
+
+    public async Task RefreshIfNeededAsync()
+    {
+        if (_lastRefreshVersion < 0 || _appEventBus.HasChangedSince(RefreshChangeKinds, _lastRefreshVersion))
+            await LoadAsync();
+    }
+
+    private async Task LoadCoreAsync()
+    {
+        if (!EnsureCurrentUser())
+            return;
+
+        var budgetsResult = await _budgetService.GetBudgetsAsync(CurrentUserId);
+        if (!budgetsResult.IsSuccess)
+        {
+            ErrorMessage = budgetsResult.Message;
+            RefreshState();
+            return;
+        }
+
+        List<BudgetOverviewItemViewModel> budgetItems = [];
+        foreach (Budget budget in (budgetsResult.Data ?? []).OrderByDescending(budget => budget.StartDate))
+        {
+            var summaryResult = await _budgetService.GetBudgetConsumptionSummaryAsync(budget.Id, CurrentUserId);
+            if (!summaryResult.IsSuccess || summaryResult.Data == null)
+                continue;
+
+            budgetItems.Add(BudgetOverviewItemViewModel.FromData(budget, summaryResult.Data, Devise));
+        }
+
+        Budgets.Clear();
+        foreach (BudgetOverviewItemViewModel budgetItem in budgetItems)
+            Budgets.Add(budgetItem);
+
+        TotalBudgetAmount = budgetItems.Sum(item => item.BudgetAmount);
+        TotalConsumedAmount = budgetItems.Sum(item => item.ConsumedAmount);
+        RefreshState();
+        UpdateObservedRefreshVersion();
+    }
+
+    private void UpdateObservedRefreshVersion()
+        => _lastRefreshVersion = _appEventBus.GetVersion(RefreshChangeKinds);
 
     private void RefreshState()
     {

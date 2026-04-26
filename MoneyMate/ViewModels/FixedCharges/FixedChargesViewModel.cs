@@ -12,20 +12,26 @@ namespace MoneyMate.ViewModels.FixedCharges;
 /// </summary>
 public class FixedChargesViewModel : AuthenticatedViewModelBase
 {
+    private const AppDataChangeKind RefreshChangeKinds = AppDataChangeKind.FixedCharges | AppDataChangeKind.Categories;
+
     private readonly IFixedChargeService _fixedChargeService;
     private readonly ICategoryService _categoryService;
+    private readonly IAppEventBus _appEventBus;
     private decimal _projectedMonthlyAmount;
+    private long _lastRefreshVersion = -1;
 
     public FixedChargesViewModel(
         IFixedChargeService fixedChargeService,
         ICategoryService categoryService,
         IAuthenticationService authenticationService,
         IDialogService dialogService,
-        INavigationService navigationService)
+        INavigationService navigationService,
+        IAppEventBus? appEventBus = null)
         : base(authenticationService, dialogService, navigationService)
     {
         _fixedChargeService = fixedChargeService ?? throw new ArgumentNullException(nameof(fixedChargeService));
         _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
+        _appEventBus = appEventBus ?? NullAppEventBus.Instance;
 
         Title = "Charges fixes";
         FixedCharges = [];
@@ -78,45 +84,54 @@ public class FixedChargesViewModel : AuthenticatedViewModelBase
 
     public async Task LoadAsync()
     {
-        await ExecuteBusyActionAsync(async () =>
+        await ExecuteBusyActionAsync(LoadCoreAsync, "Une erreur est survenue lors du chargement des charges fixes.");
+    }
+
+    public async Task RefreshIfNeededAsync()
+    {
+        if (_lastRefreshVersion < 0 || _appEventBus.HasChangedSince(RefreshChangeKinds, _lastRefreshVersion))
+            await LoadAsync();
+    }
+
+    private async Task LoadCoreAsync()
+    {
+        if (!EnsureCurrentUser())
+            return;
+
+        var fixedChargesResult = await _fixedChargeService.GetFixedChargesAsync(CurrentUserId);
+        if (!fixedChargesResult.IsSuccess)
         {
-            if (!EnsureCurrentUser())
-                return;
-
-            var fixedChargesResult = await _fixedChargeService.GetFixedChargesAsync(CurrentUserId);
-            if (!fixedChargesResult.IsSuccess)
-            {
-                ErrorMessage = fixedChargesResult.Message;
-                RefreshState();
-                return;
-            }
-
-            var categoriesResult = await _categoryService.GetCategoriesAsync(CurrentUserId);
-            if (!categoriesResult.IsSuccess)
-            {
-                ErrorMessage = categoriesResult.Message;
-                RefreshState();
-                return;
-            }
-
-            Dictionary<int, Category> categoriesById = (categoriesResult.Data ?? [])
-                .GroupBy(category => category.Id)
-                .Select(group => group.First())
-                .ToDictionary(category => category.Id, category => category);
-
-            List<FixedChargeItemViewModel> items = (fixedChargesResult.Data ?? [])
-                .OrderBy(charge => charge.DayOfMonth)
-                .ThenBy(charge => charge.Name)
-                .Select(charge => FixedChargeItemViewModel.FromModel(charge, categoriesById, Devise))
-                .ToList();
-
-            FixedCharges.Clear();
-            foreach (FixedChargeItemViewModel item in items)
-                FixedCharges.Add(item);
-
-            ProjectedMonthlyAmount = items.Sum(item => item.MonthlyEquivalentAmount);
+            ErrorMessage = fixedChargesResult.Message;
             RefreshState();
-        }, "Une erreur est survenue lors du chargement des charges fixes.");
+            return;
+        }
+
+        var categoriesResult = await _categoryService.GetCategoriesAsync(CurrentUserId);
+        if (!categoriesResult.IsSuccess)
+        {
+            ErrorMessage = categoriesResult.Message;
+            RefreshState();
+            return;
+        }
+
+        Dictionary<int, Category> categoriesById = (categoriesResult.Data ?? [])
+            .GroupBy(category => category.Id)
+            .Select(group => group.First())
+            .ToDictionary(category => category.Id, category => category);
+
+        List<FixedChargeItemViewModel> items = (fixedChargesResult.Data ?? [])
+            .OrderBy(charge => charge.DayOfMonth)
+            .ThenBy(charge => charge.Name)
+            .Select(charge => FixedChargeItemViewModel.FromModel(charge, categoriesById, Devise))
+            .ToList();
+
+        FixedCharges.Clear();
+        foreach (FixedChargeItemViewModel item in items)
+            FixedCharges.Add(item);
+
+        ProjectedMonthlyAmount = items.Sum(item => item.MonthlyEquivalentAmount);
+        RefreshState();
+        UpdateObservedRefreshVersion();
     }
 
     private async Task GenerateExpensesAsync()
@@ -139,7 +154,8 @@ public class FixedChargesViewModel : AuthenticatedViewModelBase
                 $"{result.Data?.Count ?? 0} dépense(s) récurrente(s) générée(s).",
                 "OK");
 
-            await LoadAsync();
+            _appEventBus.PublishDataChanged(AppDataChangeKind.Expenses | AppDataChangeKind.FixedCharges);
+            await LoadCoreAsync();
         }, "Une erreur est survenue lors de la génération des dépenses récurrentes.");
     }
 
@@ -160,9 +176,13 @@ public class FixedChargesViewModel : AuthenticatedViewModelBase
                 return;
             }
 
-            await LoadAsync();
+            _appEventBus.PublishDataChanged(AppDataChangeKind.FixedCharges);
+            await LoadCoreAsync();
         }, "Une erreur est survenue lors de la mise à jour de la charge fixe.");
     }
+
+    private void UpdateObservedRefreshVersion()
+        => _lastRefreshVersion = _appEventBus.GetVersion(RefreshChangeKinds);
 
     private void RefreshState()
     {

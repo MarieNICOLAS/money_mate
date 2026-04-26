@@ -15,7 +15,7 @@ namespace MoneyMate.Views.Alerts
         protected override async void OnAppearing()
         {
             base.OnAppearing();
-            await ViewModel.LoadAsync();
+            await ViewModel.RefreshIfNeededAsync();
         }
     }
 }

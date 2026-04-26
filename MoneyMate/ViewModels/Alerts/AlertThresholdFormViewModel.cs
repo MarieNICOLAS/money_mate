@@ -14,6 +14,7 @@ public class AlertThresholdFormViewModel : FormViewModelBase
     private readonly IAlertThresholdService _alertThresholdService;
     private readonly IBudgetService _budgetService;
     private readonly ICategoryService _categoryService;
+    private readonly IAppEventBus _appEventBus;
     private int _selectedBudgetId;
     private int _selectedCategoryId;
     private string _thresholdPercentageText = "80";
@@ -29,12 +30,14 @@ public class AlertThresholdFormViewModel : FormViewModelBase
         ICategoryService categoryService,
         IAuthenticationService authenticationService,
         IDialogService dialogService,
-        INavigationService navigationService)
+        INavigationService navigationService,
+        IAppEventBus? appEventBus = null)
         : base(authenticationService, dialogService, navigationService)
     {
         _alertThresholdService = alertThresholdService ?? throw new ArgumentNullException(nameof(alertThresholdService));
         _budgetService = budgetService ?? throw new ArgumentNullException(nameof(budgetService));
         _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
+        _appEventBus = appEventBus ?? NullAppEventBus.Instance;
         Budgets = [];
         Categories = [];
         AlertTypes = ["Warning", "Critical"];
@@ -202,6 +205,7 @@ public class AlertThresholdFormViewModel : FormViewModelBase
             return false;
         }
 
+        _appEventBus.PublishDataChanged(AppDataChangeKind.AlertThresholds);
         await NavigationService.NavigateToAsync(AppRoutes.AlertThreshold);
         return true;
     }
@@ -227,6 +231,7 @@ public class AlertThresholdFormViewModel : FormViewModelBase
             return false;
         }
 
+        _appEventBus.PublishDataChanged(AppDataChangeKind.AlertThresholds);
         await NavigationService.NavigateToAsync(AppRoutes.AlertThreshold);
         return true;
     }

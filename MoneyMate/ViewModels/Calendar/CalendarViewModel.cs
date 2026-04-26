@@ -8,11 +8,16 @@ namespace MoneyMate.ViewModels.Calendar;
 
 public sealed class CalendarViewModel : AuthenticatedViewModelBase
 {
+    private const AppDataChangeKind RefreshChangeKinds =
+        AppDataChangeKind.Expenses | AppDataChangeKind.FixedCharges | AppDataChangeKind.Categories;
+
     private readonly IExpenseService _expenseService;
     private readonly IFixedChargeService _fixedChargeService;
     private readonly ICategoryService _categoryService;
+    private readonly IAppEventBus _appEventBus;
 
     private DateTime _displayedMonth = new(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private long _lastRefreshVersion = -1;
     private string _monthLabel = string.Empty;
     private string _monthPeriodLabel = string.Empty;
     private string _monthExpensesDisplay = CurrencyHelper.Format(0m);
@@ -24,12 +29,14 @@ public sealed class CalendarViewModel : AuthenticatedViewModelBase
         ICategoryService categoryService,
         IAuthenticationService authenticationService,
         IDialogService dialogService,
-        INavigationService navigationService)
+        INavigationService navigationService,
+        IAppEventBus? appEventBus = null)
         : base(authenticationService, dialogService, navigationService)
     {
         _expenseService = expenseService ?? throw new ArgumentNullException(nameof(expenseService));
         _fixedChargeService = fixedChargeService ?? throw new ArgumentNullException(nameof(fixedChargeService));
         _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
+        _appEventBus = appEventBus ?? NullAppEventBus.Instance;
 
         Title = "Calendrier";
         DayGroups = [];
@@ -79,7 +86,13 @@ public sealed class CalendarViewModel : AuthenticatedViewModelBase
     public bool HasDayGroups => DayGroups.Count > 0;
 
     public Task InitializeAsync()
-        => LoadAsync();
+        => RefreshIfNeededAsync();
+
+    public async Task RefreshIfNeededAsync()
+    {
+        if (_lastRefreshVersion < 0 || _appEventBus.HasChangedSince(RefreshChangeKinds, _lastRefreshVersion))
+            await LoadAsync();
+    }
 
     public async Task LoadAsync()
     {
@@ -145,8 +158,12 @@ public sealed class CalendarViewModel : AuthenticatedViewModelBase
 
             OnPropertyChanged(nameof(HasDayGroups));
             UpdateMonthLabels();
+            UpdateObservedRefreshVersion();
         }, "Une erreur est survenue lors du chargement du calendrier.");
     }
+
+    private void UpdateObservedRefreshVersion()
+        => _lastRefreshVersion = _appEventBus.GetVersion(RefreshChangeKinds);
 
     private async Task ChangeMonthAsync(int offset)
     {

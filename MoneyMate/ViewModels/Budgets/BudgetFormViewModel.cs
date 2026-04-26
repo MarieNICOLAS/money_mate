@@ -11,6 +11,7 @@ namespace MoneyMate.ViewModels.Budgets;
 public class BudgetFormViewModel : FormViewModelBase
 {
     private readonly IBudgetService _budgetService;
+    private readonly IAppEventBus _appEventBus;
     private string _amountText = string.Empty;
     private MonthOptionViewModel? _selectedMonth;
     private bool _isActive = true;
@@ -21,10 +22,12 @@ public class BudgetFormViewModel : FormViewModelBase
         ICategoryService categoryService,
         IAuthenticationService authenticationService,
         IDialogService dialogService,
-        INavigationService navigationService)
+        INavigationService navigationService,
+        IAppEventBus? appEventBus = null)
         : base(authenticationService, dialogService, navigationService)
     {
         _budgetService = budgetService ?? throw new ArgumentNullException(nameof(budgetService));
+        _appEventBus = appEventBus ?? NullAppEventBus.Instance;
         MonthOptions = BuildMonthOptions();
         Title = "Budget";
         RefreshFormState();
@@ -133,6 +136,7 @@ public class BudgetFormViewModel : FormViewModelBase
             return false;
         }
 
+        _appEventBus.PublishDataChanged(AppDataChangeKind.Budgets);
         await NavigationService.NavigateToAsync(AppRoutes.BudgetsOverview);
         return true;
     }
@@ -158,6 +162,7 @@ public class BudgetFormViewModel : FormViewModelBase
             return false;
         }
 
+        _appEventBus.PublishDataChanged(AppDataChangeKind.Budgets);
         await NavigationService.NavigateToAsync(AppRoutes.BudgetsOverview);
         return true;
     }

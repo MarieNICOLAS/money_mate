@@ -14,6 +14,7 @@ public class ExpenseDetailsViewModel : AuthenticatedViewModelBase
 {
     private readonly IExpenseService _expenseService;
     private readonly ICategoryService _categoryService;
+    private readonly IAppEventBus _appEventBus;
     private int _expenseId;
     private string _amountDisplay = string.Empty;
     private string _categoryName = string.Empty;
@@ -28,11 +29,13 @@ public class ExpenseDetailsViewModel : AuthenticatedViewModelBase
         ICategoryService categoryService,
         IAuthenticationService authenticationService,
         IDialogService dialogService,
-        INavigationService navigationService)
+        INavigationService navigationService,
+        IAppEventBus? appEventBus = null)
         : base(authenticationService, dialogService, navigationService)
     {
         _expenseService = expenseService ?? throw new ArgumentNullException(nameof(expenseService));
         _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
+        _appEventBus = appEventBus ?? NullAppEventBus.Instance;
 
         Title = "Détail dépense";
         EditCommand = new Command(async () => await EditAsync());
@@ -192,6 +195,7 @@ public class ExpenseDetailsViewModel : AuthenticatedViewModelBase
                 return;
             }
 
+            _appEventBus.PublishDataChanged(AppDataChangeKind.Expenses);
             await NavigationService.NavigateToAsync(AppRoutes.ExpensesList);
         }, "Une erreur est survenue lors de la suppression de la dépense.");
     }
@@ -210,6 +214,7 @@ public class ExpenseDetailsViewModel : AuthenticatedViewModelBase
                 return;
             }
 
+            _appEventBus.PublishDataChanged(AppDataChangeKind.Expenses);
             await NavigationService.NavigateToAsync(AppRoutes.ExpensesList);
         }, "Une erreur est survenue lors de la duplication de la dépense.");
     }

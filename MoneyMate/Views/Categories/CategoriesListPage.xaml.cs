@@ -15,7 +15,7 @@ namespace MoneyMate.Views.Categories
         protected override async void OnAppearing()
         {
             base.OnAppearing();
-            await ViewModel.LoadAsync();
+            await ViewModel.RefreshIfNeededAsync();
         }
     }
 }

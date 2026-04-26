@@ -15,7 +15,7 @@ namespace MoneyMate.Views.Budgets
         protected override async void OnAppearing()
         {
             base.OnAppearing();
-            await ViewModel.LoadAsync();
+            await ViewModel.RefreshIfNeededAsync();
         }
     }
 }

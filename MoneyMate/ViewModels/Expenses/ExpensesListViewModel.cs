@@ -14,11 +14,14 @@ namespace MoneyMate.ViewModels.Expenses;
 public class ExpensesListViewModel : AuthenticatedViewModelBase
 {
     private const string BudgetRequiredMessage = "Créez d’abord un budget avant d’ajouter une dépense.";
+    private const AppDataChangeKind RefreshChangeKinds = AppDataChangeKind.Expenses | AppDataChangeKind.Categories;
 
     private readonly IExpenseService _expenseService;
     private readonly IBudgetService _budgetService;
     private readonly ICategoryService _categoryService;
+    private readonly IAppEventBus _appEventBus;
     private decimal _totalExpenses;
+    private long _lastRefreshVersion = -1;
 
     public ExpensesListViewModel(
         IExpenseService expenseService,
@@ -26,12 +29,14 @@ public class ExpensesListViewModel : AuthenticatedViewModelBase
         ICategoryService categoryService,
         IAuthenticationService authenticationService,
         IDialogService dialogService,
-        INavigationService navigationService)
+        INavigationService navigationService,
+        IAppEventBus? appEventBus = null)
         : base(authenticationService, dialogService, navigationService)
     {
         _expenseService = expenseService ?? throw new ArgumentNullException(nameof(expenseService));
         _budgetService = budgetService ?? throw new ArgumentNullException(nameof(budgetService));
         _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
+        _appEventBus = appEventBus ?? NullAppEventBus.Instance;
 
         Title = "Mes dépenses";
         Expenses = [];
@@ -66,49 +71,61 @@ public class ExpensesListViewModel : AuthenticatedViewModelBase
 
     public async Task LoadAsync()
     {
-        await ExecuteBusyActionAsync(async () =>
-        {
-            if (!EnsureCurrentUser())
-                return;
-
-            var expensesResult = await _expenseService.GetExpensesAsync(CurrentUserId);
-            if (!expensesResult.IsSuccess)
-            {
-                ErrorMessage = expensesResult.Message;
-                RefreshState();
-                return;
-            }
-
-            var categoriesResult = await _categoryService.GetCategoriesAsync(CurrentUserId);
-            if (!categoriesResult.IsSuccess)
-            {
-                ErrorMessage = categoriesResult.Message;
-                RefreshState();
-                return;
-            }
-
-            Dictionary<int, Category> categoriesById = (categoriesResult.Data ?? [])
-                .GroupBy(category => category.Id)
-                .Select(group => group.First())
-                .ToDictionary(category => category.Id, category => category);
-
-            List<Expense> expenses = (expensesResult.Data ?? [])
-                .OrderByDescending(expense => expense.DateOperation)
-                .ThenByDescending(expense => expense.Id)
-                .ToList();
-
-            Expenses.Clear();
-            foreach (Expense expense in expenses)
-            {
-                ExpenseListItemViewModel item = ExpenseListItemViewModel.FromModel(expense, categoriesById, Devise);
-                item.OpenCommand = OpenExpenseDetailsCommand;
-                Expenses.Add(item);
-            }
-
-            TotalExpenses = expenses.Sum(expense => expense.Amount);
-            RefreshState();
-        }, "Une erreur est survenue lors du chargement des dépenses.");
+        await ExecuteBusyActionAsync(LoadCoreAsync, "Une erreur est survenue lors du chargement des dépenses.");
     }
+
+    public async Task RefreshIfNeededAsync()
+    {
+        if (_lastRefreshVersion < 0 || _appEventBus.HasChangedSince(RefreshChangeKinds, _lastRefreshVersion))
+            await LoadAsync();
+    }
+
+    private async Task LoadCoreAsync()
+    {
+        if (!EnsureCurrentUser())
+            return;
+
+        var expensesResult = await _expenseService.GetExpensesAsync(CurrentUserId);
+        if (!expensesResult.IsSuccess)
+        {
+            ErrorMessage = expensesResult.Message;
+            RefreshState();
+            return;
+        }
+
+        var categoriesResult = await _categoryService.GetCategoriesAsync(CurrentUserId);
+        if (!categoriesResult.IsSuccess)
+        {
+            ErrorMessage = categoriesResult.Message;
+            RefreshState();
+            return;
+        }
+
+        Dictionary<int, Category> categoriesById = (categoriesResult.Data ?? [])
+            .GroupBy(category => category.Id)
+            .Select(group => group.First())
+            .ToDictionary(category => category.Id, category => category);
+
+        List<Expense> expenses = (expensesResult.Data ?? [])
+            .OrderByDescending(expense => expense.DateOperation)
+            .ThenByDescending(expense => expense.Id)
+            .ToList();
+
+        Expenses.Clear();
+        foreach (Expense expense in expenses)
+        {
+            ExpenseListItemViewModel item = ExpenseListItemViewModel.FromModel(expense, categoriesById, Devise);
+            item.OpenCommand = OpenExpenseDetailsCommand;
+            Expenses.Add(item);
+        }
+
+        TotalExpenses = expenses.Sum(expense => expense.Amount);
+        RefreshState();
+        UpdateObservedRefreshVersion();
+    }
+
+    private void UpdateObservedRefreshVersion()
+        => _lastRefreshVersion = _appEventBus.GetVersion(RefreshChangeKinds);
 
     private void RefreshState()
     {

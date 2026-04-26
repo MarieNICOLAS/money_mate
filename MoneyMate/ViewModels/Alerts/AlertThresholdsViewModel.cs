@@ -11,9 +11,14 @@ namespace MoneyMate.ViewModels.Alerts;
 /// </summary>
 public class AlertThresholdsViewModel : AuthenticatedViewModelBase
 {
+    private const AppDataChangeKind RefreshChangeKinds =
+        AppDataChangeKind.AlertThresholds | AppDataChangeKind.Budgets | AppDataChangeKind.Categories | AppDataChangeKind.Expenses;
+
     private readonly IAlertThresholdService _alertThresholdService;
     private readonly IBudgetService _budgetService;
     private readonly ICategoryService _categoryService;
+    private readonly IAppEventBus _appEventBus;
+    private long _lastRefreshVersion = -1;
 
     public AlertThresholdsViewModel(
         IAlertThresholdService alertThresholdService,
@@ -21,12 +26,14 @@ public class AlertThresholdsViewModel : AuthenticatedViewModelBase
         ICategoryService categoryService,
         IAuthenticationService authenticationService,
         IDialogService dialogService,
-        INavigationService navigationService)
+        INavigationService navigationService,
+        IAppEventBus? appEventBus = null)
         : base(authenticationService, dialogService, navigationService)
     {
         _alertThresholdService = alertThresholdService ?? throw new ArgumentNullException(nameof(alertThresholdService));
         _budgetService = budgetService ?? throw new ArgumentNullException(nameof(budgetService));
         _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
+        _appEventBus = appEventBus ?? NullAppEventBus.Instance;
 
         Title = "Alertes";
         Alerts = [];
@@ -52,56 +59,65 @@ public class AlertThresholdsViewModel : AuthenticatedViewModelBase
 
     public async Task LoadAsync()
     {
-        await ExecuteBusyActionAsync(async () =>
+        await ExecuteBusyActionAsync(LoadCoreAsync, "Une erreur est survenue lors du chargement des alertes.");
+    }
+
+    public async Task RefreshIfNeededAsync()
+    {
+        if (_lastRefreshVersion < 0 || _appEventBus.HasChangedSince(RefreshChangeKinds, _lastRefreshVersion))
+            await LoadAsync();
+    }
+
+    private async Task LoadCoreAsync()
+    {
+        if (!EnsureCurrentUser())
+            return;
+
+        var alertsResult = await _alertThresholdService.GetAlertThresholdsAsync(CurrentUserId);
+        if (!alertsResult.IsSuccess)
         {
-            if (!EnsureCurrentUser())
-                return;
-
-            var alertsResult = await _alertThresholdService.GetAlertThresholdsAsync(CurrentUserId);
-            if (!alertsResult.IsSuccess)
-            {
-                ErrorMessage = alertsResult.Message;
-                RefreshState();
-                return;
-            }
-
-            var budgetsResult = await _budgetService.GetBudgetsAsync(CurrentUserId);
-            if (!budgetsResult.IsSuccess)
-            {
-                ErrorMessage = budgetsResult.Message;
-                RefreshState();
-                return;
-            }
-
-            var categoriesResult = await _categoryService.GetCategoriesAsync(CurrentUserId);
-            if (!categoriesResult.IsSuccess)
-            {
-                ErrorMessage = categoriesResult.Message;
-                RefreshState();
-                return;
-            }
-
-            Dictionary<int, Budget> budgetsById = (budgetsResult.Data ?? []).ToDictionary(budget => budget.Id, budget => budget);
-            Dictionary<int, Category> categoriesById = (categoriesResult.Data ?? [])
-                .GroupBy(category => category.Id)
-                .Select(group => group.First())
-                .ToDictionary(category => category.Id, category => category);
-
-            List<AlertThresholdItemViewModel> items = [];
-            foreach (AlertThreshold alert in (alertsResult.Data ?? []).OrderByDescending(alert => alert.ThresholdPercentage))
-            {
-                var evaluationResult = await _alertThresholdService.EvaluateAlertAsync(alert.Id, CurrentUserId);
-                AlertTriggerInfo? triggerInfo = evaluationResult.IsSuccess ? evaluationResult.Data : null;
-
-                items.Add(AlertThresholdItemViewModel.FromData(alert, triggerInfo, budgetsById, categoriesById));
-            }
-
-            Alerts.Clear();
-            foreach (AlertThresholdItemViewModel item in items)
-                Alerts.Add(item);
-
+            ErrorMessage = alertsResult.Message;
             RefreshState();
-        }, "Une erreur est survenue lors du chargement des alertes.");
+            return;
+        }
+
+        var budgetsResult = await _budgetService.GetBudgetsAsync(CurrentUserId);
+        if (!budgetsResult.IsSuccess)
+        {
+            ErrorMessage = budgetsResult.Message;
+            RefreshState();
+            return;
+        }
+
+        var categoriesResult = await _categoryService.GetCategoriesAsync(CurrentUserId);
+        if (!categoriesResult.IsSuccess)
+        {
+            ErrorMessage = categoriesResult.Message;
+            RefreshState();
+            return;
+        }
+
+        Dictionary<int, Budget> budgetsById = (budgetsResult.Data ?? []).ToDictionary(budget => budget.Id, budget => budget);
+        Dictionary<int, Category> categoriesById = (categoriesResult.Data ?? [])
+            .GroupBy(category => category.Id)
+            .Select(group => group.First())
+            .ToDictionary(category => category.Id, category => category);
+
+        List<AlertThresholdItemViewModel> items = [];
+        foreach (AlertThreshold alert in (alertsResult.Data ?? []).OrderByDescending(alert => alert.ThresholdPercentage))
+        {
+            var evaluationResult = await _alertThresholdService.EvaluateAlertAsync(alert.Id, CurrentUserId);
+            AlertTriggerInfo? triggerInfo = evaluationResult.IsSuccess ? evaluationResult.Data : null;
+
+            items.Add(AlertThresholdItemViewModel.FromData(alert, triggerInfo, budgetsById, categoriesById));
+        }
+
+        Alerts.Clear();
+        foreach (AlertThresholdItemViewModel item in items)
+            Alerts.Add(item);
+
+        RefreshState();
+        UpdateObservedRefreshVersion();
     }
 
     private async Task ToggleAlertActiveAsync(AlertThresholdItemViewModel? alert)
@@ -121,7 +137,8 @@ public class AlertThresholdsViewModel : AuthenticatedViewModelBase
                 return;
             }
 
-            await LoadAsync();
+            _appEventBus.PublishDataChanged(AppDataChangeKind.AlertThresholds);
+            await LoadCoreAsync();
         }, "Une erreur est survenue lors de la mise à jour du seuil d'alerte.");
     }
 
@@ -147,9 +164,12 @@ public class AlertThresholdsViewModel : AuthenticatedViewModelBase
                 : $"Seuil non atteint : {result.Data.ConsumedPercentage:F0} % consommé.";
 
             await DialogService.ShowAlertAsync("Évaluation d'alerte", message, "OK");
-            await LoadAsync();
+            await LoadCoreAsync();
         }, "Une erreur est survenue lors de l'évaluation de l'alerte.");
     }
+
+    private void UpdateObservedRefreshVersion()
+        => _lastRefreshVersion = _appEventBus.GetVersion(RefreshChangeKinds);
 
     private void RefreshState()
     {

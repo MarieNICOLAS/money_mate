@@ -53,6 +53,9 @@ Money Mate est une application mobile de gestion budgétaire personnelle.
 | **Helpers** | `MoneyMate.Helpers` | Utilitaires purs sans dépendances (validation, formatage) |
 | **Behaviors** | `MoneyMate.Behaviors` | Comportements XAML attachés |
 | **Converters** | `MoneyMate.Converters` | Convertisseurs de valeurs pour binding |
+| **Configuration** | `MoneyMate.Configuration` | Routes, constantes applicatives et configuration Shell |
+| **Services.Models** | `MoneyMate.Services.Models` | DTOs de synthèse retournés par les services |
+| **Services.Results** | `MoneyMate.Services.Results` | Résultats métier typés (`ServiceResult`) |
 
 ### 3.2 Interdictions
 
@@ -62,6 +65,10 @@ Money Mate est une application mobile de gestion budgétaire personnelle.
 - ❌ SQL non paramétré (toujours utiliser `?` pour les paramètres)
 - ❌ Couplage fort entre couches
 - ❌ Duplication de logique
+- ❌ `Shell.Current.GoToAsync` directement dans un ViewModel : passer par `INavigationService`
+- ❌ Navigation avec des chaînes dispersées : utiliser `AppRoutes` et `NavigationParameterKeys`
+- ❌ Modifier une `ObservableCollection` depuis un thread non UI
+- ❌ Déplacer un bouton cliquable avec une marge négative hors bounds du layout : Android peut l'afficher mais ignorer le tap
 
 ### 3.3 Obligations
 
@@ -74,6 +81,11 @@ Money Mate est une application mobile de gestion budgétaire personnelle.
 - ✅ XML doc (`/// <summary>`) sur toutes les classes et méthodes publiques
 - ✅ Constructeurs légers : aucun chargement SQLite, graphique ou liste lourde dans un constructeur
 - ✅ Chargements UI via `InitializeAsync()` / `LoadAsync()` après le premier affichage
+- ✅ Navigation via `INavigationService`
+- ✅ Routes centralisées dans `AppRoutes`
+- ✅ Paramètres Shell centralisés dans `NavigationParameterKeys`
+- ✅ Résultats métier via `ServiceResult` / `ServiceResult<T>`
+- ✅ Rafraîchissement inter-écrans via `IAppEventBus` quand une donnée métier change
 
 ---
 
@@ -130,6 +142,9 @@ MoneyMate/
 │
 ├── ViewModels/
 │   ├── BaseViewModel.cs                    ← Classe abstraite (INotifyPropertyChanged)
+│   ├── AuthenticatedViewModelBase.cs        ← Base des écrans connectés
+│   ├── Forms/
+│   │   └── FormViewModelBase.cs             ← Base création / édition
 │   ├── Auth/
 │   │   ├── LoginViewModel.cs
 │   │   └── RegisterViewModel.cs
@@ -139,13 +154,24 @@ MoneyMate/
 │   │   ├── ProfileViewModel.cs
 │   │   ├── ChangePasswordViewModel.cs
 │   │   └── DeleteAccountViewModel.cs
-│   └── (Expenses/, Budgets/, Categories/, Alerts/, Calendar/ — à créer)
+│   ├── Expenses/
+│   ├── Budgets/
+│   ├── Categories/
+│   ├── Alerts/
+│   ├── FixedCharges/
+│   └── Calendar/
 │
 ├── Services/
 │   ├── Interfaces/
-│   │   └── IAuthenticationService.cs
+│   │   ├── IAuthenticationService.cs
+│   │   ├── INavigationService.cs
+│   │   ├── IAppEventBus.cs
+│   │   └── I*Service.cs
 │   └── Implementations/
-│       └── AuthenticationService.cs
+│       ├── AuthenticationService.cs
+│       ├── NavigationService.cs
+│       ├── ShellRouteRegistry.cs
+│       └── *Service.cs
 │
 ├── Data/
 │   └── Context/
@@ -153,10 +179,11 @@ MoneyMate/
 │       └── DatabaseService.cs              ← Singleton thread-safe
 │
 ├── Components/
-│   ├── Header.xaml(.cs)                    ← Header public (logo)
-│   ├── Footer.xaml(.cs)                    ← Footer public
 │   ├── AuthenticatedHeader.xaml(.cs)       ← Header connecté (username + logout)
-│   └── AuthenticatedFooter.xaml(.cs)       ← Barre de navigation connecté
+│   ├── AuthenticatedFooter.xaml(.cs)       ← Barre de navigation connecté
+│   ├── EmptyStateView.xaml(.cs)            ← État vide réutilisable
+│   ├── DonutChartView.cs                   ← Graphique donut GraphicsView
+│   └── BudgetProgressBar.xaml(.cs)
 │
 ├── Helpers/
 │   ├── CurrencyHelper.cs                   ← Formatage monétaire (EUR, USD, etc.)
@@ -219,6 +246,35 @@ public abstract class BaseViewModel : INotifyPropertyChanged
 - Utiliser `SetProperty(ref _field, value)` pour toute propriété bindée
 - Utiliser `IsBusy` pour verrouiller les commandes pendant le traitement
 
+### 6.1.1 AuthenticatedViewModelBase
+
+Les écrans connectés héritent de `AuthenticatedViewModelBase`.
+
+Responsabilités :
+- exposer `CurrentUser`, `CurrentUserId`, `CurrentDevise` ;
+- centraliser `ErrorMessage` / `HasError` ;
+- bloquer les actions si aucune session utilisateur active ;
+- exécuter les traitements via `ExecuteBusyActionAsync()`.
+
+Tout ViewModel connecté doit gérer proprement le cas `CurrentUserId <= 0` avec le message :
+
+```text
+Aucune session utilisateur active.
+```
+
+### 6.1.2 FormViewModelBase
+
+Les écrans de création / édition héritent de `FormViewModelBase`.
+
+Responsabilités :
+- initialisation création / édition via `InitializeAsync(parameters)` ;
+- validation via `ValidateForm()` ;
+- commandes standard `SaveCommand`, `CancelCommand`, `DeleteCommand` ;
+- état `CanSave`, `CanDelete`, `ValidationMessage` ;
+- lecture des paramètres de navigation avec `NavigationParameterKeys`.
+
+Quand un formulaire peut revenir vers plusieurs écrans, utiliser un paramètre contrôlé comme `NavigationParameterKeys.ReturnRoute` et whitelister les routes autorisées.
+
 ### 6.2 BasePage
 
 Toutes les pages héritent de `BasePage` ou `BasePage<TViewModel>` :
@@ -272,6 +328,19 @@ public class XxxService : IXxxService
 
 Les constructeurs sans paramètre ne sont tolérés que pour préserver une compatibilité existante ou pour des tests ciblés. Le flux applicatif normal doit utiliser la DI.
 
+Les services retournent des résultats explicites :
+
+```csharp
+Task<ServiceResult<T>> DoSomethingAsync(...);
+Task<ServiceResult> DeleteSomethingAsync(...);
+```
+
+Règles :
+- valider les entrées dans le service ;
+- retourner un `ErrorCode` stable et un message utilisateur clair ;
+- ne pas laisser remonter une exception technique vers le ViewModel ;
+- centraliser les messages métier sensibles au doublon, session, droits ou validation.
+
 ### 6.4 Injection de dépendances (MauiProgram.cs)
 
 Tout nouveau composant doit être enregistré dans `MauiProgram.cs` :
@@ -291,9 +360,12 @@ builder.Services.AddTransient<XxxPage>();
 
 - Les routes racines publiques restent dans `AppShell.xaml`
 - Les routes applicatives sont enregistrées dans `ShellRouteRegistry`
-- Navigation : `await Shell.Current.GoToAsync("//XxxPage")`
+- Les noms de routes sont centralisés dans `AppRoutes`
+- Les paramètres de routes sont centralisés dans `NavigationParameterKeys`
+- Navigation depuis un ViewModel : `await NavigationService.NavigateToAsync(AppRoutes.Xxx)`
 - Pattern `//` pour navigation absolue (reset de la pile)
 - Les pages doivent être résolues à la demande ; pas de préchargement massif dans `AppShell`
+- `NavigationService` normalise les routes et vérifie les droits via `IAuthenticationService.CanAccessRoute()`
 
 ### 6.6 Commandes de navigation
 
@@ -306,17 +378,36 @@ public ICommand GoBudgetCommand { get; }
 public ICommand GoProfileCommand { get; }
 
 // Dans le constructeur :
-GoHomeCommand = new Command(async () => await Shell.Current.GoToAsync("//DashboardPage"));
+GoHomeCommand = new Command(async () => await NavigationService.NavigateToAsync(AppRoutes.Dashboard));
 ```
+
+Pour transmettre des paramètres :
+
+```csharp
+await NavigationService.NavigateToAsync(
+    AppRoutes.AddBudget,
+    new Dictionary<string, object>
+    {
+        [NavigationParameterKeys.ReturnRoute] = AppRoutes.Dashboard
+    });
+```
+
+Ne pas mettre de logique de décision métier dans le code-behind de la page.
 
 ### 6.7 Components réutilisables
 
 | Composant | Usage | Propriétés bindables |
 |-----------|-------|---------------------|
-| `Header` | Pages publiques (non connecté) | — |
-| `Footer` | Pages publiques | — |
 | `AuthenticatedHeader` | Pages connectées | `UserName`, `LogoutCommand` |
 | `AuthenticatedFooter` | Pages connectées | `GoHomeCommand`, `GoExpensesCommand`, `GoBudgetCommand`, `GoProfileCommand` |
+| `EmptyStateView` | États vides réutilisables | `Icon`, `Message`, `ActionText`, `ActionCommand` |
+| `DonutChartView` | Répartition dépenses par catégorie | `Segments` |
+| `BudgetProgressBar` | Progression consommation budget | Selon composant |
+
+Règles pour les composants graphiques :
+- un `GraphicsView` doit appeler `Invalidate()` quand ses données changent ;
+- si la source est une `ObservableCollection`, écouter `INotifyCollectionChanged` ;
+- ne pas supposer que le binding remplace toute la collection : les ViewModels peuvent faire `Clear()` puis `Add()`.
 
 ### 6.8 Helpers (utilitaires purs)
 
@@ -498,6 +589,11 @@ Exigences minimales (vérifiées par `AuthenticationService.ValidatePasswordStre
 | **RG8 – Cycle budgétaire** | Jour de début configurable (`BudgetStartDay`, 1-31) |
 | **RG9 – Montant** | Toujours positif (`decimal`), validé par `ValidationHelper.IsValidAmount()` |
 | **RG10 – Date** | Ne peut pas être dans le futur, validé par `ValidationHelper.IsValidDate()` |
+| **RG11 – Budget mensuel unique** | Un seul budget par utilisateur et par mois/année |
+| **RG12 – Budget futur interdit** | Impossible de créer un budget pour un mois futur |
+| **RG13 – Doublon budget** | Message utilisateur : `Un budget existe déjà pour ce mois.` |
+| **RG14 – Dashboard sans budget** | Si aucun budget du mois n'existe, afficher une action `Créer mon budget` vers `AddBudgetPage` |
+| **RG15 – Refresh Dashboard** | Après création d'un budget, publier `AppDataChangeKind.Budgets` puis revenir au Dashboard si demandé |
 
 **Important** : toute logique métier doit être centralisée dans les **Services**, jamais dans les ViewModels.
 
@@ -544,17 +640,30 @@ Sur Android, la page `ExpensesListPage` doit conserver une `CollectionView` virt
 
 | Fonctionnalité | Routes | État |
 |---------------|--------|------|
-| Vue d'ensemble | `BudgetsOverviewPage` | 🔧 En cours |
-| Ajout budget | `AddBudgetPage` | 🔧 En cours |
-| Modification budget | `EditBudgetPage` | 🔧 En cours |
-| Calcul automatique (consommé/restant) | — | 📋 À faire |
-| Déclenchement alertes | — | 📋 À faire |
+| Vue d'ensemble | `BudgetsOverviewPage` | ✅ Implémenté |
+| Ajout budget | `AddBudgetPage` | ✅ Implémenté |
+| Modification budget | `EditBudgetPage` | ✅ Implémenté |
+| Budget mensuel unique | Service | ✅ Implémenté |
+| Validation montant > 0 | ViewModel + Service | ✅ Implémenté |
+| Détection doublon mois/année | Service | ✅ Implémenté |
+| Retour Dashboard après création depuis Dashboard | `ReturnRoute` | ✅ Implémenté |
+| Calcul automatique (consommé/restant) | Service | ✅ Implémenté |
+| Déclenchement alertes | — | 🔧 En cours |
+
+Flux Dashboard sans budget :
+
+1. `DashboardService.GetDashboardSummaryAsync()` renseigne `HasCurrentMonthBudget`.
+2. `DashboardViewModel` expose `IsCurrentMonthBudgetMissing`.
+3. `DashboardPage` affiche un bouton icône `+` dans la carte du donut.
+4. `CreateBudgetCommand` navigue vers `AddBudgetPage` avec `ReturnRoute = AppRoutes.Dashboard`.
+5. `BudgetFormViewModel` crée le budget, publie `AppDataChangeKind.Budgets`, puis revient au Dashboard.
+6. `DashboardViewModel.RefreshIfNeededAsync()` recharge les données automatiquement.
 
 ### MODULE 5 — Visualisation & Statistiques
 
 | Fonctionnalité | État |
 |---------------|------|
-| Graphique camembert (répartition par catégorie) | 📋 À faire |
+| Donut dépenses par catégorie du mois | ✅ Implémenté |
 | Graphique barres (comparaison mois) | 📋 À faire |
 | Graphique courbes (évolution dans le temps) | 📋 À faire |
 | Indicateur progression épargne | 📋 À faire |
@@ -641,6 +750,10 @@ Quand on ajoute une fonctionnalité complète (ex: un nouveau CRUD) :
 - Feedback visuel immédiat (indicateurs, barres de force, couleurs)
 - Pas de page blanche : toujours un état vide explicite
 - Accessibilité : tailles de police lisibles, contrastes suffisants
+- Les boutons icônes doivent rester dans les bounds réels du layout pour conserver leur zone tactile Android
+- Les actions principales doivent avoir une `SemanticProperties.Description`
+- Sur le Dashboard, le bouton de création de budget du mois est une icône `+` visible uniquement quand `IsCurrentMonthBudgetMissing == true`
+- Ne pas afficher du texte décoratif qui encombre le donut : privilégier les montants et les actions utiles
 
 ---
 
@@ -668,6 +781,28 @@ public async Task LoginAsync_WithValidCredentials_ReturnsUser()
 
 Nommage : `MethodName_Scenario_ExpectedResult`
 
+### 14.3 Commandes utiles
+
+Tests unitaires complets :
+
+```powershell
+dotnet test tests\UnitTests\UnitTests.csproj
+```
+
+Tests ciblés Dashboard/Budget :
+
+```powershell
+dotnet test tests\UnitTests\UnitTests.csproj --filter "FullyQualifiedName~DashboardViewModelTests|FullyQualifiedName~BudgetFormViewModelTests|FullyQualifiedName~DashboardServiceTests"
+```
+
+Build Android Debug :
+
+```powershell
+dotnet build MoneyMate\MoneyMate.csproj -f net9.0-android -c Debug
+```
+
+Si un test complet échoue hors périmètre, documenter le test en échec dans le compte rendu et exécuter les tests ciblés liés à la modification.
+
 ---
 
 ## 15. Workflow Git
@@ -677,8 +812,9 @@ Nommage : `MethodName_Scenario_ExpectedResult`
 ```
 main            ← production stable
 develop         ← intégration
-feature/*       ← nouvelles fonctionnalités
+feat/*          ← nouvelles fonctionnalités
 fix/*           ← corrections de bugs
+refactor/*      ← refactorings
 ```
 
 ### 15.2 Processus
@@ -686,11 +822,11 @@ fix/*           ← corrections de bugs
 ```bash
 git checkout develop
 git pull
-git checkout -b feature/nom-fonctionnalite
+git checkout -b feat/nom-fonctionnalite
 # ... développement ...
 git add .
 git commit -m "feat: description"
-git push origin feature/nom-fonctionnalite
+git push origin feat/nom-fonctionnalite
 # → Créer une Pull Request vers develop
 ```
 
@@ -713,6 +849,23 @@ Doit contenir :
 - Impact technique
 - Tests réalisés
 - Respect de ce CONTRIBUTING.md vérifié
+
+### 15.5 Travail avec une IA / Codex
+
+- Toujours créer une branche avant modification significative.
+- Préférer des changements petits et vérifiables.
+- Ne pas écraser les changements locaux non liés.
+- L'IA doit expliquer les fichiers modifiés, les tests lancés et les limites connues.
+- Après modification UI, tester sur Android ou au minimum compiler le projet MAUI concerné.
+- Les messages de commit doivent être courts, en français, avec préfixe conventional commit.
+
+Exemples :
+
+```text
+feat: ajoute le bouton budget au dashboard
+fix: corrige le rafraichissement du donut
+docs: met a jour les regles de contribution
+```
 
 ---
 
@@ -842,6 +995,23 @@ Références Microsoft Learn :
 - [Improve app performance - .NET MAUI](https://learn.microsoft.com/dotnet/maui/deployment/performance)
 - [Compiled bindings - .NET MAUI](https://learn.microsoft.com/dotnet/maui/fundamentals/data-binding/compiled-bindings)
 - [Android emulator hardware acceleration](https://learn.microsoft.com/dotnet/maui/android/emulator/hardware-acceleration)
+
+---
+
+### 18.5 GraphicsView et refresh visuel
+
+Les composants basés sur `GraphicsView` sont sensibles au cycle de rendu Android.
+
+Règles :
+
+- appeler `Invalidate()` quand les données affichées changent ;
+- si la donnée bindée est une collection mutable, écouter `INotifyCollectionChanged` ;
+- déclencher l'invalidation sur le dispatcher UI si nécessaire ;
+- garder des dimensions stables (`WidthRequest`, `HeightRequest`, `HeightRequest` du conteneur si superposition) ;
+- éviter de superposer des éléments interactifs avec des marges négatives ;
+- préférer un parent `Grid` borné quand un bouton est posé autour du graphique.
+
+Cas de référence : `DonutChartView` écoute `Segments` et se redessine quand `TopCategorySegments` est vidé/rempli par le `DashboardViewModel`.
 
 ---
 

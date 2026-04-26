@@ -11,128 +11,116 @@
                 ShowFooter="False"
                 ShowAuthenticatedBackButton="True"
                 UseAuthenticatedFooter="True"
-                BackgroundColor="#FFF7F0">
-
-    <views:BasePage.Resources>
-        <Color x:Key="StatsPrimary">#6B7A8F</Color>
-        <Color x:Key="StatsSuccess">#5CB85C</Color>
-        <Color x:Key="StatsDanger">#D9534F</Color>
-        <Color x:Key="StatsBackground">#FFF7F0</Color>
-        <Color x:Key="StatsText">#2B2B2B</Color>
-        <Color x:Key="StatsMuted">#68707A</Color>
-    </views:BasePage.Resources>
+                BackgroundColor="{StaticResource BackgroundLight}">
 
     <views:BasePage.PageContent>
-        <ScrollView BackgroundColor="{StaticResource StatsBackground}">
-            <VerticalStackLayout Padding="20,18,20,32" Spacing="18">
+        <ScrollView BackgroundColor="{StaticResource BackgroundLight}">
+            <VerticalStackLayout Padding="24,20,24,32" Spacing="20">
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                    <VerticalStackLayout Grid.Column="0" Spacing="4">
+                    <VerticalStackLayout Grid.Column="0" Spacing="6">
                         <Label Text="Statistiques"
-                               FontSize="28"
-                               FontAttributes="Bold"
-                               TextColor="{StaticResource StatsPrimary}" />
+                               Style="{StaticResource PageTitle}" />
                         <Label Text="Analysez vos finances"
                                FontSize="15"
-                               TextColor="{StaticResource StatsMuted}" />
+                               TextColor="{StaticResource Secondary}" />
                     </VerticalStackLayout>
 
                     <Button Grid.Column="1"
                             Text="{StaticResource IconRefresh}"
                             Command="{Binding RefreshCommand}"
                             Style="{StaticResource PrimaryIconButton}"
-                            BackgroundColor="{StaticResource StatsPrimary}"
                             SemanticProperties.Description="Actualiser les statistiques" />
                 </Grid>
 
                 <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
-                    <Border Grid.Column="0" Padding="10,9" Stroke="{StaticResource StatsPrimary}" BackgroundColor="{StaticResource StatsPrimary}">
+                    <Border Grid.Column="0" Padding="10,9" Stroke="{StaticResource Primary}" BackgroundColor="{StaticResource Primary}">
                         <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="8" />
+                            <RoundRectangle CornerRadius="14" />
                         </Border.StrokeShape>
                         <Label Text="Aperçu" FontAttributes="Bold" FontSize="12" HorizontalTextAlignment="Center" TextColor="White" />
                     </Border>
 
-                    <Border Grid.Column="1" Padding="10,9" Stroke="#E0D8D0" BackgroundColor="#FFFFFF">
+                    <Border Grid.Column="1" Padding="10,9" Stroke="#D6E1EA" BackgroundColor="#F3F8FC">
                         <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="8" />
+                            <RoundRectangle CornerRadius="14" />
                         </Border.StrokeShape>
-                        <Label Text="Budgets 🔒" FontSize="12" HorizontalTextAlignment="Center" TextColor="{StaticResource StatsMuted}" />
+                        <Label Text="Budgets" FontSize="12" HorizontalTextAlignment="Center" TextColor="{StaticResource Secondary}" />
                     </Border>
 
-                    <Border Grid.Column="2" Padding="10,9" Stroke="#E0D8D0" BackgroundColor="#FFFFFF">
+                    <Border Grid.Column="2" Padding="10,9" Stroke="#D6E1EA" BackgroundColor="#F3F8FC">
                         <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="8" />
+                            <RoundRectangle CornerRadius="14" />
                         </Border.StrokeShape>
-                        <Label Text="Catégories 🔒" FontSize="12" HorizontalTextAlignment="Center" TextColor="{StaticResource StatsMuted}" />
+                        <Label Text="Catégories" FontSize="12" HorizontalTextAlignment="Center" TextColor="{StaticResource Secondary}" />
                     </Border>
 
-                    <Border Grid.Column="3" Padding="10,9" Stroke="#E0D8D0" BackgroundColor="#FFFFFF">
+                    <Border Grid.Column="3" Padding="10,9" Stroke="#D6E1EA" BackgroundColor="#F3F8FC">
                         <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="8" />
+                            <RoundRectangle CornerRadius="14" />
                         </Border.StrokeShape>
-                        <Label Text="Évolution 🔒" FontSize="12" HorizontalTextAlignment="Center" TextColor="{StaticResource StatsMuted}" />
+                        <Label Text="Évolution" FontSize="12" HorizontalTextAlignment="Center" TextColor="{StaticResource Secondary}" />
                     </Border>
                 </Grid>
 
-                <Border Padding="14" Stroke="#E0D8D0" BackgroundColor="#FFFFFF">
+                <Border Padding="16" Stroke="#D6E1EA" BackgroundColor="White">
                     <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="8" />
+                        <RoundRectangle CornerRadius="18" />
                     </Border.StrokeShape>
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                         <VerticalStackLayout Grid.Column="0" Spacing="2">
-                            <Label Text="Filtre" FontSize="12" TextColor="{StaticResource StatsMuted}" />
-                            <Label Text="{Binding PeriodDisplay}" FontSize="16" FontAttributes="Bold" TextColor="{StaticResource StatsText}" />
+                            <Label Text="Filtre" FontSize="12" TextColor="{StaticResource Secondary}" />
+                            <Label Text="{Binding PeriodDisplay}" FontSize="16" FontAttributes="Bold" TextColor="{StaticResource TextDark}" />
                         </VerticalStackLayout>
                         <Label Grid.Column="1"
                                Text="Mois courant"
                                FontSize="13"
                                FontAttributes="Bold"
                                VerticalTextAlignment="Center"
-                               TextColor="{StaticResource StatsPrimary}" />
+                               TextColor="{StaticResource Primary}" />
                     </Grid>
                 </Border>
 
                 <ActivityIndicator IsRunning="{Binding IsBusy}"
                                    IsVisible="{Binding IsBusy}"
-                                   Color="{StaticResource StatsPrimary}" />
+                                   Color="{StaticResource Primary}" />
 
                 <Label Text="{Binding ErrorMessage}"
                        IsVisible="{Binding HasError}"
-                       TextColor="{StaticResource StatsDanger}"
+                       TextColor="{StaticResource Error}"
                        FontAttributes="Bold" />
 
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                    <Border Grid.Column="0" Padding="16" Stroke="#E0D8D0" BackgroundColor="#FFFFFF">
+                    <Border Grid.Column="0" Padding="18" Stroke="#D6E1EA" BackgroundColor="White">
                         <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="8" />
+                            <RoundRectangle CornerRadius="18" />
                         </Border.StrokeShape>
                         <VerticalStackLayout Spacing="7">
-                            <Label Text="Solde net" FontSize="13" TextColor="{StaticResource StatsMuted}" />
-                            <Label Text="{Binding NetBalanceDisplay}" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource StatsSuccess}" />
-                            <Label Text="{Binding IncomeHintDisplay}" FontSize="11" TextColor="{StaticResource StatsMuted}" />
+                            <Label Text="Solde net" FontSize="13" TextColor="{StaticResource Secondary}" />
+                            <Label Text="{Binding NetBalanceDisplay}" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource Success}" />
+                            <Label Text="{Binding IncomeHintDisplay}" FontSize="11" TextColor="{StaticResource Secondary}" />
                         </VerticalStackLayout>
                     </Border>
 
-                    <Border Grid.Column="1" Padding="16" Stroke="#E0D8D0" BackgroundColor="#FFFFFF">
+                    <Border Grid.Column="1" Padding="18" Stroke="#D6E1EA" BackgroundColor="White">
                         <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="8" />
+                            <RoundRectangle CornerRadius="18" />
                         </Border.StrokeShape>
                         <VerticalStackLayout Spacing="7">
-                            <Label Text="Dépenses" FontSize="13" TextColor="{StaticResource StatsMuted}" />
-                            <Label Text="{Binding ExpensesDisplay}" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource StatsDanger}" />
-                            <Label Text="{Binding ExpensesCountDisplay}" FontSize="11" TextColor="{StaticResource StatsMuted}" />
+                            <Label Text="Dépenses" FontSize="13" TextColor="{StaticResource Secondary}" />
+                            <Label Text="{Binding ExpensesDisplay}" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource Error}" />
+                            <Label Text="{Binding ExpensesCountDisplay}" FontSize="11" TextColor="{StaticResource Secondary}" />
                         </VerticalStackLayout>
                     </Border>
                 </Grid>
 
-                <Border Padding="16" Stroke="#E0D8D0" BackgroundColor="#FFFFFF">
+                <Border Padding="18" Stroke="#D6E1EA" BackgroundColor="White">
                     <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="8" />
+                        <RoundRectangle CornerRadius="18" />
                     </Border.StrokeShape>
                     <VerticalStackLayout Spacing="14">
                         <Grid ColumnDefinitions="*,Auto">
-                        <Label Text="Dépenses par catégorie" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource StatsText}" />
-                            <Label Grid.Column="1" Text="Top 5" FontSize="12" TextColor="{StaticResource StatsMuted}" VerticalTextAlignment="Center" />
+                            <Label Text="Dépenses par catégorie" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextDark}" />
+                            <Label Grid.Column="1" Text="Top 5" FontSize="12" TextColor="{StaticResource Secondary}" VerticalTextAlignment="Center" />
                         </Grid>
 
                         <microcharts:ChartView Chart="{Binding CategoryPieChart}"
@@ -142,7 +130,7 @@
                         <Label Text="Aucune dépense ce mois-ci."
                                IsVisible="{Binding HasCategoryChart, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"
                                HorizontalTextAlignment="Center"
-                               TextColor="{StaticResource StatsMuted}" />
+                               TextColor="{StaticResource Secondary}" />
 
                         <VerticalStackLayout Spacing="8"
                                              BindableLayout.ItemsSource="{Binding CategoryStats}"
@@ -158,13 +146,13 @@
                                         <Label Grid.Column="1"
                                                Text="{Binding CategoryName}"
                                                FontSize="14"
-                                               TextColor="{StaticResource StatsText}"
+                                               TextColor="{StaticResource TextDark}"
                                                LineBreakMode="TailTruncation" />
                                         <Label Grid.Column="2"
                                                Text="{Binding Percentage, StringFormat='{0:0.#} %'}"
                                                FontSize="14"
                                                FontAttributes="Bold"
-                                               TextColor="{StaticResource StatsPrimary}" />
+                                               TextColor="{StaticResource Primary}" />
                                     </Grid>
                                 </DataTemplate>
                             </BindableLayout.ItemTemplate>
@@ -172,58 +160,55 @@
                     </VerticalStackLayout>
                 </Border>
 
-                <Border Padding="16" Stroke="#E0D8D0" BackgroundColor="#FFFFFF">
+                <Border Padding="18" Stroke="#D6E1EA" BackgroundColor="White">
                     <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="8" />
+                        <RoundRectangle CornerRadius="18" />
                     </Border.StrokeShape>
                     <VerticalStackLayout Spacing="14">
-                        <Label Text="Dépenses du mois" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource StatsText}" />
+                        <Label Text="Dépenses du mois" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextDark}" />
                         <microcharts:ChartView Chart="{Binding CurrentMonthBarChart}"
                                                HeightRequest="190"
                                                IsVisible="{Binding HasMonthlyBarChart}" />
                         <Label Text="Le graphique apparaîtra après votre première dépense du mois."
                                IsVisible="{Binding HasMonthlyBarChart, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"
                                HorizontalTextAlignment="Center"
-                               TextColor="{StaticResource StatsMuted}" />
+                               TextColor="{StaticResource Secondary}" />
                     </VerticalStackLayout>
                 </Border>
 
-                <Border Padding="16" Stroke="#E0D8D0" BackgroundColor="#F8F4EF" Opacity="0.72" IsEnabled="False">
+                <Border Padding="18" Stroke="#D6E1EA" BackgroundColor="#F3F8FC" Opacity="0.82" IsEnabled="False">
                     <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="8" />
+                        <RoundRectangle CornerRadius="18" />
                     </Border.StrokeShape>
                     <VerticalStackLayout Spacing="10">
-                        <Label Text="Évolution" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource StatsText}" />
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="Évolution" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextDark}" />
+                            <Label Grid.Column="1" Text="Premium" FontSize="12" TextColor="{StaticResource Secondary}" VerticalTextAlignment="Center" />
+                        </Grid>
                         <Label Text="Analyse longue durée réservée Premium"
                                HorizontalTextAlignment="Center"
-                               TextColor="{StaticResource StatsMuted}" />
+                               TextColor="{StaticResource Secondary}" />
                     </VerticalStackLayout>
                 </Border>
 
                 <Button Text="Débloquer Premium"
                         Command="{Binding UnlockPremiumCommand}"
-                        BackgroundColor="{StaticResource StatsPrimary}"
-                        TextColor="White"
-                        FontAttributes="Bold"
-                        CornerRadius="8"
+                        Style="{StaticResource PrimaryButton}"
                         HeightRequest="46" />
 
-                <Border Padding="18" Stroke="#D8CDC2" BackgroundColor="#FFFFFF" IsVisible="{Binding ShowPremiumTeaser}">
+                <Border Padding="18" Stroke="#D6E1EA" BackgroundColor="White" IsVisible="{Binding ShowPremiumTeaser}">
                     <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="8" />
+                        <RoundRectangle CornerRadius="18" />
                     </Border.StrokeShape>
                     <VerticalStackLayout Spacing="12">
-                        <Label Text="Passez à Premium" FontSize="20" FontAttributes="Bold" TextColor="{StaticResource StatsPrimary}" />
-                        <Label Text="Analyses avancées" TextColor="{StaticResource StatsText}" />
-                        <Label Text="Suivi détaillé" TextColor="{StaticResource StatsText}" />
-                        <Label Text="Prévisions financières" TextColor="{StaticResource StatsText}" />
-                        <Label Text="Export PDF/CSV" TextColor="{StaticResource StatsText}" />
+                        <Label Text="Passez à Premium" FontSize="20" FontAttributes="Bold" TextColor="{StaticResource Primary}" />
+                        <Label Text="Analyses avancées" TextColor="{StaticResource TextDark}" />
+                        <Label Text="Suivi détaillé" TextColor="{StaticResource TextDark}" />
+                        <Label Text="Prévisions financières" TextColor="{StaticResource TextDark}" />
+                        <Label Text="Export PDF/CSV" TextColor="{StaticResource TextDark}" />
                         <Button Text="Découvrir"
                                 Command="{Binding DiscoverPremiumCommand}"
-                                BackgroundColor="{StaticResource StatsPrimary}"
-                                TextColor="White"
-                                FontAttributes="Bold"
-                                CornerRadius="8"
+                                Style="{StaticResource PrimaryButton}"
                                 HeightRequest="46" />
                     </VerticalStackLayout>
                 </Border>
@@ -231,7 +216,7 @@
                 <Label Text="{Binding LastUpdatedDisplay}"
                        FontSize="12"
                        HorizontalTextAlignment="Center"
-                       TextColor="{StaticResource StatsMuted}" />
+                       TextColor="{StaticResource Secondary}" />
             </VerticalStackLayout>
         </ScrollView>
     </views:BasePage.PageContent>

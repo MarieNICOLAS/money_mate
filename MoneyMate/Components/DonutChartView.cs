@@ -1,4 +1,5 @@
-﻿using System.Collections;
+using System.Collections;
+using System.Collections.Specialized;
 
 namespace MoneyMate.Components;
 
@@ -13,6 +14,7 @@ public sealed class DonutChartView : GraphicsView
             propertyChanged: OnSegmentsChanged);
 
     private readonly DonutChartDrawable _drawable;
+    private INotifyCollectionChanged? _observedSegments;
 
     public DonutChartView()
     {
@@ -30,8 +32,33 @@ public sealed class DonutChartView : GraphicsView
 
     private static void OnSegmentsChanged(BindableObject bindable, object oldValue, object newValue)
     {
-        if (bindable is DonutChartView chart)
-            chart.Invalidate();
+        if (bindable is not DonutChartView chart)
+            return;
+
+        chart.ObserveSegments(newValue as INotifyCollectionChanged);
+        chart.InvalidateChart();
+    }
+
+    private void ObserveSegments(INotifyCollectionChanged? segments)
+    {
+        if (_observedSegments != null)
+            _observedSegments.CollectionChanged -= OnObservedSegmentsChanged;
+
+        _observedSegments = segments;
+
+        if (_observedSegments != null)
+            _observedSegments.CollectionChanged += OnObservedSegmentsChanged;
+    }
+
+    private void OnObservedSegmentsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        => InvalidateChart();
+
+    private void InvalidateChart()
+    {
+        if (Dispatcher?.IsDispatchRequired == true)
+            Dispatcher.Dispatch(Invalidate);
+        else
+            Invalidate();
     }
 
     private sealed class DonutChartDrawable : IDrawable

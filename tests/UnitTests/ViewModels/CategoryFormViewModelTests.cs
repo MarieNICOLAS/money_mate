@@ -150,6 +150,32 @@ public class CategoryFormViewModelTests
     }
 
     [TestMethod]
+    public async Task SelectionOptionCommands_UpdateColorAndIcon()
+    {
+        User user = ViewModelTestHelper.CreateUser();
+        Mock<ICategoryService> categoryServiceMock = new();
+        Mock<IAlertThresholdService> alertThresholdServiceMock = new();
+
+        CategoryFormViewModel viewModel = new(
+            categoryServiceMock.Object,
+            alertThresholdServiceMock.Object,
+            ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
+            ViewModelTestHelper.CreateDialogServiceMock().Object,
+            ViewModelTestHelper.CreateNavigationServiceMock().Object);
+
+        await viewModel.InitializeAsync();
+
+        CategorySelectionOptionViewModel colorOption = viewModel.AvailableColorOptions.Single(option => option.Value == "#E57373");
+        CategorySelectionOptionViewModel iconOption = viewModel.AvailableIconOptions.Single(option => option.Value == "⚡");
+
+        colorOption.SelectCommand.Execute(null);
+        iconOption.SelectCommand.Execute(null);
+
+        Assert.AreEqual("#E57373", viewModel.ColorHex);
+        Assert.AreEqual("⚡", viewModel.Icon);
+    }
+
+    [TestMethod]
     public async Task SaveCommand_WhenInvalid_DoesNotCallService()
     {
         User user = ViewModelTestHelper.CreateUser();

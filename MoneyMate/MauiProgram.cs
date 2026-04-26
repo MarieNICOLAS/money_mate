@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using CommunityToolkit.Maui;
+using Microcharts.Maui;
 using MoneyMate.Configuration;
 using MoneyMate.Data.Context;
 using MoneyMate.Data.Repositories;
@@ -16,6 +17,7 @@ using MoneyMate.ViewModels.Dashboard;
 using MoneyMate.ViewModels.Expenses;
 using MoneyMate.ViewModels.FixedCharges;
 using MoneyMate.ViewModels.Profile;
+using MoneyMate.ViewModels.Stats;
 using MoneyMate.Views.Alerts;
 using MoneyMate.Views.Auth;
 using MoneyMate.Views.Budgets;
@@ -26,6 +28,7 @@ using MoneyMate.Views.Errors;
 using MoneyMate.Views.Expenses;
 using MoneyMate.Views.FixedCharges;
 using MoneyMate.Views.Profile;
+using MoneyMate.Views.Stats;
 
 namespace MoneyMate;
 
@@ -38,6 +41,7 @@ public static class MauiProgram
         builder
             .UseMauiApp<App>()
             .UseMauiCommunityToolkit()
+            .UseMicrocharts()
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -107,6 +111,7 @@ public static class MauiProgram
         builder.Services.AddTransient<EditFixedChargePage>();
         builder.Services.AddTransient<AlertThresholdPage>();
         builder.Services.AddTransient<CalendarPage>();
+        builder.Services.AddTransient<StatsOverviewPage>();
         builder.Services.AddTransient<ErrorPage>();
         builder.Services.AddTransient<NotFoundPage>();
         builder.Services.AddTransient<NoConnectionPage>();
@@ -133,6 +138,7 @@ public static class MauiProgram
         builder.Services.AddTransient<CalendarViewModel>();
         builder.Services.AddTransient<FixedChargesViewModel>();
         builder.Services.AddTransient<FixedChargeFormViewModel>();
+        builder.Services.AddTransient<StatsOverviewViewModel>();
 
         MauiApp app = builder.Build();
         ServiceResolver.Configure(app.Services);

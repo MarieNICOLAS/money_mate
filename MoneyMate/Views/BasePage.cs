@@ -122,6 +122,8 @@ namespace MoneyMate.Views
 
         protected ICommand GoBudgetCommand { get; }
 
+        protected ICommand GoStatsCommand { get; }
+
         protected ICommand GoProfileCommand { get; }
 
         private static void OnPageContentChanged(BindableObject bindable, object oldValue, object newValue)
@@ -137,6 +139,7 @@ namespace MoneyMate.Views
             GoCalendarCommand = new Command(async () => await NavigateToAsync(AppRoutes.Calendar));
             GoQuickAddExpenseCommand = new Command(async () => await NavigateToAsync(AppRoutes.QuickAddExpense));
             GoBudgetCommand = new Command(async () => await NavigateToAsync(AppRoutes.BudgetsOverview));
+            GoStatsCommand = new Command(async () => await NavigateToAsync(AppRoutes.StatsOverview));
             GoProfileCommand = new Command(async () => await NavigateToAsync(AppRoutes.Profile));
 
             _authenticatedFooter = new AuthenticatedFooter
@@ -146,6 +149,7 @@ namespace MoneyMate.Views
                 GoCalendarCommand = GoCalendarCommand,
                 GoQuickAddExpenseCommand = GoQuickAddExpenseCommand,
                 GoBudgetCommand = GoBudgetCommand,
+                GoStatsCommand = GoStatsCommand,
                 GoProfileCommand = GoProfileCommand,
                 IsVisible = false
             };

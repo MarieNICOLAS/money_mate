@@ -26,6 +26,7 @@
         public const string AlertThreshold = "AlertThresholdPage";
         public const string AddBudget = "AddBudgetPage";
         public const string EditBudget = "EditBudgetPage";
+        public const string StatsOverview = "StatsOverviewPage";
 
         private static readonly HashSet<string> RootRouteNames = new(StringComparer.Ordinal)
         {

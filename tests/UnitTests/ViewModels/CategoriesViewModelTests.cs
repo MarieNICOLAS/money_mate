@@ -3,7 +3,9 @@ using Moq;
 using MoneyMate.Configuration;
 using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
+using MoneyMate.Services.Models;
 using MoneyMate.Services.Results;
+using MoneyMate.ViewModels;
 using MoneyMate.ViewModels.Categories;
 
 namespace UnitTests.ViewModels;
@@ -26,17 +28,37 @@ public class CategoriesViewModelTests
         User user = ViewModelTestHelper.CreateUser();
         Mock<ICategoryService> categoryServiceMock = new();
 
-        categoryServiceMock.Setup(x => x.GetCategoriesAsync(user.Id))
-            .ReturnsAsync(ServiceResult<List<Category>>.Success(new List<Category>
+        categoryServiceMock.Setup(x => x.GetCategoryListItemsAsync(user.Id))
+            .ReturnsAsync(ServiceResult<List<CategoryListItemDto>>.Success(new List<CategoryListItemDto>
             {
-                new() { Id = 1, Name = "Alimentation", IsSystem = true, IsActive = true, Color = "#4CAF50", Icon = "🍎" },
-                new() { Id = 2, UserId = user.Id, Name = "Maison", IsSystem = false, IsActive = true, Color = "#2196F3", Icon = "🏠" }
-            }));
-
-        categoryServiceMock.Setup(x => x.GetInactiveCategoriesAsync(user.Id))
-            .ReturnsAsync(ServiceResult<List<Category>>.Success(new List<Category>
-            {
-                new() { Id = 3, UserId = user.Id, Name = "Voyage", IsSystem = false, IsActive = false, Color = "#9C27B0", Icon = "✈️" }
+                new()
+                {
+                    Category = new Category { Id = 1, Name = "Alimentation", IsSystem = true, IsActive = true, Color = "#4CAF50", Icon = "🍎" },
+                    BudgetAmount = 100m,
+                    SpentAmount = 30m,
+                    ThresholdPercentage = 80m,
+                    ThresholdAmount = 80m,
+                    RemainingBeforeThreshold = 50m,
+                    ConsumedPercentage = 30m,
+                    HasAlertThreshold = true,
+                    ThresholdStatus = "OK"
+                },
+                new()
+                {
+                    Category = new Category { Id = 2, UserId = user.Id, Name = "Maison", IsSystem = false, IsActive = true, Color = "#2196F3", Icon = "🏠" },
+                    BudgetAmount = 100m,
+                    ThresholdPercentage = 100m,
+                    ThresholdAmount = 100m,
+                    ThresholdStatus = "OK"
+                },
+                new()
+                {
+                    Category = new Category { Id = 3, UserId = user.Id, Name = "Voyage", IsSystem = false, IsActive = false, Color = "#9C27B0", Icon = "✈️" },
+                    BudgetAmount = 100m,
+                    ThresholdPercentage = 100m,
+                    ThresholdAmount = 100m,
+                    ThresholdStatus = "OK"
+                }
             }));
 
         CategoriesViewModel viewModel = new(
@@ -62,8 +84,8 @@ public class CategoriesViewModelTests
         User user = ViewModelTestHelper.CreateUser();
         Mock<ICategoryService> categoryServiceMock = new();
 
-        categoryServiceMock.Setup(x => x.GetCategoriesAsync(user.Id))
-            .ReturnsAsync(ServiceResult<List<Category>>.Failure("CATEGORY_ERROR", "Impossible de charger les catégories."));
+        categoryServiceMock.Setup(x => x.GetCategoryListItemsAsync(user.Id))
+            .ReturnsAsync(ServiceResult<List<CategoryListItemDto>>.Failure("CATEGORY_ERROR", "Impossible de charger les catégories."));
 
         CategoriesViewModel viewModel = new(
             categoryServiceMock.Object,
@@ -99,16 +121,65 @@ public class CategoriesViewModelTests
     }
 
     [TestMethod]
+    public async Task LoadedCategoryEditCommand_NavigatesToEditCategoryPage()
+    {
+        User user = ViewModelTestHelper.CreateUser();
+        Mock<ICategoryService> categoryServiceMock = new();
+        Mock<INavigationService> navigationServiceMock = ViewModelTestHelper.CreateNavigationServiceMock();
+
+        categoryServiceMock.Setup(x => x.GetCategoryListItemsAsync(user.Id))
+            .ReturnsAsync(ServiceResult<List<CategoryListItemDto>>.Success(new List<CategoryListItemDto>
+            {
+                new()
+                {
+                    Category = new Category
+                    {
+                        Id = 7,
+                        UserId = user.Id,
+                        Name = "Maison",
+                        IsSystem = false,
+                        IsActive = true,
+                        Color = "#2196F3",
+                        Icon = "🏠"
+                    },
+                    BudgetAmount = 100m,
+                    ThresholdPercentage = 100m,
+                    ThresholdAmount = 100m,
+                    ThresholdStatus = "OK"
+                }
+            }));
+
+        CategoriesViewModel viewModel = new(
+            categoryServiceMock.Object,
+            CreateAlertThresholdService(),
+            ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
+            ViewModelTestHelper.CreateDialogServiceMock().Object,
+            navigationServiceMock.Object);
+
+        await viewModel.LoadAsync();
+
+        CategoryListItemViewModel category = viewModel.Categories.Single();
+        Assert.IsNotNull(category.EditCommand);
+
+        category.EditCommand!.Execute(category);
+        await Task.Delay(100);
+
+        navigationServiceMock.Verify(x => x.NavigateToAsync(
+            AppRoutes.EditCategory,
+            It.Is<Dictionary<string, object>>(parameters =>
+                parameters.ContainsKey(NavigationParameterKeys.CategoryId) &&
+                (int)parameters[NavigationParameterKeys.CategoryId] == 7)),
+            Times.Once);
+    }
+
+    [TestMethod]
     public async Task DeleteCategoryCommand_WhenConfirmed_DeletesCategory()
     {
         User user = ViewModelTestHelper.CreateUser();
         Mock<ICategoryService> categoryServiceMock = new();
 
-        categoryServiceMock.Setup(x => x.GetCategoriesAsync(user.Id))
-            .ReturnsAsync(ServiceResult<List<Category>>.Success(new List<Category>()));
-
-        categoryServiceMock.Setup(x => x.GetInactiveCategoriesAsync(user.Id))
-            .ReturnsAsync(ServiceResult<List<Category>>.Success(new List<Category>()));
+        categoryServiceMock.Setup(x => x.GetCategoryListItemsAsync(user.Id))
+            .ReturnsAsync(ServiceResult<List<CategoryListItemDto>>.Success(new List<CategoryListItemDto>()));
 
         categoryServiceMock.Setup(x => x.DeleteCategoryAsync(5, user.Id))
             .ReturnsAsync(ServiceResult.Success());
@@ -122,7 +193,7 @@ public class CategoriesViewModelTests
 
         await viewModel.LoadAsync();
 
-        viewModel.DeleteCategoryCommand.Execute(new CategoryItemViewModel
+        viewModel.DeleteCategoryCommand.Execute(new CategoryListItemViewModel
         {
             Id = 5,
             Name = "Maison",
@@ -150,6 +221,6 @@ public class CategoriesViewModelTests
         await viewModel.LoadAsync();
 
         Assert.AreEqual("Aucune session utilisateur active.", viewModel.ErrorMessage);
-        categoryServiceMock.Verify(x => x.GetCategoriesAsync(It.IsAny<int>()), Times.Never);
+        categoryServiceMock.Verify(x => x.GetCategoryListItemsAsync(It.IsAny<int>()), Times.Never);
     }
 }

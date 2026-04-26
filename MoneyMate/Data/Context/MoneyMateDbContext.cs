@@ -67,7 +67,11 @@ namespace MoneyMate.Data.Context
 
             user.Email = user.Email.Trim().ToLowerInvariant();
 
-            return ExecuteSafe(connection => connection.Insert(user));
+            return ExecuteSafe(connection =>
+            {
+                int insertedRows = connection.Insert(user);
+                return insertedRows == 1 ? user.Id : 0;
+            });
         }
 
         public int UpdateUser(User user)
@@ -94,11 +98,23 @@ namespace MoneyMate.Data.Context
             if (userId <= 0)
                 return [];
 
-            return Execute(connection => connection.Table<Category>()
-                .Where(category => (category.IsSystem || category.UserId == userId) && category.IsActive)
-                .OrderBy(category => category.DisplayOrder)
-                .ThenBy(category => category.Name)
-                .ToList());
+            return Execute(connection => connection.Query<Category>(
+                """
+                SELECT c.*
+                FROM Categories c
+                WHERE c.IsActive = 1
+                  AND (
+                    (c.IsSystem = 1 AND NOT EXISTS (
+                        SELECT 1
+                        FROM Categories o
+                        WHERE o.UserId = ? AND o.ParentCategoryId = c.Id
+                    ))
+                    OR c.UserId = ?
+                  )
+                ORDER BY c.DisplayOrder, c.Name
+                """,
+                userId,
+                userId));
         }
 
         public List<Category> GetAllCategoriesByUserId(int userId)
@@ -106,11 +122,20 @@ namespace MoneyMate.Data.Context
             if (userId <= 0)
                 return [];
 
-            return Execute(connection => connection.Table<Category>()
-                .Where(category => category.IsSystem || category.UserId == userId)
-                .OrderBy(category => category.DisplayOrder)
-                .ThenBy(category => category.Name)
-                .ToList());
+            return Execute(connection => connection.Query<Category>(
+                """
+                SELECT c.*
+                FROM Categories c
+                WHERE (c.IsSystem = 1 AND NOT EXISTS (
+                        SELECT 1
+                        FROM Categories o
+                        WHERE o.UserId = ? AND o.ParentCategoryId = c.Id
+                    ))
+                   OR c.UserId = ?
+                ORDER BY c.DisplayOrder, c.Name
+                """,
+                userId,
+                userId));
         }
 
         public List<Category> GetCustomCategoriesByUserId(int userId)
@@ -140,6 +165,18 @@ namespace MoneyMate.Data.Context
                 .FirstOrDefault(category => category.Id == id && (category.IsSystem || category.UserId == userId)));
         }
 
+        public Category? GetCategoryOverride(int userId, int parentCategoryId)
+        {
+            if (userId <= 0 || parentCategoryId <= 0)
+                return null;
+
+            return Execute(connection => connection.Table<Category>()
+                .FirstOrDefault(category =>
+                    !category.IsSystem &&
+                    category.UserId == userId &&
+                    category.ParentCategoryId == parentCategoryId));
+        }
+
         public int InsertCategory(Category category)
         {
             ArgumentNullException.ThrowIfNull(category);
@@ -153,7 +190,11 @@ namespace MoneyMate.Data.Context
             category.Name = category.Name.Trim();
             category.Color = NormalizeColor(category.Color);
 
-            return ExecuteSafe(connection => connection.Insert(category));
+            return ExecuteSafe(connection =>
+            {
+                int insertedRows = connection.Insert(category);
+                return insertedRows == 1 ? category.Id : 0;
+            });
         }
 
         public int UpdateCategory(Category category)
@@ -227,6 +268,46 @@ namespace MoneyMate.Data.Context
             });
         }
 
+        public int MigrateCategoryUsageForUser(int userId, int sourceCategoryId, int targetCategoryId)
+        {
+            if (userId <= 0 || sourceCategoryId <= 0 || targetCategoryId <= 0 || sourceCategoryId == targetCategoryId)
+                return 0;
+
+            return Execute(connection =>
+            {
+                int updatedRows = 0;
+
+                connection.RunInTransaction(() =>
+                {
+                    updatedRows += connection.Execute(
+                        "UPDATE Expenses SET CategoryId = ? WHERE CategoryId = ? AND UserId = ?",
+                        targetCategoryId,
+                        sourceCategoryId,
+                        userId);
+
+                    updatedRows += connection.Execute(
+                        "UPDATE FixedCharges SET CategoryId = ? WHERE CategoryId = ? AND UserId = ?",
+                        targetCategoryId,
+                        sourceCategoryId,
+                        userId);
+
+                    updatedRows += connection.Execute(
+                        "UPDATE Budgets SET CategoryId = ? WHERE CategoryId = ? AND UserId = ?",
+                        targetCategoryId,
+                        sourceCategoryId,
+                        userId);
+
+                    updatedRows += connection.Execute(
+                        "UPDATE AlertThresholds SET CategoryId = ? WHERE CategoryId = ? AND UserId = ?",
+                        targetCategoryId,
+                        sourceCategoryId,
+                        userId);
+                });
+
+                return updatedRows;
+            });
+        }
+
         public List<Expense> GetExpensesByUserId(int userId)
         {
             if (userId <= 0)
@@ -271,7 +352,11 @@ namespace MoneyMate.Data.Context
             if (expense.UserId <= 0 || expense.CategoryId <= 0 || !IsCategoryAccessible(expense.CategoryId, expense.UserId))
                 return 0;
 
-            return ExecuteSafe(connection => connection.Insert(expense));
+            return ExecuteSafe(connection =>
+            {
+                int insertedRows = connection.Insert(expense);
+                return insertedRows == 1 ? expense.Id : 0;
+            });
         }
 
         public int UpdateExpense(Expense expense)
@@ -340,7 +425,11 @@ namespace MoneyMate.Data.Context
             if (budget.CategoryId > 0 && !IsCategoryAccessible(budget.CategoryId, budget.UserId))
                 return 0;
 
-            return ExecuteSafe(connection => connection.Insert(budget));
+            return ExecuteSafe(connection =>
+            {
+                int insertedRows = connection.Insert(budget);
+                return insertedRows == 1 ? budget.Id : 0;
+            });
         }
 
         public int UpdateBudget(Budget budget)
@@ -421,7 +510,11 @@ namespace MoneyMate.Data.Context
             if (fixedCharge.UserId <= 0 || fixedCharge.CategoryId <= 0 || !IsCategoryAccessible(fixedCharge.CategoryId, fixedCharge.UserId))
                 return 0;
 
-            return ExecuteSafe(connection => connection.Insert(fixedCharge));
+            return ExecuteSafe(connection =>
+            {
+                int insertedRows = connection.Insert(fixedCharge);
+                return insertedRows == 1 ? fixedCharge.Id : 0;
+            });
         }
 
         public int UpdateFixedCharge(FixedCharge fixedCharge)
@@ -493,7 +586,11 @@ namespace MoneyMate.Data.Context
             if (!IsAlertThresholdValid(alertThreshold))
                 return 0;
 
-            return ExecuteSafe(connection => connection.Insert(alertThreshold));
+            return ExecuteSafe(connection =>
+            {
+                int insertedRows = connection.Insert(alertThreshold);
+                return insertedRows == 1 ? alertThreshold.Id : 0;
+            });
         }
 
         public int UpdateAlertThreshold(AlertThreshold alertThreshold)
@@ -616,6 +713,7 @@ namespace MoneyMate.Data.Context
             connection.CreateTable<AlertThreshold>();
 
             EnsureBudgetCategoryColumn(connection);
+            EnsureCategoryOverrideColumns(connection);
             CreateIndexes(connection);
             SeedCategories(connection);
             SeedDemoData(connection);
@@ -630,12 +728,24 @@ namespace MoneyMate.Data.Context
                 connection.Execute("ALTER TABLE Budgets ADD COLUMN CategoryId INTEGER NOT NULL DEFAULT 0;");
         }
 
+        private static void EnsureCategoryOverrideColumns(SQLiteConnection connection)
+        {
+            bool hasParentCategoryIdColumn = connection.GetTableInfo("Categories")
+                .Any(column => string.Equals(column.Name, nameof(Category.ParentCategoryId), StringComparison.OrdinalIgnoreCase));
+
+            if (!hasParentCategoryIdColumn)
+                connection.Execute("ALTER TABLE Categories ADD COLUMN ParentCategoryId INTEGER NULL;");
+        }
+
         private static void CreateIndexes(SQLiteConnection connection)
         {
             connection.Execute("CREATE INDEX IF NOT EXISTS IX_Users_Email ON Users(Email)");
             connection.Execute("CREATE INDEX IF NOT EXISTS IX_Expenses_User_Date ON Expenses(UserId, DateOperation DESC)");
             connection.Execute("CREATE INDEX IF NOT EXISTS IX_Expenses_Category ON Expenses(CategoryId)");
             connection.Execute("CREATE INDEX IF NOT EXISTS IX_Categories_User_IsSystem ON Categories(UserId, IsSystem)");
+            connection.Execute("CREATE INDEX IF NOT EXISTS IX_Categories_User_Parent ON Categories(UserId, ParentCategoryId)");
+            connection.Execute("CREATE INDEX IF NOT EXISTS IX_Categories_Parent ON Categories(ParentCategoryId)");
+            connection.Execute("CREATE UNIQUE INDEX IF NOT EXISTS UX_Categories_User_ParentOverride ON Categories(UserId, ParentCategoryId) WHERE ParentCategoryId IS NOT NULL");
             connection.Execute("CREATE INDEX IF NOT EXISTS IX_Budgets_User_StartDate ON Budgets(UserId, StartDate DESC)");
             connection.Execute("CREATE INDEX IF NOT EXISTS IX_FixedCharges_User_Active ON FixedCharges(UserId, IsActive)");
             connection.Execute("CREATE INDEX IF NOT EXISTS IX_AlertThresholds_User ON AlertThresholds(UserId)");
@@ -676,6 +786,7 @@ namespace MoneyMate.Data.Context
                         existingCategory.IsActive = true;
                         existingCategory.IsSystem = true;
                         existingCategory.UserId = null;
+                        existingCategory.ParentCategoryId = null;
                         connection.Update(existingCategory);
                         continue;
                     }
@@ -927,14 +1038,31 @@ namespace MoneyMate.Data.Context
         }
 
         private bool IsCategoryAccessible(int categoryId, int userId)
-            => Execute(connection => connection.Table<Category>()
-                .Any(category => category.Id == categoryId
-                                 && category.IsActive
-                                 && (category.IsSystem || category.UserId == userId)));
+            => Execute(connection => connection.ExecuteScalar<int>(
+                """
+                SELECT COUNT(1)
+                FROM Categories c
+                WHERE c.Id = ?
+                  AND c.IsActive = 1
+                  AND (
+                    c.UserId = ?
+                    OR (
+                        c.IsSystem = 1
+                        AND NOT EXISTS (
+                            SELECT 1
+                            FROM Categories o
+                            WHERE o.UserId = ? AND o.ParentCategoryId = c.Id
+                        )
+                    )
+                  )
+                """,
+                categoryId,
+                userId,
+                userId) > 0);
 
         private bool IsAlertThresholdValid(AlertThreshold alertThreshold)
         {
-            if (alertThreshold.UserId <= 0 || alertThreshold.ThresholdPercentage <= 0)
+            if (alertThreshold.UserId <= 0 || alertThreshold.ThresholdPercentage < 0)
                 return false;
 
             if (alertThreshold.CategoryId.HasValue && !IsCategoryAccessible(alertThreshold.CategoryId.Value, alertThreshold.UserId))

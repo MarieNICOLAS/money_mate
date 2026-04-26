@@ -14,7 +14,7 @@ namespace UnitTests.Services
         {
             Mock<IMoneyMateDbContext> dbContextMock = new();
 
-            dbContextMock.Setup(x => x.GetCategoriesByUserId(1))
+            dbContextMock.Setup(x => x.GetAllCategoriesByUserId(1))
                 .Returns(new List<Category>
                 {
                     new()

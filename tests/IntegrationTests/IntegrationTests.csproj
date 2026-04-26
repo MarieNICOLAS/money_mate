@@ -24,6 +24,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\MoneyMate\MoneyMate.csproj" />
+    <ProjectReference Include="..\..\MoneyMate\MoneyMate.csproj" SetTargetFramework="TargetFramework=net9.0-windows10.0.19041.0" />
   </ItemGroup>
 </Project>

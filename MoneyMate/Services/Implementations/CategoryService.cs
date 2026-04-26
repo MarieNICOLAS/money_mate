@@ -2,6 +2,7 @@
 using MoneyMate.Models;
 using MoneyMate.Services.Common;
 using MoneyMate.Services.Interfaces;
+using MoneyMate.Services.Models;
 using MoneyMate.Services.Results;
 
 namespace MoneyMate.Services.Implementations
@@ -14,6 +15,8 @@ namespace MoneyMate.Services.Implementations
         private const string DefaultCategoryColor = "#6B7A8F";
 
         private readonly IMoneyMateDbContext _dbContext;
+        private readonly Lock _cacheLock = new();
+        private readonly Dictionary<int, List<Category>> _visibleCategoryCache = [];
 
         public CategoryService()
             : this(DbContextFactory.CreateDefault())
@@ -35,10 +38,35 @@ namespace MoneyMate.Services.Implementations
                             "CATEGORY_INVALID_USER",
                             ServiceMessages.InvalidUser);
 
-                    List<Category> categories = _dbContext.GetCategoriesByUserId(userId);
+                    List<Category> categories = GetCachedVisibleCategories(userId, includeInactive: false);
                     return ServiceResult<List<Category>>.Success(categories);
                 },
                 operationName: nameof(GetCategoriesAsync),
+                fallbackErrorCode: "CATEGORY_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors du chargement des catégories.");
+        }
+
+        public Task<ServiceResult<List<CategoryListItemDto>>> GetCategoryListItemsAsync(int userId)
+        {
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
+                {
+                    if (userId <= 0)
+                    {
+                        return ServiceResult<List<CategoryListItemDto>>.Failure(
+                            "CATEGORY_INVALID_USER",
+                            ServiceMessages.InvalidUser);
+                    }
+
+                    List<Category> categories = GetCachedVisibleCategories(userId, includeInactive: true);
+                    List<AlertThreshold> alertThresholds = _dbContext.GetAlertThresholdsByUserId(userId);
+                    List<Budget> budgets = _dbContext.GetBudgetsByUserId(userId);
+                    List<Expense> expenses = _dbContext.GetExpensesByUserId(userId);
+
+                    List<CategoryListItemDto> items = BuildCategoryListItems(categories, alertThresholds, budgets, expenses);
+                    return ServiceResult<List<CategoryListItemDto>>.Success(items);
+                },
+                operationName: nameof(GetCategoryListItemsAsync),
                 fallbackErrorCode: "CATEGORY_UNEXPECTED_ERROR",
                 fallbackMessage: "Une erreur est survenue lors du chargement des catégories.");
         }
@@ -167,6 +195,7 @@ namespace MoneyMate.Services.Implementations
                     }
 
                     category.Id = categoryId;
+                    InvalidateCategoryCache(category.UserId.Value);
                     return ServiceResult<Category>.Success(category, "Catégorie créée avec succès.");
                 },
                 operationName: nameof(CreateCategoryAsync),
@@ -230,6 +259,8 @@ namespace MoneyMate.Services.Implementations
 
                     category.IsSystem = false;
                     category.CreatedAt = existingCategory.CreatedAt;
+                    category.ParentCategoryId = existingCategory.ParentCategoryId;
+                    category.DisplayOrder = existingCategory.DisplayOrder;
 
                     int updatedRows = _dbContext.UpdateCategory(category);
                     if (updatedRows != 1)
@@ -239,11 +270,111 @@ namespace MoneyMate.Services.Implementations
                             "La mise à jour de la catégorie a échoué.");
                     }
 
+                    InvalidateCategoryCache(category.UserId.Value);
                     return ServiceResult<Category>.Success(category, "Catégorie mise à jour avec succès.");
                 },
                 operationName: nameof(UpdateCategoryAsync),
                 fallbackErrorCode: "CATEGORY_UNEXPECTED_ERROR",
                 fallbackMessage: "Une erreur est survenue lors de la mise à jour de la catégorie.");
+        }
+
+        public Task<ServiceResult<Category>> CustomizeSystemCategoryAsync(Category category)
+        {
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
+                {
+                    ArgumentNullException.ThrowIfNull(category);
+
+                    if (category.Id <= 0 || !category.UserId.HasValue || category.UserId.Value <= 0)
+                    {
+                        return ServiceResult<Category>.Failure(
+                            "CATEGORY_INVALID_INPUT",
+                            "Les informations de la catégorie sont invalides.");
+                    }
+
+                    int userId = category.UserId.Value;
+                    Category? systemCategory = _dbContext.GetCategoryById(category.Id);
+                    if (systemCategory is null || !systemCategory.IsSystem)
+                    {
+                        return ServiceResult<Category>.Failure(
+                            "CATEGORY_SYSTEM_NOT_FOUND",
+                            "Catégorie système introuvable.");
+                    }
+
+                    Category? existingOverride = _dbContext.GetCategoryOverride(userId, systemCategory.Id);
+                    ServiceResult normalizationResult = NormalizeAndValidateCategory(category, existingOverride ?? systemCategory);
+                    if (!normalizationResult.IsSuccess)
+                    {
+                        return ServiceResult<Category>.Failure(
+                            normalizationResult.ErrorCode,
+                            normalizationResult.Message);
+                    }
+
+                    ServiceResult<bool> nameExistsResult = CategoryNameExistsInternal(
+                        userId,
+                        category.Name,
+                        existingOverride?.Id,
+                        systemCategory.Id);
+
+                    if (!nameExistsResult.IsSuccess)
+                    {
+                        return ServiceResult<Category>.Failure(
+                            nameExistsResult.ErrorCode,
+                            nameExistsResult.Message);
+                    }
+
+                    if (nameExistsResult.Data)
+                    {
+                        return ServiceResult<Category>.Failure(
+                            "CATEGORY_NAME_ALREADY_EXISTS",
+                            "Une catégorie portant ce nom existe déjà.");
+                    }
+
+                    Category userCategory = existingOverride ?? new Category
+                    {
+                        UserId = userId,
+                        ParentCategoryId = systemCategory.Id,
+                        IsSystem = false,
+                        DisplayOrder = systemCategory.DisplayOrder,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    userCategory.Name = category.Name;
+                    userCategory.Description = category.Description;
+                    userCategory.Color = category.Color;
+                    userCategory.Icon = category.Icon;
+                    userCategory.IsActive = true;
+                    userCategory.IsSystem = false;
+                    userCategory.UserId = userId;
+                    userCategory.ParentCategoryId = systemCategory.Id;
+
+                    if (existingOverride is null)
+                    {
+                        int newCategoryId = _dbContext.InsertCategory(userCategory);
+                        if (newCategoryId <= 0)
+                        {
+                            return ServiceResult<Category>.Failure(
+                                "CATEGORY_OVERRIDE_CREATE_FAILED",
+                                "Impossible de personnaliser la catégorie système.");
+                        }
+
+                        userCategory.Id = newCategoryId;
+                    }
+                    else if (_dbContext.UpdateCategory(userCategory) != 1)
+                    {
+                        return ServiceResult<Category>.Failure(
+                            "CATEGORY_OVERRIDE_UPDATE_FAILED",
+                            "La mise à jour de la catégorie personnalisée a échoué.");
+                    }
+
+                    _dbContext.MigrateCategoryUsageForUser(userId, systemCategory.Id, userCategory.Id);
+                    InvalidateCategoryCache(userId);
+
+                    return ServiceResult<Category>.Success(userCategory, "Catégorie personnalisée avec succès.");
+                },
+                operationName: nameof(CustomizeSystemCategoryAsync),
+                fallbackErrorCode: "CATEGORY_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors de la personnalisation de la catégorie.");
         }
 
         public Task<ServiceResult> DeleteCategoryAsync(int categoryId, int userId)
@@ -294,6 +425,7 @@ namespace MoneyMate.Services.Implementations
                             "La suppression de la catégorie a échoué.");
                     }
 
+                    InvalidateCategoryCache(userId);
                     return ServiceResult.Success("Catégorie supprimée avec succès.");
                 },
                 operationName: nameof(DeleteCategoryAsync),
@@ -357,6 +489,7 @@ namespace MoneyMate.Services.Implementations
                             "La mise à jour de la catégorie a échoué.");
                     }
 
+                    InvalidateCategoryCache(userId);
                     return ServiceResult<Category>.Success(
                         category,
                         isActive
@@ -410,6 +543,7 @@ namespace MoneyMate.Services.Implementations
                         }
                     }
 
+                    InvalidateCategoryCache(userId);
                     return ServiceResult.Success("Ordre des catégories mis à jour avec succès.");
                 },
                 operationName: nameof(ReorderCategoriesAsync),
@@ -417,7 +551,11 @@ namespace MoneyMate.Services.Implementations
                 fallbackMessage: "Une erreur est survenue lors du réordonnancement des catégories.");
         }
 
-        private ServiceResult<bool> CategoryNameExistsInternal(int userId, string categoryName, int? excludedCategoryId = null)
+        private ServiceResult<bool> CategoryNameExistsInternal(
+            int userId,
+            string categoryName,
+            int? excludedCategoryId = null,
+            int? excludedParentCategoryId = null)
         {
             if (userId <= 0)
                 return ServiceResult<bool>.Failure("CATEGORY_INVALID_USER", ServiceMessages.InvalidUser);
@@ -429,6 +567,7 @@ namespace MoneyMate.Services.Implementations
 
             bool exists = _dbContext.GetAllCategoriesByUserId(userId)
                 .Where(category => !excludedCategoryId.HasValue || category.Id != excludedCategoryId.Value)
+                .Where(category => !excludedParentCategoryId.HasValue || category.Id != excludedParentCategoryId.Value)
                 .Any(category => string.Equals(category.Name.Trim(), normalizedCategoryName, StringComparison.OrdinalIgnoreCase));
 
             return ServiceResult<bool>.Success(exists);
@@ -473,6 +612,138 @@ namespace MoneyMate.Services.Implementations
                 _dbContext.GetAlertThresholdsByUserId(userId).Any(alert => alert.CategoryId == categoryId);
 
             return ServiceResult<bool>.Success(isInUse);
+        }
+
+        private List<Category> GetCachedVisibleCategories(int userId, bool includeInactive)
+        {
+            if (includeInactive)
+                return _dbContext.GetAllCategoriesByUserId(userId);
+
+            lock (_cacheLock)
+            {
+                if (_visibleCategoryCache.TryGetValue(userId, out List<Category>? cachedCategories))
+                    return cachedCategories.Select(CloneCategory).ToList();
+            }
+
+            List<Category> categories = _dbContext.GetCategoriesByUserId(userId);
+
+            lock (_cacheLock)
+                _visibleCategoryCache[userId] = categories.Select(CloneCategory).ToList();
+
+            return categories;
+        }
+
+        private void InvalidateCategoryCache(int userId)
+        {
+            lock (_cacheLock)
+                _visibleCategoryCache.Remove(userId);
+        }
+
+        private static Category CloneCategory(Category category)
+            => new()
+            {
+                Id = category.Id,
+                UserId = category.UserId,
+                ParentCategoryId = category.ParentCategoryId,
+                IsSystem = category.IsSystem,
+                Name = category.Name,
+                Description = category.Description,
+                Color = category.Color,
+                Icon = category.Icon,
+                DisplayOrder = category.DisplayOrder,
+                IsActive = category.IsActive,
+                CreatedAt = category.CreatedAt
+            };
+
+        private static List<CategoryListItemDto> BuildCategoryListItems(
+            List<Category> categories,
+            List<AlertThreshold> alertThresholds,
+            List<Budget> budgets,
+            List<Expense> expenses)
+        {
+            DateTime now = DateTime.Now;
+            DateTime periodStart = new(now.Year, now.Month, 1);
+            DateTime periodEnd = periodStart.AddMonths(1).AddTicks(-1);
+
+            Budget? globalBudget = budgets
+                .Where(budget => budget.IsActive && budget.CategoryId == 0 && IsDateInBudgetPeriod(now, budget))
+                .OrderByDescending(budget => budget.CreatedAt)
+                .FirstOrDefault();
+
+            Dictionary<int, Budget> categoryBudgets = budgets
+                .Where(budget => budget.IsActive && budget.CategoryId > 0 && IsDateInBudgetPeriod(now, budget))
+                .GroupBy(budget => budget.CategoryId)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.OrderByDescending(budget => budget.CreatedAt).First());
+
+            Dictionary<int, AlertThreshold> categoryAlerts = alertThresholds
+                .Where(alert => alert.IsActive && alert.CategoryId.HasValue && !alert.BudgetId.HasValue)
+                .GroupBy(alert => alert.CategoryId!.Value)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.OrderByDescending(alert => alert.ThresholdPercentage).First());
+
+            return categories
+                .Select(category =>
+                {
+                    int effectiveParentId = category.ParentCategoryId ?? category.Id;
+                    Budget? categoryBudget = categoryBudgets.GetValueOrDefault(category.Id)
+                        ?? categoryBudgets.GetValueOrDefault(effectiveParentId);
+                    decimal budgetAmount = categoryBudget?.Amount ?? globalBudget?.Amount ?? 0m;
+
+                    AlertThreshold? alert = categoryAlerts.GetValueOrDefault(category.Id)
+                        ?? categoryAlerts.GetValueOrDefault(effectiveParentId);
+                    decimal thresholdPercentage = alert?.ThresholdPercentage ?? 100m;
+                    decimal thresholdAmount = budgetAmount > 0
+                        ? budgetAmount * thresholdPercentage / 100m
+                        : 0m;
+
+                    decimal spentAmount = expenses
+                        .Where(expense =>
+                            expense.DateOperation >= periodStart &&
+                            expense.DateOperation <= periodEnd &&
+                            (expense.CategoryId == category.Id || expense.CategoryId == effectiveParentId))
+                        .Sum(expense => expense.Amount);
+
+                    decimal consumedPercentage = budgetAmount > 0
+                        ? spentAmount / budgetAmount * 100m
+                        : 0m;
+                    decimal remainingBeforeThreshold = thresholdAmount - spentAmount;
+
+                    return new CategoryListItemDto
+                    {
+                        Category = category,
+                        BudgetAmount = budgetAmount,
+                        SpentAmount = spentAmount,
+                        ThresholdPercentage = thresholdPercentage,
+                        ThresholdAmount = thresholdAmount,
+                        RemainingBeforeThreshold = remainingBeforeThreshold,
+                        ConsumedPercentage = consumedPercentage,
+                        HasAlertThreshold = alert is not null,
+                        ThresholdStatus = ResolveThresholdStatus(spentAmount, thresholdAmount)
+                    };
+                })
+                .ToList();
+        }
+
+        private static bool IsDateInBudgetPeriod(DateTime date, Budget budget)
+        {
+            DateTime startDate = new(budget.StartDate.Year, budget.StartDate.Month, 1);
+            DateTime endDate = (budget.EndDate ?? startDate.AddMonths(1).AddDays(-1)).Date.AddDays(1).AddTicks(-1);
+            return date >= startDate && date <= endDate;
+        }
+
+        private static string ResolveThresholdStatus(decimal spentAmount, decimal thresholdAmount)
+        {
+            if (thresholdAmount <= 0)
+                return "Aucun seuil";
+
+            decimal ratio = spentAmount / thresholdAmount;
+            if (ratio >= 1m)
+                return "Dépassé";
+
+            return ratio >= 0.8m ? "Seuil proche" : "OK";
         }
     }
 }

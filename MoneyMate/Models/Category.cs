@@ -23,6 +23,13 @@ namespace MoneyMate.Models
         public int? UserId { get; set; }
 
         /// <summary>
+        /// Identifiant de la catégorie système remplacée par cette catégorie utilisateur.
+        /// Null pour une catégorie système ou une catégorie personnalisée indépendante.
+        /// </summary>
+        [Indexed]
+        public int? ParentCategoryId { get; set; }
+
+        /// <summary>
         /// Indique si la catégorie est fournie par le système.
         /// </summary>
         [NotNull]

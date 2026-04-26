@@ -41,6 +41,8 @@ public class CategoryFormViewModel : FormViewModelBase
         Title = "Catégorie";
         SelectColorCommand = new Command<string>(SelectColor);
         SelectIconCommand = new Command<string>(SelectIcon);
+        AvailableColorOptions = new(AvailableColors.Select(color => new CategorySelectionOptionViewModel(color, SelectColorCommand)).ToArray());
+        AvailableIconOptions = new(AvailableIcons.Select(icon => new CategorySelectionOptionViewModel(icon, SelectIconCommand)).ToArray());
         RefreshFormState();
     }
 
@@ -154,9 +156,6 @@ public class CategoryFormViewModel : FormViewModelBase
         if (!EnsureCurrentUser())
             return ErrorMessage;
 
-        if (IsSystemCategory)
-            return "Cette catégorie système ne peut pas être modifiée depuis le formulaire.";
-
         if (string.IsNullOrWhiteSpace(Name))
             return "Le nom de la catégorie est requis.";
 
@@ -197,7 +196,9 @@ public class CategoryFormViewModel : FormViewModelBase
         };
 
         var result = IsEditMode
-            ? await _categoryService.UpdateCategoryAsync(category)
+            ? IsSystemCategory
+                ? await _categoryService.CustomizeSystemCategoryAsync(category)
+                : await _categoryService.UpdateCategoryAsync(category)
             : await _categoryService.CreateCategoryAsync(category);
 
         if (!result.IsSuccess)
@@ -280,6 +281,10 @@ public class CategoryFormViewModel : FormViewModelBase
     public ICommand SelectColorCommand { get; }
     public ICommand SelectIconCommand { get; }
 
+    public ReadOnlyCollection<CategorySelectionOptionViewModel> AvailableColorOptions { get; }
+
+    public ReadOnlyCollection<CategorySelectionOptionViewModel> AvailableIconOptions { get; }
+
     public bool CanEditSystemCategory => !IsSystemCategory;
 
     private async Task LoadCategoryAlertAsync(int categoryId)
@@ -359,4 +364,17 @@ public class CategoryFormViewModel : FormViewModelBase
 
         return true;
     }
+}
+
+public sealed class CategorySelectionOptionViewModel
+{
+    public CategorySelectionOptionViewModel(string value, ICommand selectCommand)
+    {
+        Value = value;
+        SelectCommand = new Command(() => selectCommand.Execute(Value));
+    }
+
+    public string Value { get; }
+
+    public ICommand SelectCommand { get; }
 }

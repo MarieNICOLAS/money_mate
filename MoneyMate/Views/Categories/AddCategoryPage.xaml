@@ -86,13 +86,13 @@
                                    ClearButtonVisibility="WhileEditing" />
                         </Border>
 
-                        <FlexLayout BindableLayout.ItemsSource="{Binding AvailableIcons}"
+                        <FlexLayout BindableLayout.ItemsSource="{Binding AvailableIconOptions}"
                                     Direction="Row"
                                     Wrap="Wrap"
                                     JustifyContent="Start"
                                     AlignItems="Start">
                             <BindableLayout.ItemTemplate>
-                                <DataTemplate x:DataType="x:String">
+                                <DataTemplate x:DataType="viewModels:CategorySelectionOptionViewModel">
                                     <Border Padding="8"
                                             Margin="4"
                                             BackgroundColor="#F3F8FC"
@@ -103,11 +103,10 @@
                                         </Border.StrokeShape>
                                         <Border.GestureRecognizers>
                                             <TapGestureRecognizer
-                                                Command="{Binding Source={x:Reference Page}, Path=BindingContext.SelectIconCommand}"
-                                                CommandParameter="{Binding .}" />
+                                                Command="{Binding SelectCommand}" />
                                         </Border.GestureRecognizers>
 
-                                        <Label Text="{Binding .}"
+                                        <Label Text="{Binding Value}"
                                                FontSize="24"
                                                HorizontalOptions="Center"
                                                VerticalOptions="Center" />
@@ -119,13 +118,13 @@
                         <Label Text="Couleur"
                                Style="{StaticResource FormLabel}" />
 
-                        <FlexLayout BindableLayout.ItemsSource="{Binding AvailableColors}"
+                        <FlexLayout BindableLayout.ItemsSource="{Binding AvailableColorOptions}"
                                     Direction="Row"
                                     Wrap="Wrap"
                                     JustifyContent="Start"
                                     AlignItems="Start">
                             <BindableLayout.ItemTemplate>
-                                <DataTemplate x:DataType="x:String">
+                                <DataTemplate x:DataType="viewModels:CategorySelectionOptionViewModel">
                                     <Border Padding="4"
                                             Margin="4"
                                             Stroke="#D6E1EA"
@@ -135,13 +134,12 @@
                                         </Border.StrokeShape>
                                         <Border.GestureRecognizers>
                                             <TapGestureRecognizer
-                                                Command="{Binding Source={x:Reference Page}, Path=BindingContext.SelectColorCommand}"
-                                                CommandParameter="{Binding .}" />
+                                                Command="{Binding SelectCommand}" />
                                         </Border.GestureRecognizers>
 
                                         <Border WidthRequest="34"
                                                 HeightRequest="34"
-                                                BackgroundColor="{Binding ., Converter={StaticResource HexToColorConverter}}"
+                                                BackgroundColor="{Binding Value, Converter={StaticResource HexToColorConverter}}"
                                                 StrokeThickness="0">
                                             <Border.StrokeShape>
                                                 <RoundRectangle CornerRadius="17" />

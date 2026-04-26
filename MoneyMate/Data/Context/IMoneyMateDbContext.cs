@@ -21,9 +21,11 @@ namespace MoneyMate.Data.Context
         List<Category> GetCustomCategoriesByUserId(int userId);
         Category? GetCategoryById(int id);
         Category? GetCategoryById(int id, int userId);
+        Category? GetCategoryOverride(int userId, int parentCategoryId);
         int InsertCategory(Category category);
         int UpdateCategory(Category category);
         int DeleteCategory(Category category);
+        int MigrateCategoryUsageForUser(int userId, int sourceCategoryId, int targetCategoryId);
 
         List<Expense> GetExpensesByUserId(int userId);
         List<Expense> GetExpensesByCategory(int userId, int categoryId);

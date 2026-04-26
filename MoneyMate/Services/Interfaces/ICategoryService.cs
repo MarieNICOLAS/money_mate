@@ -1,4 +1,5 @@
-﻿using MoneyMate.Models;
+using MoneyMate.Models;
+using MoneyMate.Services.Models;
 using MoneyMate.Services.Results;
 
 namespace MoneyMate.Services.Interfaces
@@ -12,6 +13,11 @@ namespace MoneyMate.Services.Interfaces
         /// Retourne les catégories accessibles à un utilisateur.
         /// </summary>
         Task<ServiceResult<List<Category>>> GetCategoriesAsync(int userId);
+
+        /// <summary>
+        /// Retourne les catégories préparées pour l'affichage avec jauges de seuil.
+        /// </summary>
+        Task<ServiceResult<List<CategoryListItemDto>>> GetCategoryListItemsAsync(int userId);
 
         /// <summary>
         /// Retourne les catégories personnalisées d'un utilisateur.
@@ -37,6 +43,11 @@ namespace MoneyMate.Services.Interfaces
         /// Met à jour une catégorie personnalisée.
         /// </summary>
         Task<ServiceResult<Category>> UpdateCategoryAsync(Category category);
+
+        /// <summary>
+        /// Crée ou met à jour l'override utilisateur d'une catégorie système.
+        /// </summary>
+        Task<ServiceResult<Category>> CustomizeSystemCategoryAsync(Category category);
 
         /// <summary>
         /// Supprime une catégorie personnalisée.

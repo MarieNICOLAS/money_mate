@@ -1,4 +1,4 @@
-﻿using MoneyMate.Models;
+using MoneyMate.Models;
 using MoneyMate.Services.Models;
 using MoneyMate.Services.Results;
 
@@ -63,5 +63,10 @@ namespace MoneyMate.Services.Interfaces
         /// Duplique une dépense existante pour le même utilisateur.
         /// </summary>
         Task<ServiceResult<Expense>> DuplicateExpenseAsync(int expenseId, int userId, DateTime? newDate = null);
+
+        /// <summary>
+        /// Migre les dépenses d'un utilisateur vers une autre catégorie.
+        /// </summary>
+        Task<ServiceResult<int>> MigrateExpenseCategoryAsync(int userId, int sourceCategoryId, int targetCategoryId);
     }
 }

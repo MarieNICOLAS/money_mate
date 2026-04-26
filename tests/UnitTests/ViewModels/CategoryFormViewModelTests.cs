@@ -92,6 +92,64 @@ public class CategoryFormViewModelTests
     }
 
     [TestMethod]
+    public async Task SaveCommand_WhenEditingSystemCategory_CustomizesCategoryAndNavigates()
+    {
+        User user = ViewModelTestHelper.CreateUser();
+        Mock<ICategoryService> categoryServiceMock = new();
+        Mock<IAlertThresholdService> alertThresholdServiceMock = new();
+        Mock<INavigationService> navigationServiceMock = ViewModelTestHelper.CreateNavigationServiceMock();
+
+        categoryServiceMock.Setup(x => x.GetCategoryByIdAsync(12, user.Id))
+            .ReturnsAsync(ServiceResult<Category>.Success(new Category
+            {
+                Id = 12,
+                Name = "Alimentation",
+                Description = "Système",
+                Color = "#123456",
+                Icon = "🛒",
+                IsActive = true,
+                IsSystem = true,
+                CreatedAt = DateTime.UtcNow.AddDays(-2)
+            }));
+
+        categoryServiceMock.Setup(x => x.CustomizeSystemCategoryAsync(It.IsAny<Category>()))
+            .ReturnsAsync(ServiceResult<Category>.Success(new Category
+            {
+                Id = 99,
+                UserId = user.Id,
+                ParentCategoryId = 12,
+                Name = "Courses",
+                IsSystem = false
+            }));
+
+        alertThresholdServiceMock.Setup(x => x.GetAlertThresholdsAsync(user.Id))
+            .ReturnsAsync(ServiceResult<List<AlertThreshold>>.Success([]));
+
+        CategoryFormViewModel viewModel = new(
+            categoryServiceMock.Object,
+            alertThresholdServiceMock.Object,
+            ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
+            ViewModelTestHelper.CreateDialogServiceMock().Object,
+            navigationServiceMock.Object);
+
+        await viewModel.InitializeAsync(new Dictionary<string, object>
+        {
+            [NavigationParameterKeys.CategoryId] = 12
+        });
+
+        viewModel.Name = "Courses";
+        viewModel.SaveCommand.Execute(null);
+        await Task.Delay(100);
+
+        categoryServiceMock.Verify(x => x.CustomizeSystemCategoryAsync(It.Is<Category>(category =>
+            category.Id == 12 &&
+            category.UserId == user.Id &&
+            category.Name == "Courses")), Times.Once);
+        categoryServiceMock.Verify(x => x.UpdateCategoryAsync(It.IsAny<Category>()), Times.Never);
+        navigationServiceMock.Verify(x => x.NavigateToAsync(AppRoutes.CategoriesList), Times.Once);
+    }
+
+    [TestMethod]
     public async Task SaveCommand_WhenInvalid_DoesNotCallService()
     {
         User user = ViewModelTestHelper.CreateUser();

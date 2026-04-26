@@ -436,6 +436,33 @@ namespace MoneyMate.Services.Implementations
                 fallbackMessage: "Une erreur est survenue lors de la duplication de la dépense.");
         }
 
+        public Task<ServiceResult<int>> MigrateExpenseCategoryAsync(int userId, int sourceCategoryId, int targetCategoryId)
+        {
+            return ServiceExecution.ExecuteAsync(
+                action: () =>
+                {
+                    if (userId <= 0 || sourceCategoryId <= 0 || targetCategoryId <= 0)
+                    {
+                        return ServiceResult<int>.Failure(
+                            "EXPENSE_INVALID_INPUT",
+                            ServiceMessages.InvalidInput);
+                    }
+
+                    if (!CategoryExistsForUser(userId, targetCategoryId))
+                    {
+                        return ServiceResult<int>.Failure(
+                            "EXPENSE_CATEGORY_NOT_FOUND",
+                            "La catégorie cible est introuvable ou inactive.");
+                    }
+
+                    int updatedRows = _dbContext.MigrateCategoryUsageForUser(userId, sourceCategoryId, targetCategoryId);
+                    return ServiceResult<int>.Success(updatedRows);
+                },
+                operationName: nameof(MigrateExpenseCategoryAsync),
+                fallbackErrorCode: "EXPENSE_UNEXPECTED_ERROR",
+                fallbackMessage: "Une erreur est survenue lors de la migration des dépenses.");
+        }
+
         private static ServiceResult ValidateExpense(Expense expense)
         {
             if (expense.UserId <= 0)

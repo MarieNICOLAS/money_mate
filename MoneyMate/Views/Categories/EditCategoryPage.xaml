@@ -24,7 +24,7 @@
                        Style="{StaticResource PageTitle}" />
 
                 <VerticalStackLayout Spacing="4">
-                    <Label Text="Modifiez une catégorie personnalisée existante."
+                    <Label Text="Modifiez cette catégorie pour votre espace."
                            Style="{StaticResource BodyText}"
                            TextColor="{StaticResource Secondary}" />
                 </VerticalStackLayout>
@@ -41,7 +41,7 @@
                                                   CategoryIcon="{Binding Icon}"
                                                   CategoryColor="{Binding ColorHex, Converter={StaticResource HexToColorConverter}}" />
 
-                        <Label Text="Les catégories système ne doivent pas être modifiées depuis ce formulaire."
+                        <Label Text="Les modifications d'une catégorie système sont enregistrées uniquement pour votre utilisateur."
                                Style="{StaticResource CaptionText}"
                                TextColor="{StaticResource Secondary}" />
                     </VerticalStackLayout>

@@ -154,9 +154,6 @@ public class CategoryFormViewModel : FormViewModelBase
         if (!EnsureCurrentUser())
             return ErrorMessage;
 
-        if (IsSystemCategory)
-            return "Cette catégorie système ne peut pas être modifiée depuis le formulaire.";
-
         if (string.IsNullOrWhiteSpace(Name))
             return "Le nom de la catégorie est requis.";
 
@@ -197,7 +194,9 @@ public class CategoryFormViewModel : FormViewModelBase
         };
 
         var result = IsEditMode
-            ? await _categoryService.UpdateCategoryAsync(category)
+            ? IsSystemCategory
+                ? await _categoryService.CustomizeSystemCategoryAsync(category)
+                : await _categoryService.UpdateCategoryAsync(category)
             : await _categoryService.CreateCategoryAsync(category);
 
         if (!result.IsSuccess)

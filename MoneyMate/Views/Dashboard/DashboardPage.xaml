@@ -50,7 +50,8 @@
                         </Border.StrokeShape>
 
                         <VerticalStackLayout Spacing="16">
-                            <Grid HorizontalOptions="Center"
+                            <Grid HeightRequest="230"
+                                  HorizontalOptions="Fill"
                                   VerticalOptions="Center">
                                 <components:DonutChartView Segments="{Binding TopCategorySegments}"
                                                            HorizontalOptions="Center"
@@ -59,9 +60,6 @@
                                 <VerticalStackLayout HorizontalOptions="Center"
                                                      VerticalOptions="Center"
                                                      Spacing="2">
-                                    <Label Text="Solde actuel"
-                                           HorizontalTextAlignment="Center"
-                                           TextColor="{StaticResource Secondary}" />
                                     <Label Text="{Binding CurrentMonthBalanceDisplay}"
                                            HorizontalTextAlignment="Center"
                                            FontSize="20"
@@ -71,18 +69,27 @@
 
                                  <VerticalStackLayout HorizontalOptions="End"
                                                       VerticalOptions="End"
-                                                      Margin="0,0,4,4"
-                                                      Spacing="1">
-                                     <Label Text="Budget du mois"
-                                            FontSize="12"
-                                            HorizontalTextAlignment="End"
-                                            TextColor="{StaticResource Secondary}" />
+                                                      Margin="0,0,4,6"
+                                                      Spacing="2">
                                      <Label Text="{Binding CurrentMonthBudgetDisplay}"
                                             FontSize="14"
                                             FontAttributes="Bold"
                                             HorizontalTextAlignment="End"
                                             TextColor="{StaticResource Primary}" />
                                  </VerticalStackLayout>
+
+                                <Button Text="{StaticResource IconAdd}"
+                                        Command="{Binding CreateBudgetCommand}"
+                                        IsVisible="{Binding IsCurrentMonthBudgetMissing}"
+                                        Style="{StaticResource AccentIconButton}"
+                                        WidthRequest="38"
+                                        HeightRequest="38"
+                                        CornerRadius="19"
+                                        FontSize="21"
+                                        HorizontalOptions="End"
+                                        VerticalOptions="End"
+                                        Margin="0,0,22,18"
+                                        SemanticProperties.Description="Créer mon budget" />
                             </Grid>
 
                             <VerticalStackLayout Spacing="10"

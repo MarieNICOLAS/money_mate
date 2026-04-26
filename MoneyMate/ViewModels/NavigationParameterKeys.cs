@@ -10,4 +10,5 @@ public static class NavigationParameterKeys
     public const string BudgetId = nameof(BudgetId);
     public const string FixedChargeId = nameof(FixedChargeId);
     public const string AlertThresholdId = nameof(AlertThresholdId);
+    public const string ReturnRoute = nameof(ReturnRoute);
 }

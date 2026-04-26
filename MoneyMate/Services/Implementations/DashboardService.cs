@@ -45,7 +45,8 @@ namespace MoneyMate.Services.Implementations
                     DateTime previousMonthStart = monthStart.AddMonths(-1);
 
                     List<Expense> allExpenses = _dbContext.GetExpensesByUserId(userId);
-                    List<Budget> budgets = _dbContext.GetBudgetsByUserId(userId)
+                    List<Budget> allBudgets = _dbContext.GetBudgetsByUserId(userId);
+                    List<Budget> budgets = allBudgets
                         .Where(budget => budget.IsActive)
                         .ToList();
                     List<AlertThreshold> alertThresholds = _dbContext.GetAlertThresholdsByUserId(userId);
@@ -53,7 +54,7 @@ namespace MoneyMate.Services.Implementations
                     Dictionary<int, Category> categoriesById = _dbContext.GetCategoriesByUserId(userId)
                         .ToDictionary(category => category.Id, category => category);
 
-                    foreach (Budget budget in budgets)
+                    foreach (Budget budget in allBudgets)
                         budget.NormalizeToMonthlyPeriod();
 
                     List<Expense> currentMonthExpenses = allExpenses
@@ -72,9 +73,15 @@ namespace MoneyMate.Services.Implementations
                         categoriesById,
                         topCount: 5);
 
-                    decimal currentMonthBudget = budgets
+                    bool hasCurrentMonthBudget = allBudgets.Any(budget =>
+                        budget.StartDate < nextMonthStart &&
+                        (budget.EndDate ?? DateTime.MaxValue) >= monthStart);
+
+                    List<Budget> currentMonthBudgets = budgets
                         .Where(budget => budget.StartDate < nextMonthStart && (budget.EndDate ?? DateTime.MaxValue) >= monthStart)
-                        .Sum(budget => budget.Amount);
+                        .ToList();
+
+                    decimal currentMonthBudget = currentMonthBudgets.Sum(budget => budget.Amount);
 
                     List<DashboardRecentTransaction> recentTransactions = BuildRecentTransactions(
                         currentMonthExpenses,
@@ -91,6 +98,7 @@ namespace MoneyMate.Services.Implementations
                     {
                         CurrentMonthExpenses = currentMonthExpensesAmount,
                         CurrentMonthBudget = currentMonthBudget,
+                        HasCurrentMonthBudget = hasCurrentMonthBudget,
                         CurrentMonthBalance = currentMonthBudget > 0
                             ? currentMonthBudget - currentMonthExpensesAmount
                             : -currentMonthExpensesAmount,

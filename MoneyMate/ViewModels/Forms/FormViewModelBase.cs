@@ -80,6 +80,8 @@ public abstract class FormViewModelBase : AuthenticatedViewModelBase
     {
         await ExecuteBusyActionAsync(async () =>
         {
+            ApplyNavigationParameters(parameters);
+
             if (!EnsureCurrentUser())
             {
                 RefreshFormState();
@@ -121,6 +123,10 @@ public abstract class FormViewModelBase : AuthenticatedViewModelBase
     }
 
     protected virtual Task LoadLookupsAsync() => Task.CompletedTask;
+
+    protected virtual void ApplyNavigationParameters(Dictionary<string, object>? parameters)
+    {
+    }
 
     protected virtual Task InitializeForCreateAsync() => Task.CompletedTask;
 

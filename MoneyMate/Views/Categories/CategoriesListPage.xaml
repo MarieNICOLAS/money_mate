@@ -108,7 +108,7 @@
 
                                     <Button Grid.Column="1"
                                             Text="{StaticResource IconEdit}"
-                                            Command="{Binding Source={x:Reference Page}, Path=BindingContext.EditCategoryCommand}"
+                                            Command="{Binding EditCommand}"
                                             CommandParameter="{Binding .}"
                                             Style="{StaticResource IconButton}"
                                             SemanticProperties.Description="Modifier la catégorie" />
@@ -186,7 +186,7 @@
                                                        Spacing="8"
                                                        HorizontalOptions="End">
                                     <Button Text="{StaticResource IconDelete}"
-                                            Command="{Binding Source={x:Reference Page}, Path=BindingContext.DeleteCategoryCommand}"
+                                            Command="{Binding DeleteCommand}"
                                             CommandParameter="{Binding .}"
                                             IsVisible="{Binding CanDelete}"
                                             Style="{StaticResource DangerIconButton}"

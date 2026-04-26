@@ -108,7 +108,7 @@ public class CategoriesViewModel : AuthenticatedViewModelBase
         }
 
         List<CategoryListItemViewModel> categoryItems = (categoriesResult.Data ?? [])
-            .Select(item => CategoryListItemViewModel.FromDto(item, CurrentDevise))
+            .Select(CreateCategoryListItemViewModel)
             .ToList();
 
         Categories.Clear();
@@ -133,6 +133,14 @@ public class CategoriesViewModel : AuthenticatedViewModelBase
             {
                 [NavigationParameterKeys.CategoryId] = category.Id
             });
+    }
+
+    private CategoryListItemViewModel CreateCategoryListItemViewModel(CategoryListItemDto dto)
+    {
+        CategoryListItemViewModel category = CategoryListItemViewModel.FromDto(dto, CurrentDevise);
+        category.EditCommand = EditCategoryCommand;
+        category.DeleteCommand = DeleteCategoryCommand;
+        return category;
     }
 
     private async Task ToggleCategoryActiveAsync(CategoryListItemViewModel? category)
@@ -301,6 +309,10 @@ public sealed class CategoryListItemViewModel
     public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
 
     public string StatusText => IsActive ? "Active" : "Inactive";
+
+    public ICommand? EditCommand { get; set; }
+
+    public ICommand? DeleteCommand { get; set; }
 
     public static CategoryListItemViewModel FromDto(CategoryListItemDto dto, string devise)
     {

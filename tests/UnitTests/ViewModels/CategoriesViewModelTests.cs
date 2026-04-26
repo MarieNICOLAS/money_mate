@@ -5,6 +5,7 @@ using MoneyMate.Models;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.Services.Models;
 using MoneyMate.Services.Results;
+using MoneyMate.ViewModels;
 using MoneyMate.ViewModels.Categories;
 
 namespace UnitTests.ViewModels;
@@ -117,6 +118,58 @@ public class CategoriesViewModelTests
         await Task.Delay(100);
 
         navigationServiceMock.Verify(x => x.NavigateToAsync(AppRoutes.AddCategory), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task LoadedCategoryEditCommand_NavigatesToEditCategoryPage()
+    {
+        User user = ViewModelTestHelper.CreateUser();
+        Mock<ICategoryService> categoryServiceMock = new();
+        Mock<INavigationService> navigationServiceMock = ViewModelTestHelper.CreateNavigationServiceMock();
+
+        categoryServiceMock.Setup(x => x.GetCategoryListItemsAsync(user.Id))
+            .ReturnsAsync(ServiceResult<List<CategoryListItemDto>>.Success(new List<CategoryListItemDto>
+            {
+                new()
+                {
+                    Category = new Category
+                    {
+                        Id = 7,
+                        UserId = user.Id,
+                        Name = "Maison",
+                        IsSystem = false,
+                        IsActive = true,
+                        Color = "#2196F3",
+                        Icon = "🏠"
+                    },
+                    BudgetAmount = 100m,
+                    ThresholdPercentage = 100m,
+                    ThresholdAmount = 100m,
+                    ThresholdStatus = "OK"
+                }
+            }));
+
+        CategoriesViewModel viewModel = new(
+            categoryServiceMock.Object,
+            CreateAlertThresholdService(),
+            ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
+            ViewModelTestHelper.CreateDialogServiceMock().Object,
+            navigationServiceMock.Object);
+
+        await viewModel.LoadAsync();
+
+        CategoryListItemViewModel category = viewModel.Categories.Single();
+        Assert.IsNotNull(category.EditCommand);
+
+        category.EditCommand!.Execute(category);
+        await Task.Delay(100);
+
+        navigationServiceMock.Verify(x => x.NavigateToAsync(
+            AppRoutes.EditCategory,
+            It.Is<Dictionary<string, object>>(parameters =>
+                parameters.ContainsKey(NavigationParameterKeys.CategoryId) &&
+                (int)parameters[NavigationParameterKeys.CategoryId] == 7)),
+            Times.Once);
     }
 
     [TestMethod]

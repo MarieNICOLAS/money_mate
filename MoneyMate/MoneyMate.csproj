@@ -75,7 +75,6 @@
 	<ItemGroup>
 	  <Folder Include="Views\Support\" />
 	  <Folder Include="Views\Settings\" />
-	  <Folder Include="Views\Stats\" />
 	  <Folder Include="Views\Onboarding\" />
 	</ItemGroup>
 
@@ -183,6 +182,9 @@
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\Profile\ProfilePage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\Stats\StatsOverviewPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	</ItemGroup>

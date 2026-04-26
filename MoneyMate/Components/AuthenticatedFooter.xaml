@@ -10,7 +10,7 @@
             StrokeThickness="0"
             Padding="18,10,18,12"
             Margin="0">
-        <Grid ColumnDefinitions="*,*,*,*,*"
+        <Grid ColumnDefinitions="*,*,*,*,*,*"
               ColumnSpacing="4"
               HorizontalOptions="Fill">
 
@@ -87,6 +87,24 @@
             </VerticalStackLayout>
 
             <VerticalStackLayout Grid.Column="4"
+                                 Spacing="2"
+                                 HorizontalOptions="Center"
+                                 VerticalOptions="Center">
+                <Label Text="{StaticResource IconStats}"
+                       FontFamily="MaterialIcons"
+                       FontSize="22"
+                       TextColor="White"
+                       HorizontalOptions="Center" />
+                <Label Text="Stats"
+                       FontSize="11"
+                       TextColor="White"
+                       HorizontalOptions="Center" />
+                <VerticalStackLayout.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoStatsCommand}" />
+                </VerticalStackLayout.GestureRecognizers>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Grid.Column="5"
                                  Spacing="2"
                                  HorizontalOptions="Center"
                                  VerticalOptions="Center">

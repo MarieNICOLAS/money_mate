@@ -9,6 +9,7 @@ using MoneyMate.Views.Errors;
 using MoneyMate.Views.Expenses;
 using MoneyMate.Views.FixedCharges;
 using MoneyMate.Views.Profile;
+using MoneyMate.Views.Stats;
 
 namespace MoneyMate.Services.Implementations;
 
@@ -45,6 +46,7 @@ public static class ShellRouteRegistry
         Register<EditFixedChargePage>();
         Register<AlertThresholdPage>();
         Register<CalendarPage>();
+        Register<StatsOverviewPage>();
         Register<ErrorPage>();
         Register<NotFoundPage>();
         Register<NoConnectionPage>();

@@ -42,7 +42,8 @@ namespace MoneyMate.Services.Implementations
             ["FixedChargesPage"] = [UserRoles.User, UserRoles.Admin],
             ["AddFixedChargePage"] = [UserRoles.User, UserRoles.Admin],
             ["EditFixedChargePage"] = [UserRoles.User, UserRoles.Admin],
-            ["CalendarPage"] = [UserRoles.User, UserRoles.Admin]
+            ["CalendarPage"] = [UserRoles.User, UserRoles.Admin],
+            ["StatsOverviewPage"] = [UserRoles.User, UserRoles.Admin]
         };
 
         private readonly IMoneyMateDbContext _dbContext;

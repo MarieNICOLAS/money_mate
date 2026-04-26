@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                xmlns:views="clr-namespace:MoneyMate.Views"
+                xmlns:viewModels="clr-namespace:MoneyMate.ViewModels.Stats"
+                xmlns:models="clr-namespace:MoneyMate.Models"
+                xmlns:microcharts="clr-namespace:Microcharts.Maui;assembly=Microcharts.Maui"
+                x:Class="MoneyMate.Views.Stats.StatsOverviewPage"
+                x:DataType="viewModels:StatsOverviewViewModel"
+                Title="Statistiques"
+                ShowFooter="False"
+                ShowAuthenticatedBackButton="True"
+                UseAuthenticatedFooter="True"
+                BackgroundColor="#FFF7F0">
+
+    <views:BasePage.Resources>
+        <Color x:Key="StatsPrimary">#6B7A8F</Color>
+        <Color x:Key="StatsSuccess">#5CB85C</Color>
+        <Color x:Key="StatsDanger">#D9534F</Color>
+        <Color x:Key="StatsBackground">#FFF7F0</Color>
+        <Color x:Key="StatsText">#2B2B2B</Color>
+        <Color x:Key="StatsMuted">#68707A</Color>
+    </views:BasePage.Resources>
+
+    <views:BasePage.PageContent>
+        <ScrollView BackgroundColor="{StaticResource StatsBackground}">
+            <VerticalStackLayout Padding="20,18,20,32" Spacing="18">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <VerticalStackLayout Grid.Column="0" Spacing="4">
+                        <Label Text="Statistiques"
+                               FontSize="28"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource StatsPrimary}" />
+                        <Label Text="Analysez vos finances"
+                               FontSize="15"
+                               TextColor="{StaticResource StatsMuted}" />
+                    </VerticalStackLayout>
+
+                    <Button Grid.Column="1"
+                            Text="{StaticResource IconRefresh}"
+                            Command="{Binding RefreshCommand}"
+                            Style="{StaticResource PrimaryIconButton}"
+                            BackgroundColor="{StaticResource StatsPrimary}"
+                            SemanticProperties.Description="Actualiser les statistiques" />
+                </Grid>
+
+                <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
+                    <Border Grid.Column="0" Padding="10,9" Stroke="{StaticResource StatsPrimary}" BackgroundColor="{StaticResource StatsPrimary}">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="8" />
+                        </Border.StrokeShape>
+                        <Label Text="Aperçu" FontAttributes="Bold" FontSize="12" HorizontalTextAlignment="Center" TextColor="White" />
+                    </Border>
+
+                    <Border Grid.Column="1" Padding="10,9" Stroke="#E0D8D0" BackgroundColor="#FFFFFF">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="8" />
+                        </Border.StrokeShape>
+                        <Label Text="Budgets 🔒" FontSize="12" HorizontalTextAlignment="Center" TextColor="{StaticResource StatsMuted}" />
+                    </Border>
+
+                    <Border Grid.Column="2" Padding="10,9" Stroke="#E0D8D0" BackgroundColor="#FFFFFF">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="8" />
+                        </Border.StrokeShape>
+                        <Label Text="Catégories 🔒" FontSize="12" HorizontalTextAlignment="Center" TextColor="{StaticResource StatsMuted}" />
+                    </Border>
+
+                    <Border Grid.Column="3" Padding="10,9" Stroke="#E0D8D0" BackgroundColor="#FFFFFF">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="8" />
+                        </Border.StrokeShape>
+                        <Label Text="Évolution 🔒" FontSize="12" HorizontalTextAlignment="Center" TextColor="{StaticResource StatsMuted}" />
+                    </Border>
+                </Grid>
+
+                <Border Padding="14" Stroke="#E0D8D0" BackgroundColor="#FFFFFF">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="8" />
+                    </Border.StrokeShape>
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <VerticalStackLayout Grid.Column="0" Spacing="2">
+                            <Label Text="Filtre" FontSize="12" TextColor="{StaticResource StatsMuted}" />
+                            <Label Text="{Binding PeriodDisplay}" FontSize="16" FontAttributes="Bold" TextColor="{StaticResource StatsText}" />
+                        </VerticalStackLayout>
+                        <Label Grid.Column="1"
+                               Text="Mois courant"
+                               FontSize="13"
+                               FontAttributes="Bold"
+                               VerticalTextAlignment="Center"
+                               TextColor="{StaticResource StatsPrimary}" />
+                    </Grid>
+                </Border>
+
+                <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                   IsVisible="{Binding IsBusy}"
+                                   Color="{StaticResource StatsPrimary}" />
+
+                <Label Text="{Binding ErrorMessage}"
+                       IsVisible="{Binding HasError}"
+                       TextColor="{StaticResource StatsDanger}"
+                       FontAttributes="Bold" />
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Border Grid.Column="0" Padding="16" Stroke="#E0D8D0" BackgroundColor="#FFFFFF">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="8" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="7">
+                            <Label Text="Solde net" FontSize="13" TextColor="{StaticResource StatsMuted}" />
+                            <Label Text="{Binding NetBalanceDisplay}" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource StatsSuccess}" />
+                            <Label Text="{Binding IncomeHintDisplay}" FontSize="11" TextColor="{StaticResource StatsMuted}" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Border Grid.Column="1" Padding="16" Stroke="#E0D8D0" BackgroundColor="#FFFFFF">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="8" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="7">
+                            <Label Text="Dépenses" FontSize="13" TextColor="{StaticResource StatsMuted}" />
+                            <Label Text="{Binding ExpensesDisplay}" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource StatsDanger}" />
+                            <Label Text="{Binding ExpensesCountDisplay}" FontSize="11" TextColor="{StaticResource StatsMuted}" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <Border Padding="16" Stroke="#E0D8D0" BackgroundColor="#FFFFFF">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="8" />
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="14">
+                        <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Dépenses par catégorie" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource StatsText}" />
+                            <Label Grid.Column="1" Text="Top 5" FontSize="12" TextColor="{StaticResource StatsMuted}" VerticalTextAlignment="Center" />
+                        </Grid>
+
+                        <microcharts:ChartView Chart="{Binding CategoryPieChart}"
+                                               HeightRequest="220"
+                                               IsVisible="{Binding HasCategoryChart}" />
+
+                        <Label Text="Aucune dépense ce mois-ci."
+                               IsVisible="{Binding HasCategoryChart, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"
+                               HorizontalTextAlignment="Center"
+                               TextColor="{StaticResource StatsMuted}" />
+
+                        <VerticalStackLayout Spacing="8"
+                                             BindableLayout.ItemsSource="{Binding CategoryStats}"
+                                             IsVisible="{Binding HasCategoryChart}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="models:CategoryStatsDto">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" Padding="0,3">
+                                        <BoxView WidthRequest="10"
+                                                 HeightRequest="10"
+                                                 CornerRadius="5"
+                                                 VerticalOptions="Center"
+                                                 Color="{Binding CategoryColor}" />
+                                        <Label Grid.Column="1"
+                                               Text="{Binding CategoryName}"
+                                               FontSize="14"
+                                               TextColor="{StaticResource StatsText}"
+                                               LineBreakMode="TailTruncation" />
+                                        <Label Grid.Column="2"
+                                               Text="{Binding Percentage, StringFormat='{0:0.#} %'}"
+                                               FontSize="14"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource StatsPrimary}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Padding="16" Stroke="#E0D8D0" BackgroundColor="#FFFFFF">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="8" />
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="14">
+                        <Label Text="Dépenses du mois" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource StatsText}" />
+                        <microcharts:ChartView Chart="{Binding CurrentMonthBarChart}"
+                                               HeightRequest="190"
+                                               IsVisible="{Binding HasMonthlyBarChart}" />
+                        <Label Text="Le graphique apparaîtra après votre première dépense du mois."
+                               IsVisible="{Binding HasMonthlyBarChart, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"
+                               HorizontalTextAlignment="Center"
+                               TextColor="{StaticResource StatsMuted}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Padding="16" Stroke="#E0D8D0" BackgroundColor="#F8F4EF" Opacity="0.72" IsEnabled="False">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="8" />
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Évolution" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource StatsText}" />
+                        <Label Text="Analyse longue durée réservée Premium"
+                               HorizontalTextAlignment="Center"
+                               TextColor="{StaticResource StatsMuted}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Button Text="Débloquer Premium"
+                        Command="{Binding UnlockPremiumCommand}"
+                        BackgroundColor="{StaticResource StatsPrimary}"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        CornerRadius="8"
+                        HeightRequest="46" />
+
+                <Border Padding="18" Stroke="#D8CDC2" BackgroundColor="#FFFFFF" IsVisible="{Binding ShowPremiumTeaser}">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="8" />
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Passez à Premium" FontSize="20" FontAttributes="Bold" TextColor="{StaticResource StatsPrimary}" />
+                        <Label Text="Analyses avancées" TextColor="{StaticResource StatsText}" />
+                        <Label Text="Suivi détaillé" TextColor="{StaticResource StatsText}" />
+                        <Label Text="Prévisions financières" TextColor="{StaticResource StatsText}" />
+                        <Label Text="Export PDF/CSV" TextColor="{StaticResource StatsText}" />
+                        <Button Text="Découvrir"
+                                Command="{Binding DiscoverPremiumCommand}"
+                                BackgroundColor="{StaticResource StatsPrimary}"
+                                TextColor="White"
+                                FontAttributes="Bold"
+                                CornerRadius="8"
+                                HeightRequest="46" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Label Text="{Binding LastUpdatedDisplay}"
+                       FontSize="12"
+                       HorizontalTextAlignment="Center"
+                       TextColor="{StaticResource StatsMuted}" />
+            </VerticalStackLayout>
+        </ScrollView>
+    </views:BasePage.PageContent>
+</views:BasePage>

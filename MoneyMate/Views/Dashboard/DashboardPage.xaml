@@ -17,7 +17,7 @@
                 <VerticalStackLayout Spacing="20" Padding="24,20,24,32">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                         <VerticalStackLayout Grid.Column="0" Spacing="6">
-                            <Label Text="{Binding Source={x:Reference Page}, Path=PageTitle}"
+                            <Label Text="{Binding PageTitle}"
                                    Style="{StaticResource PageTitle}" />
                             <Label Text="{Binding GreetingText}"
                                    FontSize="24"

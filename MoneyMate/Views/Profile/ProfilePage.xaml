@@ -22,7 +22,7 @@
                                  Phone="Fill" Tablet="Center" Desktop="Center" />
                     </VerticalStackLayout.HorizontalOptions>
 
-                     <Label Text="{Binding Source={x:Reference self}, Path=PageTitle}"
+                     <Label Text="{Binding PageTitle}"
                             Style="{StaticResource PageTitle}" />
 
                     <Border Style="{StaticResource CardFrame}">

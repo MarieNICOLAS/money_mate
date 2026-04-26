@@ -12,7 +12,7 @@
         <ScrollView>
             <VerticalStackLayout Style="{StaticResource MainContainer}" Spacing="18">
                 <VerticalStackLayout Spacing="6">
-                <Label Text="{Binding Source={x:Reference Page}, Path=PageTitle}"
+                <Label Text="{Binding PageTitle}"
                        Style="{StaticResource PageTitle}" />
                     <Label Text="{Binding BudgetRequirementMessage}"
                            IsVisible="{Binding HasBudgetRequirementError}"

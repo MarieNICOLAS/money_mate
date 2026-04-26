@@ -529,6 +529,8 @@ Exigences minimales (vérifiées par `AuthenticationService.ValidatePasswordStre
 
 La liste dépenses utilise un ViewModel d'affichage (`ExpenseListItemViewModel`) pour exposer à la CollectionView le libellé, la catégorie, la note, le montant formaté, la date et la commande d'ouverture. Ne pas binder directement une CollectionView complexe sur les entités SQLite.
 
+Sur Android, la page `ExpensesListPage` doit conserver une `CollectionView` virtualisée dans une ligne `Grid` dédiée. Ne pas l'imbriquer dans un `ScrollView`, car cela force la mesure complète des items et peut provoquer un ANR (`MoneyMate isn't responding`) après ajout rapide ou retour sur la liste.
+
 ### MODULE 3 — Catégories
 
 | Fonctionnalité | Routes | État |
@@ -785,6 +787,55 @@ Warnings à corriger avant stabilisation :
 - `XC0045` : propriété bindée absente ou mauvais type de ViewModel.
 
 Ne pas masquer ces warnings avec `x:DataType="x:Object"` : corriger le type ou le binding.
+
+### 18.3 Listes MAUI Android
+
+Les listes doivent rester légères et virtualisées :
+
+- ne jamais placer une `CollectionView` dans un `ScrollView` sur une page mobile critique ;
+- utiliser un parent `Grid` avec une ligne `*` pour donner une hauteur bornée à la liste ;
+- préférer `ItemSizingStrategy="MeasureFirstItem"` quand les cartes ont une hauteur stable ;
+- garder les templates d'items simples : pas de logique métier, pas de requête service, pas de conversion coûteuse ;
+- mapper les données côté ViewModel vers un DTO d'affichage (`ExpenseListItemViewModel`, `ExpenseDisplayDto`, etc.) avant de remplir la collection ;
+- ne mettre à jour l'`ObservableCollection` que depuis le thread UI ;
+- charger les données avec `LoadAsync()` / `RefreshAsync()` et éviter tout chargement en constructeur.
+
+Exemple attendu :
+
+```xml
+<Grid RowDefinitions="Auto,*">
+    <CollectionView Grid.Row="1"
+                    ItemsSource="{Binding Items}"
+                    ItemSizingStrategy="MeasureFirstItem">
+        <CollectionView.ItemTemplate>
+            <DataTemplate x:DataType="viewModels:ItemViewModel">
+                <!-- carte item -->
+            </DataTemplate>
+        </CollectionView.ItemTemplate>
+    </CollectionView>
+</Grid>
+```
+
+### 18.4 Polices MAUI
+
+Tout `FontFamily` utilisé en XAML doit avoir un alias déclaré dans `MauiProgram.cs`.
+
+Aliases actuellement attendus :
+
+```csharp
+fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
+fonts.AddFont("OpenSans-Regular.ttf", "OpenSans");
+fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemiBold");
+fonts.AddFont("Lora-VariableFont_wght.ttf", "Lora");
+fonts.AddFont("MaterialIcons-Regular.ttf", "MaterialIcons");
+```
+
+Règles :
+
+- ne pas utiliser un nom de fichier comme `FontFamily` si l'alias n'est pas déclaré ;
+- vérifier les logs Android après modification UI : `Font asset not found OpenSans` ou `Font asset not found Lora` indique un alias manquant ou un asset non déployé ;
+- après correction de police, faire un rebuild/redeploy complet ; si l'émulateur garde de vieux assets FastDev, désinstaller l'application puis redéployer ;
+- limiter le nombre de familles sur les listes longues : chaque police supplémentaire augmente le coût de mesure/rendu Android.
 
 Références Microsoft Learn :
 

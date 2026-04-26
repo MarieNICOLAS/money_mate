@@ -13,9 +13,13 @@ namespace MoneyMate.ViewModels.Categories;
 /// </summary>
 public class CategoriesViewModel : AuthenticatedViewModelBase
 {
+    private const AppDataChangeKind RefreshChangeKinds = AppDataChangeKind.Categories | AppDataChangeKind.AlertThresholds;
+
     private readonly ICategoryService _categoryService;
     private readonly IAlertThresholdService _alertThresholdService;
+    private readonly IAppEventBus _appEventBus;
     private string _selectedSortOption = SortAlphabetical;
+    private long _lastRefreshVersion = -1;
 
     private const string SortAlphabetical = "Alphabétique";
     private const string SortAlertThreshold = "Alerte %";
@@ -25,11 +29,13 @@ public class CategoriesViewModel : AuthenticatedViewModelBase
         IAlertThresholdService alertThresholdService,
         IAuthenticationService authenticationService,
         IDialogService dialogService,
-        INavigationService navigationService)
+        INavigationService navigationService,
+        IAppEventBus? appEventBus = null)
         : base(authenticationService, dialogService, navigationService)
     {
         _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
         _alertThresholdService = alertThresholdService ?? throw new ArgumentNullException(nameof(alertThresholdService));
+        _appEventBus = appEventBus ?? NullAppEventBus.Instance;
 
         Title = "Catégories";
         Categories = [];
@@ -74,57 +80,66 @@ public class CategoriesViewModel : AuthenticatedViewModelBase
 
     public async Task LoadAsync()
     {
-        await ExecuteBusyActionAsync(async () =>
+        await ExecuteBusyActionAsync(LoadCoreAsync, "Une erreur est survenue lors du chargement des catégories.");
+    }
+
+    public async Task RefreshIfNeededAsync()
+    {
+        if (_lastRefreshVersion < 0 || _appEventBus.HasChangedSince(RefreshChangeKinds, _lastRefreshVersion))
+            await LoadAsync();
+    }
+
+    private async Task LoadCoreAsync()
+    {
+        if (!EnsureCurrentUser())
+            return;
+
+        var activeCategoriesResult = await _categoryService.GetCategoriesAsync(CurrentUserId);
+        if (!activeCategoriesResult.IsSuccess)
         {
-            if (!EnsureCurrentUser())
-                return;
-
-            var activeCategoriesResult = await _categoryService.GetCategoriesAsync(CurrentUserId);
-            if (!activeCategoriesResult.IsSuccess)
-            {
-                ErrorMessage = activeCategoriesResult.Message;
-                RefreshState();
-                return;
-            }
-
-            var inactiveCategoriesResult = await _categoryService.GetInactiveCategoriesAsync(CurrentUserId);
-            if (!inactiveCategoriesResult.IsSuccess)
-            {
-                ErrorMessage = inactiveCategoriesResult.Message;
-                RefreshState();
-                return;
-            }
-
-            Dictionary<int, AlertThreshold> categoryAlerts = [];
-            var alertThresholdsResult = await _alertThresholdService.GetAlertThresholdsAsync(CurrentUserId);
-            if (alertThresholdsResult.IsSuccess)
-            {
-                categoryAlerts = (alertThresholdsResult.Data ?? [])
-                    .Where(alert => alert.CategoryId.HasValue && !alert.BudgetId.HasValue && alert.IsActive)
-                    .GroupBy(alert => alert.CategoryId!.Value)
-                    .ToDictionary(group => group.Key, group => group.OrderByDescending(alert => alert.ThresholdPercentage).First());
-            }
-
-            List<CategoryItemViewModel> categoryItems = (activeCategoriesResult.Data ?? [])
-                .Concat(inactiveCategoriesResult.Data ?? [])
-                .GroupBy(category => category.Id)
-                .Select(group => group.First())
-                .Select(category => CategoryItemViewModel.FromModel(
-                    category,
-                    categoryAlerts.TryGetValue(category.Id, out AlertThreshold? alertThreshold)
-                        ? alertThreshold
-                        : null))
-                .ToList();
-
-            Categories.Clear();
-            foreach (CategoryItemViewModel category in OrderCategories(categoryItems))
-            {
-                category.PropertyChanged += OnCategoryItemPropertyChanged;
-                Categories.Add(category);
-            }
-
+            ErrorMessage = activeCategoriesResult.Message;
             RefreshState();
-        }, "Une erreur est survenue lors du chargement des catégories.");
+            return;
+        }
+
+        var inactiveCategoriesResult = await _categoryService.GetInactiveCategoriesAsync(CurrentUserId);
+        if (!inactiveCategoriesResult.IsSuccess)
+        {
+            ErrorMessage = inactiveCategoriesResult.Message;
+            RefreshState();
+            return;
+        }
+
+        Dictionary<int, AlertThreshold> categoryAlerts = [];
+        var alertThresholdsResult = await _alertThresholdService.GetAlertThresholdsAsync(CurrentUserId);
+        if (alertThresholdsResult.IsSuccess)
+        {
+            categoryAlerts = (alertThresholdsResult.Data ?? [])
+                .Where(alert => alert.CategoryId.HasValue && !alert.BudgetId.HasValue && alert.IsActive)
+                .GroupBy(alert => alert.CategoryId!.Value)
+                .ToDictionary(group => group.Key, group => group.OrderByDescending(alert => alert.ThresholdPercentage).First());
+        }
+
+        List<CategoryItemViewModel> categoryItems = (activeCategoriesResult.Data ?? [])
+            .Concat(inactiveCategoriesResult.Data ?? [])
+            .GroupBy(category => category.Id)
+            .Select(group => group.First())
+            .Select(category => CategoryItemViewModel.FromModel(
+                category,
+                categoryAlerts.TryGetValue(category.Id, out AlertThreshold? alertThreshold)
+                    ? alertThreshold
+                    : null))
+            .ToList();
+
+        Categories.Clear();
+        foreach (CategoryItemViewModel category in OrderCategories(categoryItems))
+        {
+            category.PropertyChanged += OnCategoryItemPropertyChanged;
+            Categories.Add(category);
+        }
+
+        RefreshState();
+        UpdateObservedRefreshVersion();
     }
 
     private async Task EditCategoryAsync(CategoryItemViewModel? category)
@@ -160,7 +175,8 @@ public class CategoriesViewModel : AuthenticatedViewModelBase
                 return;
             }
 
-            await LoadAsync();
+            _appEventBus.PublishDataChanged(AppDataChangeKind.Categories);
+            await LoadCoreAsync();
         }, "Une erreur est survenue lors de la mise à jour de la catégorie.");
     }
 
@@ -190,9 +206,13 @@ public class CategoriesViewModel : AuthenticatedViewModelBase
                 return;
             }
 
-            await LoadAsync();
+            _appEventBus.PublishDataChanged(AppDataChangeKind.Categories);
+            await LoadCoreAsync();
         }, "Une erreur est survenue lors de la suppression de la catégorie.");
     }
+
+    private void UpdateObservedRefreshVersion()
+        => _lastRefreshVersion = _appEventBus.GetVersion(RefreshChangeKinds);
 
     private void RefreshState()
     {

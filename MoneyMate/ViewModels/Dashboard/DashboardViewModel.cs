@@ -13,10 +13,12 @@ namespace MoneyMate.ViewModels.Dashboard;
 public class DashboardViewModel : AuthenticatedViewModelBase
 {
     private static readonly Color DefaultColor = Color.FromArgb("#6B7A8F");
+    private const AppDataChangeKind RefreshChangeKinds = AppDataChangeKind.All;
 
     private readonly IDashboardService _dashboardService;
+    private readonly IAppEventBus _appEventBus;
 
-    private bool _isInitialized;
+    private long _lastRefreshVersion = -1;
     private string _greetingText = "Bonjour";
     private string _todayDisplay = string.Empty;
     private string _userName = string.Empty;
@@ -36,10 +38,12 @@ public class DashboardViewModel : AuthenticatedViewModelBase
         IAuthenticationService authenticationService,
         IDashboardService dashboardService,
         IDialogService dialogService,
-        INavigationService navigationService)
+        INavigationService navigationService,
+        IAppEventBus? appEventBus = null)
         : base(authenticationService, dialogService, navigationService)
     {
         _dashboardService = dashboardService ?? throw new ArgumentNullException(nameof(dashboardService));
+        _appEventBus = appEventBus ?? NullAppEventBus.Instance;
 
         Title = "Tableau de bord";
         TopCategories = [];
@@ -160,13 +164,13 @@ public class DashboardViewModel : AuthenticatedViewModelBase
 
     public bool HasRecentTransactions => RecentTransactions.Count > 0;
 
-    public async Task InitializeAsync()
-    {
-        if (_isInitialized)
-            return;
+    public Task InitializeAsync()
+        => RefreshIfNeededAsync();
 
-        _isInitialized = true;
-        await LoadAsync();
+    public async Task RefreshIfNeededAsync()
+    {
+        if (_lastRefreshVersion < 0 || _appEventBus.HasChangedSince(RefreshChangeKinds, _lastRefreshVersion))
+            await LoadAsync();
     }
 
     public async Task LoadAsync()
@@ -190,8 +194,12 @@ public class DashboardViewModel : AuthenticatedViewModelBase
             }
 
             ApplySummary(summaryResult.Data);
+            UpdateObservedRefreshVersion();
         }, "Une erreur est survenue lors du chargement du tableau de bord.");
     }
+
+    private void UpdateObservedRefreshVersion()
+        => _lastRefreshVersion = _appEventBus.GetVersion(RefreshChangeKinds);
 
     private async Task LogoutAsync()
     {

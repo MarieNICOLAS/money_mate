@@ -13,6 +13,7 @@ public class FixedChargeFormViewModel : FormViewModelBase
 {
     private readonly IFixedChargeService _fixedChargeService;
     private readonly ICategoryService _categoryService;
+    private readonly IAppEventBus _appEventBus;
     private string _name = string.Empty;
     private string _description = string.Empty;
     private string _amountText = string.Empty;
@@ -31,11 +32,13 @@ public class FixedChargeFormViewModel : FormViewModelBase
         ICategoryService categoryService,
         IAuthenticationService authenticationService,
         IDialogService dialogService,
-        INavigationService navigationService)
+        INavigationService navigationService,
+        IAppEventBus? appEventBus = null)
         : base(authenticationService, dialogService, navigationService)
     {
         _fixedChargeService = fixedChargeService ?? throw new ArgumentNullException(nameof(fixedChargeService));
         _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
+        _appEventBus = appEventBus ?? NullAppEventBus.Instance;
         Categories = [];
         Frequencies = ["Monthly", "Quarterly", "Yearly"];
         Title = "Charge fixe";
@@ -241,6 +244,7 @@ public class FixedChargeFormViewModel : FormViewModelBase
             return false;
         }
 
+        _appEventBus.PublishDataChanged(AppDataChangeKind.FixedCharges);
         await NavigationService.NavigateToAsync(AppRoutes.FixedCharges);
         return true;
     }
@@ -266,6 +270,7 @@ public class FixedChargeFormViewModel : FormViewModelBase
             return false;
         }
 
+        _appEventBus.PublishDataChanged(AppDataChangeKind.FixedCharges);
         await NavigationService.NavigateToAsync(AppRoutes.FixedCharges);
         return true;
     }

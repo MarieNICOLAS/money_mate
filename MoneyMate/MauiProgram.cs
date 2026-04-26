@@ -76,6 +76,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IDashboardService, DashboardService>();
         builder.Services.AddSingleton<IFixedChargeService, FixedChargeService>();
         builder.Services.AddSingleton<IAlertThresholdService, AlertThresholdService>();
+        builder.Services.AddSingleton<IAppEventBus, AppEventBus>();
 
         builder.Services.AddSingleton<INavigationService, NavigationService>();
         builder.Services.AddSingleton<IDialogService, DialogService>();

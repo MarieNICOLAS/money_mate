@@ -16,6 +16,7 @@ public class QuickAddExpenseViewModel : FormViewModelBase
     private readonly IExpenseService _expenseService;
     private readonly IBudgetService _budgetService;
     private readonly ICategoryService _categoryService;
+    private readonly IAppEventBus _appEventBus;
     private List<Budget> _activeBudgets = [];
     private string _amountText = string.Empty;
     private int _selectedCategoryId;
@@ -28,12 +29,14 @@ public class QuickAddExpenseViewModel : FormViewModelBase
         ICategoryService categoryService,
         IAuthenticationService authenticationService,
         IDialogService dialogService,
-        INavigationService navigationService)
+        INavigationService navigationService,
+        IAppEventBus? appEventBus = null)
         : base(authenticationService, dialogService, navigationService)
     {
         _expenseService = expenseService ?? throw new ArgumentNullException(nameof(expenseService));
         _budgetService = budgetService ?? throw new ArgumentNullException(nameof(budgetService));
         _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
+        _appEventBus = appEventBus ?? NullAppEventBus.Instance;
         Categories = [];
         Title = "Ajout rapide";
         RefreshFormState();
@@ -160,6 +163,7 @@ public class QuickAddExpenseViewModel : FormViewModelBase
             return false;
         }
 
+        _appEventBus.PublishDataChanged(AppDataChangeKind.Expenses);
         await NavigationService.NavigateToAsync(AppRoutes.ExpensesList);
         return true;
     }

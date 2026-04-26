@@ -14,6 +14,7 @@ public class CategoryFormViewModel : FormViewModelBase
 {
     private readonly ICategoryService _categoryService;
     private readonly IAlertThresholdService _alertThresholdService;
+    private readonly IAppEventBus _appEventBus;
     private string _name = string.Empty;
     private string _description = string.Empty;
     private string _colorHex = "#6B7A8F";
@@ -30,11 +31,13 @@ public class CategoryFormViewModel : FormViewModelBase
         IAlertThresholdService alertThresholdService,
         IAuthenticationService authenticationService,
         IDialogService dialogService,
-        INavigationService navigationService)
+        INavigationService navigationService,
+        IAppEventBus? appEventBus = null)
         : base(authenticationService, dialogService, navigationService)
     {
         _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
         _alertThresholdService = alertThresholdService ?? throw new ArgumentNullException(nameof(alertThresholdService));
+        _appEventBus = appEventBus ?? NullAppEventBus.Instance;
         Title = "Catégorie";
         SelectColorCommand = new Command<string>(SelectColor);
         SelectIconCommand = new Command<string>(SelectIcon);
@@ -207,6 +210,7 @@ public class CategoryFormViewModel : FormViewModelBase
         if (!await SyncCategoryAlertAsync(savedCategory.Id, savedCategory.Name))
             return false;
 
+        _appEventBus.PublishDataChanged(AppDataChangeKind.Categories | AppDataChangeKind.AlertThresholds);
         await NavigationService.NavigateToAsync(AppRoutes.CategoriesList);
         return true;
     }
@@ -246,6 +250,7 @@ public class CategoryFormViewModel : FormViewModelBase
             return false;
         }
 
+        _appEventBus.PublishDataChanged(AppDataChangeKind.Categories | AppDataChangeKind.AlertThresholds);
         await NavigationService.NavigateToAsync(AppRoutes.CategoriesList);
         return true;
     }

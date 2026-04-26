@@ -15,7 +15,7 @@
                 <Label Text="{Binding Source={x:Reference Page}, Path=PageTitle}"
                        Style="{StaticResource PageTitle}" />
                     <Label Text="{Binding BudgetRequirementMessage}"
-                           IsVisible="{Binding HasValidationErrors}"
+                           IsVisible="{Binding HasBudgetRequirementError}"
                            FontSize="13"
                            TextColor="{StaticResource Error}" />
                 </VerticalStackLayout>
@@ -32,7 +32,7 @@
                                FontAttributes="Bold" />
 
                         <Label Text="{Binding ValidationMessage}"
-                               IsVisible="{Binding HasValidationErrors}"
+                               IsVisible="{Binding HasFormValidationError}"
                                TextColor="{StaticResource Error}" />
 
                         <VerticalStackLayout Spacing="8">

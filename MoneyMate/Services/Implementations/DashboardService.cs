@@ -88,6 +88,12 @@ namespace MoneyMate.Services.Implementations
                         categoriesById,
                         take: 5);
 
+                    List<DashboardBudgetProgress> budgetProgress = BuildBudgetProgress(
+                        currentMonthBudgets,
+                        currentMonthExpenses,
+                        categoriesById,
+                        take: 4);
+
                     int budgetsAtRiskCount = budgets.Count(budget =>
                         IsBudgetAtRisk(budget, allExpenses));
 
@@ -111,7 +117,8 @@ namespace MoneyMate.Services.Implementations
                         TriggeredAlertsCount = triggeredAlertsCount,
                         BudgetsAtRiskCount = budgetsAtRiskCount,
                         TopCategories = topCategories,
-                        RecentTransactions = recentTransactions
+                        RecentTransactions = recentTransactions,
+                        Budgets = budgetProgress
                     };
 
                     return ServiceResult<DashboardSummary>.Success(summary);
@@ -204,7 +211,7 @@ namespace MoneyMate.Services.Implementations
                         : "Catégorie inconnue",
                     CategoryColor = categoriesById.TryGetValue(group.Key, out category)
                         ? category.Color
-                        : "#6B7A8F",
+                        : "#6793AE",
                     CategoryIcon = categoriesById.TryGetValue(group.Key, out category)
                         ? category.Icon
                         : "💰",
@@ -233,13 +240,54 @@ namespace MoneyMate.Services.Implementations
                     {
                         ExpenseId = expense.Id,
                         CategoryName = category?.Name ?? "Catégorie inconnue",
-                        CategoryColor = category?.Color ?? "#6B7A8F",
+                    CategoryColor = category?.Color ?? "#6793AE",
                         CategoryIcon = category?.Icon ?? "💰",
                         Note = expense.Note,
                         Amount = expense.Amount,
                         DateOperation = expense.DateOperation
                     };
                 })
+                .ToList();
+        }
+
+        private static List<DashboardBudgetProgress> BuildBudgetProgress(
+            IEnumerable<Budget> budgets,
+            IEnumerable<Expense> currentMonthExpenses,
+            IReadOnlyDictionary<int, Category> categoriesById,
+            int take)
+        {
+            List<Expense> materializedExpenses = currentMonthExpenses.ToList();
+
+            return budgets
+                .Where(budget => budget.Amount > 0)
+                .OrderByDescending(budget => budget.CreatedAt)
+                .Take(take)
+                .Select(budget =>
+                {
+                    categoriesById.TryGetValue(budget.CategoryId, out Category? category);
+
+                    IEnumerable<Expense> scopedExpenses = budget.CategoryId > 0
+                        ? materializedExpenses.Where(expense => expense.CategoryId == budget.CategoryId)
+                        : materializedExpenses;
+
+                    decimal spentAmount = scopedExpenses.Sum(expense => expense.Amount);
+                    decimal consumedPercentage = budget.CalculateBudgetPercentage(spentAmount);
+
+                    return new DashboardBudgetProgress
+                    {
+                        BudgetId = budget.Id,
+                        CategoryId = budget.CategoryId,
+                        CategoryName = category?.Name ?? "Budget mensuel",
+                        CategoryColor = category?.Color ?? "#6793AE",
+                        CategoryIcon = category?.Icon ?? "💰",
+                        BudgetAmount = budget.Amount,
+                        SpentAmount = spentAmount,
+                        RemainingAmount = budget.Amount - spentAmount,
+                        ConsumedPercentage = consumedPercentage,
+                        IsExceeded = spentAmount > budget.Amount
+                    };
+                })
+                .OrderByDescending(item => item.ConsumedPercentage)
                 .ToList();
         }
 

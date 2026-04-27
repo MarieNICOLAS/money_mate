@@ -227,7 +227,7 @@
                             Command="{Binding SaveCommand}" />
 
                     <Button Text="Annuler"
-                            Style="{StaticResource OutlineButton}"
+                            Style="{StaticResource CancelButton}"
                             Command="{Binding CancelCommand}" />
 
                 </VerticalStackLayout>

@@ -77,8 +77,7 @@
                             SemanticProperties.Description="Modifier la dépense" />
                     <Button Text="Dupliquer"
                             Command="{Binding DuplicateCommand}"
-                            BackgroundColor="#E8EEF3"
-                            TextColor="{StaticResource TextDark}" />
+                            Style="{StaticResource NeutralButton}" />
                     <Button Text="{StaticResource IconDelete}"
                             Command="{Binding DeleteCommand}"
                             Style="{StaticResource DangerIconButton}"

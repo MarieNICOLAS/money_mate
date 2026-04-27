@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <Shell
     x:Class="MoneyMate.AppShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
@@ -6,24 +6,38 @@
     xmlns:local="clr-namespace:MoneyMate"
     xmlns:auth="clr-namespace:MoneyMate.Views.Auth"
     xmlns:dashboard="clr-namespace:MoneyMate.Views.Dashboard"
-    Title="Money Mate"
+    Title="MoneyMate"
+    Shell.BackgroundColor="#F6FDFD"
+    Shell.DisabledColor="#A8A8A8"
     Shell.FlyoutBehavior="Disabled"
-    Shell.NavBarIsVisible="False">
+    Shell.ForegroundColor="#6793AE"
+    Shell.NavBarIsVisible="False"
+    Shell.TabBarIsVisible="False">
 
-    <FlyoutItem x:Name="HomeFlyoutItem" Title="Accueil" FlyoutItemIsVisible="False">
-        <ShellContent Title="Accueil" ContentTemplate="{DataTemplate local:MainPage}" Route="MainPage" />
-    </FlyoutItem>
+    <Shell.Resources>
+        <Style TargetType="ShellContent">
+            <Setter Property="Shell.TabBarIsVisible" Value="False" />
+        </Style>
+    </Shell.Resources>
 
-    <FlyoutItem x:Name="DashboardFlyoutItem" Title="Tableau de bord" FlyoutItemIsVisible="False">
-        <ShellContent Title="Tableau de bord" ContentTemplate="{DataTemplate dashboard:DashboardPage}" Route="DashboardPage" />
-    </FlyoutItem>
+    <ShellContent Title="Accueil"
+                  ContentTemplate="{DataTemplate local:MainPage}"
+                  FlyoutItemIsVisible="False"
+                  Route="MainPage" />
 
-    <FlyoutItem x:Name="LoginFlyoutItem" Title="Connexion" FlyoutItemIsVisible="False">
-        <ShellContent Title="Connexion" ContentTemplate="{DataTemplate auth:LoginPage}" Route="LoginPage" />
-    </FlyoutItem>
+    <ShellContent Title="Dashboard"
+                  ContentTemplate="{DataTemplate dashboard:DashboardPage}"
+                  FlyoutItemIsVisible="False"
+                  Route="DashboardPage" />
 
-    <FlyoutItem x:Name="RegisterFlyoutItem" Title="Inscription" FlyoutItemIsVisible="False">
-        <ShellContent Title="Inscription" ContentTemplate="{DataTemplate auth:RegisterPage}" Route="RegisterPage" />
-    </FlyoutItem>
+    <ShellContent Title="Connexion"
+                  ContentTemplate="{DataTemplate auth:LoginPage}"
+                  FlyoutItemIsVisible="False"
+                  Route="LoginPage" />
+
+    <ShellContent Title="Inscription"
+                  ContentTemplate="{DataTemplate auth:RegisterPage}"
+                  FlyoutItemIsVisible="False"
+                  Route="RegisterPage" />
 
 </Shell>

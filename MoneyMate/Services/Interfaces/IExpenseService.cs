@@ -1,4 +1,5 @@
 using MoneyMate.Models;
+using MoneyMate.Models.DTOs;
 using MoneyMate.Services.Models;
 using MoneyMate.Services.Results;
 
@@ -13,6 +14,16 @@ namespace MoneyMate.Services.Interfaces
         /// Retourne toutes les dépenses d'un utilisateur.
         /// </summary>
         Task<ServiceResult<List<Expense>>> GetExpensesAsync(int userId);
+
+        /// <summary>
+        /// Retourne les opérations préparées pour la liste filtrable.
+        /// </summary>
+        Task<IReadOnlyList<ExpenseListItemDto>> GetExpensesAsync(int userId, ExpenseFilterDto filter);
+
+        /// <summary>
+        /// Retourne le résumé financier de la période filtrée.
+        /// </summary>
+        Task<ExpenseSummaryDto> GetExpenseSummaryAsync(int userId, ExpenseFilterDto filter);
 
         /// <summary>
         /// Retourne les dépenses d'un utilisateur pour une catégorie.

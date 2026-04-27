@@ -22,6 +22,15 @@ public partial class AuthenticatedHeader : ContentView
     public static readonly BindableProperty LogoutCommandProperty =
         BindableProperty.Create(nameof(LogoutCommand), typeof(ICommand), typeof(AuthenticatedHeader), null);
 
+    public static readonly BindableProperty NavigateToAlertsCommandProperty =
+        BindableProperty.Create(nameof(NavigateToAlertsCommand), typeof(ICommand), typeof(AuthenticatedHeader), null);
+
+    public static readonly BindableProperty NavigateToProfileCommandProperty =
+        BindableProperty.Create(nameof(NavigateToProfileCommand), typeof(ICommand), typeof(AuthenticatedHeader), null);
+
+    public static readonly BindableProperty HasNotificationBadgeProperty =
+        BindableProperty.Create(nameof(HasNotificationBadge), typeof(bool), typeof(AuthenticatedHeader), false);
+
     public static readonly BindableProperty ShowBackButtonProperty =
         BindableProperty.Create(nameof(ShowBackButton), typeof(bool), typeof(AuthenticatedHeader), false);
 
@@ -41,6 +50,24 @@ public partial class AuthenticatedHeader : ContentView
     {
         get => (ICommand?)GetValue(LogoutCommandProperty);
         set => SetValue(LogoutCommandProperty, value);
+    }
+
+    public ICommand? NavigateToAlertsCommand
+    {
+        get => (ICommand?)GetValue(NavigateToAlertsCommandProperty);
+        set => SetValue(NavigateToAlertsCommandProperty, value);
+    }
+
+    public ICommand? NavigateToProfileCommand
+    {
+        get => (ICommand?)GetValue(NavigateToProfileCommandProperty);
+        set => SetValue(NavigateToProfileCommandProperty, value);
+    }
+
+    public bool HasNotificationBadge
+    {
+        get => (bool)GetValue(HasNotificationBadgeProperty);
+        set => SetValue(HasNotificationBadgeProperty, value);
     }
 
     public bool ShowBackButton
@@ -75,6 +102,8 @@ public partial class AuthenticatedHeader : ContentView
         }
 
         LogoutCommand ??= new Command(async () => await LogoutAsync());
+        NavigateToAlertsCommand ??= new Command(async () => await NavigateToAlertsAsync());
+        NavigateToProfileCommand ??= new Command(async () => await NavigateToProfileAsync());
         BackCommand ??= new Command(async () => await GoBackAsync());
         InitializeComponent();
     }
@@ -92,6 +121,22 @@ public partial class AuthenticatedHeader : ContentView
 
         await _authenticationService.LogoutAsync(true);
         await _navigationService.NavigateToAsync(AppRoutes.Main);
+    }
+
+    private async Task NavigateToAlertsAsync()
+    {
+        if (_navigationService == null)
+            return;
+
+        await _navigationService.NavigateToAsync(AppRoutes.AlertThreshold);
+    }
+
+    private async Task NavigateToProfileAsync()
+    {
+        if (_navigationService == null)
+            return;
+
+        await _navigationService.NavigateToAsync(AppRoutes.Profile);
     }
 
     private async Task GoBackAsync()

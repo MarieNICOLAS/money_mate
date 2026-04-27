@@ -2,13 +2,14 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
 
-    <!-- 🎨 PALETTE MONEY MATE -->
+    <!-- Palette MoneyMate -->
     <Color x:Key="Primary">#6793AE</Color>
     <Color x:Key="PrimaryLight">#B6DCE3</Color>
     <Color x:Key="Accent">#26658C</Color>
     <Color x:Key="Secondary">#4F7993</Color>
     <Color x:Key="BackgroundDark">#011C40</Color>
     <Color x:Key="BackgroundLight">#F6FDFD</Color>
+    <Color x:Key="CardBackground">#FFFFFF</Color>
     <Color x:Key="TextLight">#FFFFFF</Color>
     <Color x:Key="TextMuted">#EAEAEA</Color>
     <Color x:Key="TextDark">#222222</Color>
@@ -17,6 +18,7 @@
     <Color x:Key="Black">#000000</Color>
     <Color x:Key="Success">#6CC57C</Color>
     <Color x:Key="Error">#E57373</Color>
+    <Color x:Key="Danger">#E57373</Color>
 
     <!-- 🔤 Material Icons Unicode -->
     <x:String x:Key="IconHome">&#xE88A;</x:String>
@@ -26,6 +28,13 @@
     <x:String x:Key="IconProfile">&#xE853;</x:String>
     <x:String x:Key="IconCalendar">&#xE935;</x:String>
     <x:String x:Key="IconLogout">&#xE9BA;</x:String>
+    <x:String x:Key="IconBell">&#xE7F4;</x:String>
+    <x:String x:Key="IconWallet">&#xE850;</x:String>
+    <x:String x:Key="IconIncome">&#xE8E5;</x:String>
+    <x:String x:Key="IconTransfer">&#xE8D4;</x:String>
+    <x:String x:Key="IconScanner">&#xE5FA;</x:String>
+    <x:String x:Key="IconInsight">&#xE8B8;</x:String>
+    <x:String x:Key="IconDiscover">&#xE89E;</x:String>
     <x:String x:Key="IconEyeOpen">&#xE8F4;</x:String>
     <x:String x:Key="IconEyeClosed">&#xE8F5;</x:String>
     <x:String x:Key="IconBack">&#xE5C4;</x:String>

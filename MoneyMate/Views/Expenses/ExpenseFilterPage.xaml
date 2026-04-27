@@ -1,0 +1,260 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                xmlns:views="clr-namespace:MoneyMate.Views"
+                xmlns:viewModels="clr-namespace:MoneyMate.ViewModels.Expenses"
+                xmlns:dto="clr-namespace:MoneyMate.Models.DTOs"
+                x:Class="MoneyMate.Views.Expenses.ExpenseFilterPage"
+                x:Name="Page"
+                x:DataType="viewModels:ExpenseFilterViewModel"
+                Title="Filtres"
+                ShowHeader="False"
+                ShowFooter="False">
+    <views:BasePage.PageContent>
+        <Grid RowDefinitions="Auto,*,Auto" BackgroundColor="{StaticResource BackgroundLight}">
+            <Grid Padding="16,14"
+                  ColumnDefinitions="44,*,Auto"
+                  ColumnSpacing="8"
+                  BackgroundColor="{StaticResource BackgroundLight}">
+                <Button Text="&#xE5CD;"
+                        Command="{Binding CloseCommand}"
+                        Style="{StaticResource IconButton}"
+                        SemanticProperties.Description="Fermer les filtres" />
+                <Label Grid.Column="1"
+                       Text="Filtres"
+                       FontSize="20"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextDark}"
+                       HorizontalTextAlignment="Center"
+                       VerticalTextAlignment="Center" />
+                <Button Grid.Column="2"
+                        Text="Réinitialiser"
+                        Command="{Binding ResetCommand}"
+                        Style="{StaticResource CompactNeutralButton}"
+                        SemanticProperties.Description="Réinitialiser les filtres" />
+            </Grid>
+
+            <ScrollView Grid.Row="1">
+                <VerticalStackLayout Padding="20,6,20,24" Spacing="18">
+                    <Border IsVisible="{Binding HasValidationError}"
+                            Padding="12"
+                            BackgroundColor="#FFF0F0"
+                            StrokeThickness="0">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="14" />
+                        </Border.StrokeShape>
+                        <Label Text="{Binding ValidationErrorMessage}"
+                               TextColor="{StaticResource Error}"
+                               FontAttributes="Bold" />
+                    </Border>
+
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Période" Style="{StaticResource SectionTitle}" Margin="0,0,0,0" />
+                        <ScrollView Orientation="Horizontal">
+                            <HorizontalStackLayout Spacing="8">
+                                <Button Text="Mois" Command="{Binding SelectPeriodModeCommand}" CommandParameter="Mois"
+                                        Style="{StaticResource FilterChipButton}"
+                                        BackgroundColor="{Binding MonthPeriodBackground}" TextColor="{Binding MonthPeriodTextColor}" />
+                                <Button Text="Trimestre" Command="{Binding SelectPeriodModeCommand}" CommandParameter="Trimestre"
+                                        Style="{StaticResource FilterChipButton}"
+                                        BackgroundColor="{Binding QuarterPeriodBackground}" TextColor="{Binding QuarterPeriodTextColor}" />
+                                <Button Text="Année" Command="{Binding SelectPeriodModeCommand}" CommandParameter="Année"
+                                        Style="{StaticResource FilterChipButton}"
+                                        BackgroundColor="{Binding YearPeriodBackground}" TextColor="{Binding YearPeriodTextColor}" />
+                                <Button Text="Personnalisée" Command="{Binding SelectPeriodModeCommand}" CommandParameter="Personnalisée"
+                                        Style="{StaticResource FilterChipButton}"
+                                        BackgroundColor="{Binding CustomPeriodBackground}" TextColor="{Binding CustomPeriodTextColor}" />
+                            </HorizontalStackLayout>
+                        </ScrollView>
+
+                        <Border Padding="12"
+                                BackgroundColor="#FFFFFF"
+                                Stroke="#D6E1EA"
+                                StrokeThickness="1">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="14" />
+                            </Border.StrokeShape>
+                            <VerticalStackLayout Spacing="10">
+                                <DatePicker Date="{Binding SelectedMonth}"
+                                            Format="MMMM yyyy"
+                                            IsVisible="{Binding IsMonthPeriod}"
+                                            TextColor="{StaticResource TextDark}"
+                                            SemanticProperties.Description="Sélection du mois" />
+
+                                <Picker ItemsSource="{Binding QuarterOptions}"
+                                        SelectedItem="{Binding SelectedQuarter}"
+                                        IsVisible="{Binding IsQuarterPeriod}"
+                                        TextColor="{StaticResource TextDark}"
+                                        SemanticProperties.Description="Sélection du trimestre" />
+
+                                <Entry Text="{Binding SelectedYear}"
+                                       IsVisible="{Binding IsYearPeriod}"
+                                       Keyboard="Numeric"
+                                       TextColor="{StaticResource TextDark}"
+                                       Placeholder="Année"
+                                       SemanticProperties.Description="Sélection de l'année" />
+
+                                <Grid ColumnDefinitions="*,*" ColumnSpacing="10" IsVisible="{Binding IsCustomPeriod}">
+                                    <DatePicker Date="{Binding CustomStartDateValue}"
+                                                TextColor="{StaticResource TextDark}"
+                                                SemanticProperties.Description="Date de début" />
+                                    <DatePicker Grid.Column="1"
+                                                Date="{Binding CustomEndDateValue}"
+                                                TextColor="{StaticResource TextDark}"
+                                                SemanticProperties.Description="Date de fin" />
+                                </Grid>
+                            </VerticalStackLayout>
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Type d'opération" Style="{StaticResource SectionTitle}" Margin="0,0,0,0" />
+                        <ScrollView Orientation="Horizontal">
+                            <HorizontalStackLayout Spacing="8">
+                                <Button Text="Toutes" Command="{Binding SelectOperationTypeCommand}" CommandParameter="Toutes"
+                                        Style="{StaticResource FilterChipButton}"
+                                        BackgroundColor="{Binding AllSegmentBackground}" TextColor="{Binding AllSegmentTextColor}" />
+                                <Button Text="Dépenses" Command="{Binding SelectOperationTypeCommand}" CommandParameter="Dépenses"
+                                        Style="{StaticResource FilterChipButton}"
+                                        BackgroundColor="{Binding ExpenseSegmentBackground}" TextColor="{Binding ExpenseSegmentTextColor}" />
+                                <Button Text="Revenus" Command="{Binding SelectOperationTypeCommand}" CommandParameter="Revenus"
+                                        Style="{StaticResource FilterChipButton}"
+                                        BackgroundColor="{Binding IncomeSegmentBackground}" TextColor="{Binding IncomeSegmentTextColor}" />
+                                <Button Text="Transferts" Command="{Binding SelectOperationTypeCommand}" CommandParameter="Transferts"
+                                        Style="{StaticResource FilterChipButton}"
+                                        BackgroundColor="{Binding TransferSegmentBackground}" TextColor="{Binding TransferSegmentTextColor}" />
+                            </HorizontalStackLayout>
+                        </ScrollView>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="10">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="Catégories" Style="{StaticResource SectionTitle}" Margin="0,0,0,0" />
+                            <Button Grid.Column="1"
+                                    Text="{Binding SelectAllCategoriesText}"
+                                    Command="{Binding ToggleSelectAllCategoriesCommand}"
+                                    Style="{StaticResource CompactNeutralButton}" />
+                        </Grid>
+
+                        <CollectionView ItemsSource="{Binding Categories}"
+                                        SelectionMode="None"
+                                        HeightRequest="230">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="{x:Null}">
+                                    <Border Padding="12"
+                                            Margin="0,0,0,8"
+                                            BackgroundColor="{Binding BackgroundColor}"
+                                            Stroke="{Binding BorderColor}"
+                                            StrokeThickness="1">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="14" />
+                                        </Border.StrokeShape>
+                                        <Grid ColumnDefinitions="36,*,28" ColumnSpacing="10">
+                                            <Border WidthRequest="32" HeightRequest="32" BackgroundColor="#FFFFFF" StrokeThickness="0">
+                                                <Border.StrokeShape>
+                                                    <RoundRectangle CornerRadius="16" />
+                                                </Border.StrokeShape>
+                                                <Label Text="{Binding Icon}" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                            </Border>
+                                            <Label Grid.Column="1"
+                                                   Text="{Binding Label}"
+                                                   FontSize="15"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{StaticResource TextDark}"
+                                                   VerticalTextAlignment="Center" />
+                                            <Label Grid.Column="2"
+                                                   Text="{Binding SelectionMark}"
+                                                   FontSize="18"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{StaticResource Secondary}"
+                                                   HorizontalTextAlignment="Center"
+                                                   VerticalTextAlignment="Center" />
+                                        </Grid>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding Source={x:Reference Page}, Path=BindingContext.ToggleCategoryCommand}"
+                                                                  CommandParameter="{Binding .}" />
+                                        </Border.GestureRecognizers>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Montant" Style="{StaticResource SectionTitle}" Margin="0,0,0,0" />
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                            <Border Padding="12,4" BackgroundColor="#FFFFFF" Stroke="#D6E1EA" StrokeThickness="1">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="14" />
+                                </Border.StrokeShape>
+                                <Entry Text="{Binding MinAmount}"
+                                       Placeholder="Min. €"
+                                       Keyboard="Numeric"
+                                       BackgroundColor="Transparent"
+                                       TextColor="{StaticResource TextDark}"
+                                       SemanticProperties.Description="Montant minimum" />
+                            </Border>
+                            <Border Grid.Column="1" Padding="12,4" BackgroundColor="#FFFFFF" Stroke="#D6E1EA" StrokeThickness="1">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="14" />
+                                </Border.StrokeShape>
+                                <Entry Text="{Binding MaxAmount}"
+                                       Placeholder="Max. €"
+                                       Keyboard="Numeric"
+                                       BackgroundColor="Transparent"
+                                       TextColor="{StaticResource TextDark}"
+                                       SemanticProperties.Description="Montant maximum" />
+                            </Border>
+                        </Grid>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Moyen de paiement" Style="{StaticResource SectionTitle}" Margin="0,0,0,0" />
+                        <Border Padding="12,2" BackgroundColor="#FFFFFF" Stroke="#D6E1EA" StrokeThickness="1">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="14" />
+                            </Border.StrokeShape>
+                            <Picker ItemsSource="{Binding PaymentMethods}"
+                                    SelectedItem="{Binding SelectedPaymentMethod}"
+                                    TextColor="{StaticResource TextDark}"
+                                    SemanticProperties.Description="Moyen de paiement" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <Border Padding="14" BackgroundColor="#FFFFFF" Stroke="#D6E1EA" StrokeThickness="1">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="14" />
+                        </Border.StrokeShape>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="Afficher uniquement les charges fixes"
+                                   FontSize="15"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextDark}"
+                                   VerticalTextAlignment="Center" />
+                            <Switch Grid.Column="1"
+                                    IsToggled="{Binding FixedChargesOnly}"
+                                    OnColor="{StaticResource Primary}"
+                                    SemanticProperties.Description="Charges fixes uniquement" />
+                        </Grid>
+                    </Border>
+                </VerticalStackLayout>
+            </ScrollView>
+
+            <Grid Grid.Row="2"
+                  Padding="16,12"
+                  ColumnDefinitions="*,*"
+                  ColumnSpacing="10"
+                  BackgroundColor="{StaticResource BackgroundLight}">
+                <Button Text="Annuler"
+                        Command="{Binding CloseCommand}"
+                        Style="{StaticResource CancelButton}" />
+                <Button Grid.Column="1"
+                        Text="{Binding ApplyButtonText}"
+                        Command="{Binding ApplyCommand}"
+                        Style="{StaticResource PrimaryButton}"
+                        MinimumHeightRequest="46"
+                        SemanticProperties.Description="Appliquer les filtres" />
+            </Grid>
+        </Grid>
+    </views:BasePage.PageContent>
+</views:BasePage>

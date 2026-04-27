@@ -10,6 +10,8 @@ public sealed class RecentTransactionItemViewModel
 
     public string AmountDisplay { get; init; } = string.Empty;
 
+    public Color AmountColor { get; init; } = Color.FromArgb("#D9534F");
+
     public string DateDisplay { get; init; } = string.Empty;
 
     public Color AccentColor { get; init; } = Colors.LightGray;

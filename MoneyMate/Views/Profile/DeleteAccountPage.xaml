@@ -59,16 +59,11 @@
 
                     <Button Text="Supprimer définitivement"
                             Command="{Binding DeleteAccountCommand}"
-                            BackgroundColor="{StaticResource Error}"
-                            TextColor="{StaticResource TextLight}"
-                            FontSize="16"
-                            FontAttributes="Bold"
-                            CornerRadius="25"
-                            Padding="16,10" />
+                            Style="{StaticResource DangerButton}" />
 
                     <Button Text="Annuler"
                             Command="{Binding CancelCommand}"
-                            Style="{StaticResource OutlineButton}" />
+                            Style="{StaticResource CancelButton}" />
 
                 </VerticalStackLayout>
             </ScrollView>

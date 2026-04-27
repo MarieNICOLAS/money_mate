@@ -6,122 +6,103 @@
              BackgroundColor="Transparent"
              Margin="0">
 
-    <Border BackgroundColor="{StaticResource Primary}"
-            StrokeThickness="0"
-            Padding="18,10,18,12"
-            Margin="0">
-        <Grid ColumnDefinitions="*,*,*,*,*,*"
-              ColumnSpacing="4"
-              HorizontalOptions="Fill">
+    <Grid Padding="12,0,12,10"
+          HeightRequest="86">
+        <Border BackgroundColor="{StaticResource CardBackground}"
+                Stroke="#D6E1EA"
+                StrokeThickness="1"
+                Padding="10,9"
+                VerticalOptions="End">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="24" />
+            </Border.StrokeShape>
+            <Border.Shadow>
+                <Shadow Brush="#22000000"
+                        Offset="0,8"
+                        Radius="18"
+                        Opacity="0.22" />
+            </Border.Shadow>
 
-            <VerticalStackLayout Grid.Column="0"
-                                 Spacing="2"
-                                 HorizontalOptions="Center"
-                                 VerticalOptions="Center">
-                <Label Text="{StaticResource IconHome}"
-                       FontFamily="MaterialIcons"
-                       FontSize="22"
-                       TextColor="White"
-                       HorizontalOptions="Center" />
-                <Label Text="Accueil"
-                       FontSize="11"
-                       TextColor="White"
-                       HorizontalOptions="Center" />
-                <VerticalStackLayout.GestureRecognizers>
-                    <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoHomeCommand}" />
-                </VerticalStackLayout.GestureRecognizers>
-            </VerticalStackLayout>
+            <Grid ColumnDefinitions="*,*,76,*,*,*"
+                  ColumnSpacing="2"
+                  HorizontalOptions="Fill"
+                  HeightRequest="58">
 
-            <VerticalStackLayout Grid.Column="1"
-                                 Spacing="2"
-                                 HorizontalOptions="Center"
-                                 VerticalOptions="Center">
-                <Label Text="{StaticResource IconExpense}"
-                       FontFamily="MaterialIcons"
-                       FontSize="22"
-                       TextColor="White"
-                       HorizontalOptions="Center" />
-                <Label Text="Dépenses"
-                       FontSize="11"
-                       TextColor="White"
-                       HorizontalOptions="Center" />
-                <VerticalStackLayout.GestureRecognizers>
-                    <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoExpensesCommand}" />
-                </VerticalStackLayout.GestureRecognizers>
-            </VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="0"
+                                     Style="{StaticResource BottomNavItemStyle}">
+                    <Label Text="{StaticResource IconHome}" Style="{StaticResource BottomNavIconStyle}" />
+                    <Label Text="Accueil" Style="{StaticResource BottomNavLabelStyle}" />
+                    <VerticalStackLayout.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoHomeCommand}" />
+                    </VerticalStackLayout.GestureRecognizers>
+                </VerticalStackLayout>
 
-            <VerticalStackLayout Grid.Column="2"
-                                 Spacing="2"
-                                 HorizontalOptions="Center"
-                                 VerticalOptions="Center">
-                <Label Text="+"
-                       FontSize="28"
-                       FontAttributes="Bold"
-                       TextColor="White"
-                       HorizontalOptions="Center" />
-                <Label Text="Ajouter"
-                       FontSize="11"
-                       TextColor="White"
-                       HorizontalOptions="Center" />
-                <VerticalStackLayout.GestureRecognizers>
-                    <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoQuickAddExpenseCommand}" />
-                </VerticalStackLayout.GestureRecognizers>
-            </VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="1"
+                                     Style="{StaticResource BottomNavItemStyle}">
+                    <Label Text="{StaticResource IconExpense}" Style="{StaticResource BottomNavIconStyle}" />
+                    <Label Text="Dépenses" Style="{StaticResource BottomNavLabelStyle}" />
+                    <VerticalStackLayout.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoExpensesCommand}" />
+                    </VerticalStackLayout.GestureRecognizers>
+                </VerticalStackLayout>
 
-            <VerticalStackLayout Grid.Column="3"
-                                 Spacing="2"
-                                 HorizontalOptions="Center"
-                                 VerticalOptions="Center">
-                <Label Text="{StaticResource IconBudget}"
-                       FontFamily="MaterialIcons"
-                       FontSize="22"
-                       TextColor="White"
-                       HorizontalOptions="Center" />
-                <Label Text="Budgets"
-                       FontSize="11"
-                       TextColor="White"
-                       HorizontalOptions="Center" />
-                <VerticalStackLayout.GestureRecognizers>
-                    <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoBudgetCommand}" />
-                </VerticalStackLayout.GestureRecognizers>
-            </VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="3"
+                                     Style="{StaticResource BottomNavItemStyle}">
+                    <Label Text="{StaticResource IconBudget}" Style="{StaticResource BottomNavIconStyle}" />
+                    <Label Text="Budgets" Style="{StaticResource BottomNavLabelStyle}" />
+                    <VerticalStackLayout.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoBudgetCommand}" />
+                    </VerticalStackLayout.GestureRecognizers>
+                </VerticalStackLayout>
 
-            <VerticalStackLayout Grid.Column="4"
-                                 Spacing="2"
-                                 HorizontalOptions="Center"
-                                 VerticalOptions="Center">
-                <Label Text="{StaticResource IconStats}"
-                       FontFamily="MaterialIcons"
-                       FontSize="22"
-                       TextColor="White"
-                       HorizontalOptions="Center" />
-                <Label Text="Stats"
-                       FontSize="11"
-                       TextColor="White"
-                       HorizontalOptions="Center" />
-                <VerticalStackLayout.GestureRecognizers>
-                    <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoStatsCommand}" />
-                </VerticalStackLayout.GestureRecognizers>
-            </VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="4"
+                                     Style="{StaticResource BottomNavItemStyle}">
+                    <Label Text="{StaticResource IconStats}" Style="{StaticResource BottomNavIconStyle}" />
+                    <Label Text="Stats" Style="{StaticResource BottomNavLabelStyle}" />
+                    <VerticalStackLayout.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoStatsCommand}" />
+                    </VerticalStackLayout.GestureRecognizers>
+                </VerticalStackLayout>
 
-            <VerticalStackLayout Grid.Column="5"
-                                 Spacing="2"
-                                 HorizontalOptions="Center"
-                                 VerticalOptions="Center">
-                <Label Text="{StaticResource IconProfile}"
-                       FontFamily="MaterialIcons"
-                       FontSize="22"
-                       TextColor="White"
-                       HorizontalOptions="Center" />
-                <Label Text="Profil"
-                       FontSize="11"
-                       TextColor="White"
-                       HorizontalOptions="Center" />
-                <VerticalStackLayout.GestureRecognizers>
-                    <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoProfileCommand}" />
-                </VerticalStackLayout.GestureRecognizers>
-            </VerticalStackLayout>
-        </Grid>
-    </Border>
+                <VerticalStackLayout Grid.Column="5"
+                                     Style="{StaticResource BottomNavItemStyle}">
+                    <Label Text="{StaticResource IconCalendar}" Style="{StaticResource BottomNavIconStyle}" />
+                    <Label Text="Calendrier" Style="{StaticResource BottomNavLabelStyle}" FontSize="9" />
+                    <VerticalStackLayout.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoCalendarCommand}" />
+                    </VerticalStackLayout.GestureRecognizers>
+                </VerticalStackLayout>
+            </Grid>
+        </Border>
+
+        <Border WidthRequest="64"
+                HeightRequest="64"
+                BackgroundColor="{StaticResource Accent}"
+                HorizontalOptions="Center"
+                VerticalOptions="Start"
+                Stroke="#FFFFFF"
+                StrokeThickness="4"
+                TranslationY="-2"
+                SemanticProperties.Description="Ajouter une dépense">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="32" />
+            </Border.StrokeShape>
+            <Border.Shadow>
+                <Shadow Brush="#33000000"
+                        Offset="0,8"
+                        Radius="18"
+                        Opacity="0.28" />
+            </Border.Shadow>
+            <Label Text="{StaticResource IconAdd}"
+                   FontFamily="MaterialIcons"
+                   FontSize="34"
+                   TextColor="White"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center" />
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding Source={x:Reference this}, Path=GoAddExpenseCommand}" />
+            </Border.GestureRecognizers>
+        </Border>
+    </Grid>
 
 </ContentView>

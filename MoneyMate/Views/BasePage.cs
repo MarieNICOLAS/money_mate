@@ -118,7 +118,7 @@ namespace MoneyMate.Views
 
         protected ICommand GoCalendarCommand { get; }
 
-        protected ICommand GoQuickAddExpenseCommand { get; }
+        protected ICommand GoAddExpenseCommand { get; }
 
         protected ICommand GoBudgetCommand { get; }
 
@@ -137,7 +137,7 @@ namespace MoneyMate.Views
             GoHomeCommand = new Command(async () => await NavigateToAsync(AppRoutes.Dashboard));
             GoExpensesCommand = new Command(async () => await NavigateToAsync(AppRoutes.ExpensesList));
             GoCalendarCommand = new Command(async () => await NavigateToAsync(AppRoutes.Calendar));
-            GoQuickAddExpenseCommand = new Command(async () => await NavigateToAsync(AppRoutes.QuickAddExpense));
+            GoAddExpenseCommand = new Command(async () => await NavigateToAsync(AppRoutes.AddExpense));
             GoBudgetCommand = new Command(async () => await NavigateToAsync(AppRoutes.BudgetsOverview));
             GoStatsCommand = new Command(async () => await NavigateToAsync(AppRoutes.StatsOverview));
             GoProfileCommand = new Command(async () => await NavigateToAsync(AppRoutes.Profile));
@@ -147,10 +147,9 @@ namespace MoneyMate.Views
                 GoHomeCommand = GoHomeCommand,
                 GoExpensesCommand = GoExpensesCommand,
                 GoCalendarCommand = GoCalendarCommand,
-                GoQuickAddExpenseCommand = GoQuickAddExpenseCommand,
+                GoAddExpenseCommand = GoAddExpenseCommand,
                 GoBudgetCommand = GoBudgetCommand,
                 GoStatsCommand = GoStatsCommand,
-                GoProfileCommand = GoProfileCommand,
                 IsVisible = false
             };
 
@@ -194,6 +193,7 @@ namespace MoneyMate.Views
 
             OnPropertyChanged(nameof(PageTitle));
             UpdateAuthenticatedHeaderTitle();
+            UpdateAuthenticatedHeaderBindings();
         }
 
         protected override void OnPropertyChanged(string? propertyName = null)
@@ -241,12 +241,26 @@ namespace MoneyMate.Views
                     UpdateAuthenticatedHeaderTitle();
                 });
             }
+
+            if (e.PropertyName == nameof(IAuthenticatedHeaderViewModel.HasNotificationBadge))
+                MainThread.BeginInvokeOnMainThread(UpdateAuthenticatedHeaderBindings);
         }
 
         private void UpdateAuthenticatedHeaderTitle()
         {
             string? title = _trackedViewModel?.Title;
             _authenticatedHeader.PageTitle = string.IsNullOrWhiteSpace(title) ? Title : title;
+        }
+
+        private void UpdateAuthenticatedHeaderBindings()
+        {
+            if (_trackedViewModel is not IAuthenticatedHeaderViewModel headerViewModel)
+                return;
+
+            _authenticatedHeader.NavigateToAlertsCommand = headerViewModel.NavigateToAlertsCommand;
+            _authenticatedHeader.NavigateToProfileCommand = headerViewModel.NavigateToProfileCommand;
+            _authenticatedHeader.LogoutCommand = headerViewModel.LogoutCommand;
+            _authenticatedHeader.HasNotificationBadge = headerViewModel.HasNotificationBadge;
         }
 
         private static async Task NavigateToAsync(string route)

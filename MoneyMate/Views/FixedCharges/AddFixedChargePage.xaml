@@ -127,7 +127,7 @@
                     <Button Grid.Column="0"
                             Text="Annuler"
                             Command="{Binding CancelCommand}"
-                            Style="{StaticResource OutlineButton}" />
+                            Style="{StaticResource CancelButton}" />
                     <Button Grid.Column="1"
                             Text="Enregistrer"
                             Command="{Binding SaveCommand}"

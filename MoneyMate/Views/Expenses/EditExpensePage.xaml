@@ -30,11 +30,11 @@
 
                         <Label Text="Date"
                                Style="{StaticResource FormLabel}" />
-                        <DatePicker Date="{Binding ExpenseDate, Mode=TwoWay}" />
+                        <DatePicker Date="{Binding DateOperation, Mode=TwoWay}" />
 
                         <Label Text="Catégorie"
                                Style="{StaticResource FormLabel}" />
-                        <Picker ItemsSource="{Binding AvailableCategories}"
+                        <Picker ItemsSource="{Binding Categories}"
                                 ItemDisplayBinding="{Binding Name}"
                                 SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"
                                 Title="Sélectionnez une catégorie" />
@@ -42,7 +42,7 @@
                         <Label Text="Notes"
                                Style="{StaticResource FormLabel}" />
                         <Border Style="{StaticResource InputContainer}">
-                            <Editor Text="{Binding Description, Mode=TwoWay}"
+                            <Editor Text="{Binding Note, Mode=TwoWay}"
                                     Placeholder="Ajoutez un contexte ou un détail"
                                     AutoSize="TextChanges"
                                     MinimumHeightRequest="90" />
@@ -57,9 +57,9 @@
 
                         <Grid ColumnDefinitions="Auto,*"
                               ColumnSpacing="12">
-                            <Switch IsToggled="{Binding IsRecurring, Mode=TwoWay}" />
+                            <Switch IsToggled="{Binding IsFixedCharge, Mode=TwoWay}" />
                             <Label Grid.Column="1"
-                                   Text="Marquer cette dépense comme récurrente"
+                                   Text="Marquer cette dépense comme charge fixe"
                                    VerticalTextAlignment="Center"
                                    TextColor="{StaticResource TextDark}" />
                         </Grid>
@@ -83,8 +83,7 @@
                     <Button Grid.Column="1"
                             Text="Annuler"
                             Command="{Binding CancelCommand}"
-                            BackgroundColor="#E8EEF3"
-                            TextColor="{StaticResource TextDark}" />
+                            Style="{StaticResource CancelButton}" />
                     <Button Grid.Column="2"
                             Text="Enregistrer"
                             Command="{Binding SaveCommand}"

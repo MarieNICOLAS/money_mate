@@ -4,50 +4,89 @@
              x:Class="MoneyMate.Components.AuthenticatedHeader"
              x:Name="this">
 
-    <Border BackgroundColor="{StaticResource PrimaryLight}"
-            Padding="16,12">
-        <Grid ColumnDefinitions="Auto,Auto,*,Auto"
-              ColumnSpacing="10">
-            <Button Text="{StaticResource IconBack}"
-                    FontFamily="MaterialIcons"
-                    Grid.Column="0"
-                    Command="{Binding Source={x:Reference this}, Path=BackCommand}"
-                    IsVisible="{Binding Source={x:Reference this}, Path=ShowBackButton}"
-                    BackgroundColor="Transparent"
-                    TextColor="{StaticResource Primary}"
-                    FontSize="24"
-                    WidthRequest="36"
-                    HeightRequest="36"
-                    Padding="0"
-                    CornerRadius="18" />
+    <Border BackgroundColor="{StaticResource Primary}"
+            StrokeThickness="0"
+            Padding="18,12,18,8">
+        <Grid ColumnDefinitions="Auto,*,Auto"
+              ColumnSpacing="12"
+              MinimumHeightRequest="56">
+            <Grid Grid.Column="0"
+                  ColumnDefinitions="Auto,Auto"
+                  ColumnSpacing="8"
+                  VerticalOptions="Center">
+                <Button Text="{StaticResource IconBack}"
+                        FontFamily="MaterialIcons"
+                        Command="{Binding Source={x:Reference this}, Path=BackCommand}"
+                        IsVisible="{Binding Source={x:Reference this}, Path=ShowBackButton}"
+                        BackgroundColor="Transparent"
+                        TextColor="{StaticResource TextLight}"
+                        FontSize="24"
+                        WidthRequest="44"
+                        HeightRequest="44"
+                        Padding="0"
+                        CornerRadius="22"
+                        SemanticProperties.Description="Retour" />
 
-            <Image Grid.Column="1"
-                   Source="money_mate_icon.png"
-                   WidthRequest="30"
-                   HeightRequest="30"
-                   VerticalOptions="Center" />
+                <Image Grid.Column="1"
+                       Source="money_mate_icon.png"
+                       WidthRequest="34"
+                       HeightRequest="34"
+                       VerticalOptions="Center" />
+            </Grid>
 
-            <VerticalStackLayout Grid.Column="2"
+            <VerticalStackLayout Grid.Column="1"
                                  Spacing="0"
                                  VerticalOptions="Center">
-                <Label Text="{Binding Source={x:Reference this}, Path=PageTitle}"
-                       FontSize="18"
+                <Label Text="MoneyMate"
+                       FontSize="15"
                        FontAttributes="Bold"
-                       TextColor="{StaticResource Primary}"
+                        TextColor="{StaticResource TextLight}"
+                       LineBreakMode="TailTruncation" />
+                <Label Text="{Binding Source={x:Reference this}, Path=PageTitle}"
+                       FontSize="12"
+                        TextColor="{StaticResource BackgroundLight}"
                        LineBreakMode="TailTruncation" />
             </VerticalStackLayout>
 
-            <Button Grid.Column="3"
-                    Text="{StaticResource IconLogout}"
-                    FontFamily="MaterialIcons"
-                    Command="{Binding Source={x:Reference this}, Path=LogoutCommand}"
-                    BackgroundColor="Transparent"
-                    TextColor="{StaticResource Primary}"
-                    FontSize="22"
-                    WidthRequest="36"
-                    HeightRequest="36"
-                    Padding="0"
-                    CornerRadius="18" />
+            <HorizontalStackLayout Grid.Column="2"
+                                   Spacing="8"
+                                   HorizontalOptions="End"
+                                   VerticalOptions="Center">
+                <Grid WidthRequest="44"
+                      HeightRequest="44"
+                      SemanticProperties.Description="Alertes">
+                    <Button Text="{StaticResource IconBell}"
+                            FontFamily="MaterialIcons"
+                            Command="{Binding Source={x:Reference this}, Path=NavigateToAlertsCommand}"
+                            Style="{StaticResource IconButton}"
+                            BackgroundColor="{StaticResource BackgroundLight}"
+                            TextColor="{StaticResource Accent}" />
+                    <BoxView WidthRequest="9"
+                             HeightRequest="9"
+                             CornerRadius="4.5"
+                             Color="{StaticResource Danger}"
+                             HorizontalOptions="End"
+                             VerticalOptions="Start"
+                             Margin="0,8,8,0"
+                             IsVisible="{Binding Source={x:Reference this}, Path=HasNotificationBadge}" />
+                </Grid>
+
+                <Button Text="{StaticResource IconProfile}"
+                        FontFamily="MaterialIcons"
+                        Command="{Binding Source={x:Reference this}, Path=NavigateToProfileCommand}"
+                        Style="{StaticResource IconButton}"
+                        BackgroundColor="{StaticResource BackgroundLight}"
+                        TextColor="{StaticResource Accent}"
+                        SemanticProperties.Description="Profil" />
+
+                <Button Text="{StaticResource IconLogout}"
+                        FontFamily="MaterialIcons"
+                        Command="{Binding Source={x:Reference this}, Path=LogoutCommand}"
+                        Style="{StaticResource IconButton}"
+                        BackgroundColor="{StaticResource BackgroundLight}"
+                        TextColor="{StaticResource Danger}"
+                        SemanticProperties.Description="Déconnexion" />
+            </HorizontalStackLayout>
         </Grid>
     </Border>
 

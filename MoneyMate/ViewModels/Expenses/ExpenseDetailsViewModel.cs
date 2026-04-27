@@ -16,6 +16,7 @@ public class ExpenseDetailsViewModel : AuthenticatedViewModelBase
     private readonly ICategoryService _categoryService;
     private readonly IAppEventBus _appEventBus;
     private int _expenseId;
+    private decimal _amount;
     private string _amountDisplay = string.Empty;
     private string _categoryName = string.Empty;
     private string _categoryIcon = "💰";
@@ -50,6 +51,12 @@ public class ExpenseDetailsViewModel : AuthenticatedViewModelBase
         private set => SetProperty(ref _expenseId, value);
     }
 
+    public decimal Amount
+    {
+        get => _amount;
+        private set => SetProperty(ref _amount, value);
+    }
+
     public string AmountDisplay
     {
         get => _amountDisplay;
@@ -77,13 +84,24 @@ public class ExpenseDetailsViewModel : AuthenticatedViewModelBase
     public string Note
     {
         get => _note;
-        private set => SetProperty(ref _note, value);
+        private set
+        {
+            if (SetProperty(ref _note, value))
+                OnPropertyChanged(nameof(Description));
+        }
     }
 
     public DateTime DateOperation
     {
         get => _dateOperation;
-        private set => SetProperty(ref _dateOperation, value);
+        private set
+        {
+            if (SetProperty(ref _dateOperation, value))
+            {
+                OnPropertyChanged(nameof(ExpenseDate));
+                OnPropertyChanged(nameof(CreatedAt));
+            }
+        }
     }
 
     public bool IsFixedCharge
@@ -97,6 +115,14 @@ public class ExpenseDetailsViewModel : AuthenticatedViewModelBase
     }
 
     public bool HasExpense => ExpenseId > 0;
+
+    public DateTime ExpenseDate => DateOperation;
+
+    public DateTime CreatedAt => DateOperation;
+
+    public string Description => Note;
+
+    public string Devise => CurrentDevise;
 
     public string ExpenseTypeText => IsFixedCharge ? "Récurrente" : "Ponctuelle";
 
@@ -151,6 +177,7 @@ public class ExpenseDetailsViewModel : AuthenticatedViewModelBase
         var categoriesResult = await _categoryService.GetCategoriesAsync(CurrentUserId);
         Category? category = (categoriesResult.Data ?? []).FirstOrDefault(item => item.Id == expense.CategoryId);
 
+        Amount = expense.Amount;
         AmountDisplay = CurrencyHelper.Format(expense.Amount, CurrentDevise);
         CategoryName = category?.Name ?? "Catégorie inconnue";
         CategoryIcon = string.IsNullOrWhiteSpace(category?.Icon) ? "💰" : category!.Icon;

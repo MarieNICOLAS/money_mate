@@ -74,7 +74,7 @@
 
                 <HorizontalStackLayout Spacing="12">
                     <Button Text="Annuler"
-                            Style="{StaticResource OutlineButton}"
+                            Style="{StaticResource CancelButton}"
                             HorizontalOptions="FillAndExpand"
                             Command="{Binding CancelCommand}" />
                     <Button Text="Enregistrer"

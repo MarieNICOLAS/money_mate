@@ -32,36 +32,6 @@
                             SemanticProperties.Description="Actualiser les statistiques" />
                 </Grid>
 
-                <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
-                    <Border Grid.Column="0" Padding="10,9" Stroke="{StaticResource Primary}" BackgroundColor="{StaticResource Primary}">
-                        <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="14" />
-                        </Border.StrokeShape>
-                        <Label Text="Aperçu" FontAttributes="Bold" FontSize="12" HorizontalTextAlignment="Center" TextColor="White" />
-                    </Border>
-
-                    <Border Grid.Column="1" Padding="10,9" Stroke="#D6E1EA" BackgroundColor="#F3F8FC">
-                        <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="14" />
-                        </Border.StrokeShape>
-                        <Label Text="Budgets" FontSize="12" HorizontalTextAlignment="Center" TextColor="{StaticResource Secondary}" />
-                    </Border>
-
-                    <Border Grid.Column="2" Padding="10,9" Stroke="#D6E1EA" BackgroundColor="#F3F8FC">
-                        <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="14" />
-                        </Border.StrokeShape>
-                        <Label Text="Catégories" FontSize="12" HorizontalTextAlignment="Center" TextColor="{StaticResource Secondary}" />
-                    </Border>
-
-                    <Border Grid.Column="3" Padding="10,9" Stroke="#D6E1EA" BackgroundColor="#F3F8FC">
-                        <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="14" />
-                        </Border.StrokeShape>
-                        <Label Text="Évolution" FontSize="12" HorizontalTextAlignment="Center" TextColor="{StaticResource Secondary}" />
-                    </Border>
-                </Grid>
-
                 <Border Padding="16" Stroke="#D6E1EA" BackgroundColor="White">
                     <Border.StrokeShape>
                         <RoundRectangle CornerRadius="18" />
@@ -176,16 +146,49 @@
                     </VerticalStackLayout>
                 </Border>
 
-                <Border Padding="18" Stroke="#D6E1EA" BackgroundColor="#F3F8FC" Opacity="0.82" IsEnabled="False">
+                <Border Padding="18" Stroke="#D6E1EA" BackgroundColor="White">
                     <Border.StrokeShape>
                         <RoundRectangle CornerRadius="18" />
                     </Border.StrokeShape>
-                    <VerticalStackLayout Spacing="10">
-                        <Grid ColumnDefinitions="*,Auto">
+                    <VerticalStackLayout Spacing="14">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                             <Label Text="Évolution" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextDark}" />
-                            <Label Grid.Column="1" Text="Premium" FontSize="12" TextColor="{StaticResource Secondary}" VerticalTextAlignment="Center" />
+                            <Grid Grid.Column="1" ColumnDefinitions="Auto,Auto" ColumnSpacing="4">
+                                <Button Text="Année"
+                                        Command="{Binding SelectEvolutionPeriodCommand}"
+                                        CommandParameter="Année"
+                                        BackgroundColor="{Binding YearSegmentBackground}"
+                                        TextColor="{Binding YearSegmentTextColor}"
+                                        FontSize="12"
+                                        FontAttributes="Bold"
+                                        CornerRadius="16"
+                                        Padding="12,4"
+                                        MinimumHeightRequest="34"
+                                        SemanticProperties.Description="Afficher l'évolution annuelle" />
+                                <Button Grid.Column="1"
+                                        Text="Mois"
+                                        Command="{Binding SelectEvolutionPeriodCommand}"
+                                        CommandParameter="Mois"
+                                        BackgroundColor="{Binding MonthSegmentBackground}"
+                                        TextColor="{Binding MonthSegmentTextColor}"
+                                        FontSize="12"
+                                        FontAttributes="Bold"
+                                        CornerRadius="16"
+                                        Padding="12,4"
+                                        MinimumHeightRequest="34"
+                                        SemanticProperties.Description="Afficher l'évolution mensuelle" />
+                            </Grid>
                         </Grid>
-                        <Label Text="Analyse longue durée réservée Premium"
+                        <Label Text="{Binding EvolutionSubtitle}"
+                               FontSize="12"
+                               TextColor="{StaticResource Secondary}" />
+
+                        <microcharts:ChartView Chart="{Binding EvolutionLineChart}"
+                                               HeightRequest="230"
+                                               IsVisible="{Binding HasEvolutionChart}" />
+
+                        <Label Text="Le graphique apparaîtra après vos premières opérations."
+                               IsVisible="{Binding HasEvolutionChart, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"
                                HorizontalTextAlignment="Center"
                                TextColor="{StaticResource Secondary}" />
                     </VerticalStackLayout>

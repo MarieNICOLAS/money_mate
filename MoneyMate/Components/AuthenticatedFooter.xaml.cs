@@ -17,17 +17,14 @@ public partial class AuthenticatedFooter : ContentView
     public static readonly BindableProperty GoCalendarCommandProperty =
         BindableProperty.Create(nameof(GoCalendarCommand), typeof(ICommand), typeof(AuthenticatedFooter), null);
 
-    public static readonly BindableProperty GoQuickAddExpenseCommandProperty =
-        BindableProperty.Create(nameof(GoQuickAddExpenseCommand), typeof(ICommand), typeof(AuthenticatedFooter), null);
+    public static readonly BindableProperty GoAddExpenseCommandProperty =
+        BindableProperty.Create(nameof(GoAddExpenseCommand), typeof(ICommand), typeof(AuthenticatedFooter), null);
 
     public static readonly BindableProperty GoBudgetCommandProperty =
         BindableProperty.Create(nameof(GoBudgetCommand), typeof(ICommand), typeof(AuthenticatedFooter), null);
 
     public static readonly BindableProperty GoStatsCommandProperty =
         BindableProperty.Create(nameof(GoStatsCommand), typeof(ICommand), typeof(AuthenticatedFooter), null);
-
-    public static readonly BindableProperty GoProfileCommandProperty =
-        BindableProperty.Create(nameof(GoProfileCommand), typeof(ICommand), typeof(AuthenticatedFooter), null);
 
     public ICommand? GoHomeCommand
     {
@@ -47,10 +44,16 @@ public partial class AuthenticatedFooter : ContentView
         set => SetValue(GoCalendarCommandProperty, value);
     }
 
+    public ICommand? GoAddExpenseCommand
+    {
+        get => (ICommand?)GetValue(GoAddExpenseCommandProperty);
+        set => SetValue(GoAddExpenseCommandProperty, value);
+    }
+
     public ICommand? GoQuickAddExpenseCommand
     {
-        get => (ICommand?)GetValue(GoQuickAddExpenseCommandProperty);
-        set => SetValue(GoQuickAddExpenseCommandProperty, value);
+        get => GoAddExpenseCommand;
+        set => GoAddExpenseCommand = value;
     }
 
     public ICommand? GoBudgetCommand
@@ -63,12 +66,6 @@ public partial class AuthenticatedFooter : ContentView
     {
         get => (ICommand?)GetValue(GoStatsCommandProperty);
         set => SetValue(GoStatsCommandProperty, value);
-    }
-
-    public ICommand? GoProfileCommand
-    {
-        get => (ICommand?)GetValue(GoProfileCommandProperty);
-        set => SetValue(GoProfileCommandProperty, value);
     }
 
     public AuthenticatedFooter()

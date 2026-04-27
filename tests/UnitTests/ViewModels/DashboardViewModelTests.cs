@@ -48,7 +48,7 @@ public class DashboardViewModelTests
         await viewModel.LoadAsync();
 
         Assert.AreEqual("user", viewModel.UserName);
-        Assert.AreEqual("Bonjour user", viewModel.GreetingText);
+        Assert.AreEqual("Bonjour user 👋", viewModel.GreetingText);
         Assert.IsFalse(string.IsNullOrWhiteSpace(viewModel.TodayDisplay));
         Assert.AreEqual("3", viewModel.ExpensesCountDisplay);
         Assert.AreEqual("2", viewModel.ActiveBudgetsDisplay);
@@ -110,6 +110,25 @@ public class DashboardViewModelTests
                     parameters.ContainsKey(NavigationParameterKeys.ReturnRoute) &&
                     (string)parameters[NavigationParameterKeys.ReturnRoute] == AppRoutes.Dashboard)),
             Times.Once);
+    }
+
+    [TestMethod]
+    public async Task NavigateToAddExpenseCommand_NavigatesToAddExpensePage()
+    {
+        var user = ViewModelTestHelper.CreateUser();
+        Mock<INavigationService> navigationServiceMock = ViewModelTestHelper.CreateNavigationServiceMock();
+
+        DashboardViewModel viewModel = new(
+            ViewModelTestHelper.CreateAuthenticationServiceMock(user).Object,
+            new Mock<IDashboardService>().Object,
+            ViewModelTestHelper.CreateDialogServiceMock().Object,
+            navigationServiceMock.Object);
+
+        viewModel.NavigateToAddExpenseCommand.Execute(null);
+        await Task.Delay(100);
+
+        navigationServiceMock.Verify(x => x.NavigateToAsync(AppRoutes.AddExpense), Times.Once);
+        navigationServiceMock.Verify(x => x.NavigateToAsync(AppRoutes.QuickAddExpense), Times.Never);
     }
 
     [TestMethod]

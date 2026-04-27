@@ -76,6 +76,8 @@ public static class MauiProgram
         builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
         builder.Services.AddSingleton<ICategoryService, CategoryService>();
         builder.Services.AddSingleton<IExpenseService, ExpenseService>();
+        builder.Services.AddSingleton<ICalendarService, CalendarService>();
+        builder.Services.AddSingleton<IExpenseFilterStateService, ExpenseFilterStateService>();
         builder.Services.AddSingleton<IBudgetService, BudgetService>();
         builder.Services.AddSingleton<IDashboardService, DashboardService>();
         builder.Services.AddSingleton<IFixedChargeService, FixedChargeService>();
@@ -99,6 +101,7 @@ public static class MauiProgram
         builder.Services.AddTransient<AddExpensePage>();
         builder.Services.AddTransient<EditExpensePage>();
         builder.Services.AddTransient<ExpenseDetailsPage>();
+        builder.Services.AddTransient<ExpenseFilterPage>();
         builder.Services.AddTransient<QuickAddExpensePage>();
         builder.Services.AddTransient<CategoriesListPage>();
         builder.Services.AddTransient<AddCategoryPage>();
@@ -128,6 +131,7 @@ public static class MauiProgram
         builder.Services.AddTransient<ExpensesListViewModel>();
         builder.Services.AddTransient<ExpenseFormViewModel>();
         builder.Services.AddTransient<ExpenseDetailsViewModel>();
+        builder.Services.AddTransient<ExpenseFilterViewModel>();
         builder.Services.AddTransient<QuickAddExpenseViewModel>();
         builder.Services.AddTransient<CategoriesViewModel>();
         builder.Services.AddTransient<CategoryFormViewModel>();

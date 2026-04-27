@@ -1,10 +1,8 @@
 ﻿using MoneyMate.Configuration;
 using MoneyMate.Views.Alerts;
-using MoneyMate.Views.Auth;
 using MoneyMate.Views.Budgets;
 using MoneyMate.Views.Calendar;
 using MoneyMate.Views.Categories;
-using MoneyMate.Views.Dashboard;
 using MoneyMate.Views.Errors;
 using MoneyMate.Views.Expenses;
 using MoneyMate.Views.FixedCharges;
@@ -24,9 +22,6 @@ public static class ShellRouteRegistry
 
         _isRegistered = true;
 
-        Register<LoginPage>();
-        Register<RegisterPage>();
-        Register<DashboardPage>();
         Register<ProfilePage>();
         Register<ChangePasswordPage>();
         Register<DeleteAccountPage>();
@@ -34,6 +29,7 @@ public static class ShellRouteRegistry
         Register<AddExpensePage>();
         Register<EditExpensePage>();
         Register<ExpenseDetailsPage>();
+        Routing.RegisterRoute(AppRoutes.ExpenseFilter, typeof(ExpenseFilterPage));
         Register<QuickAddExpensePage>();
         Register<CategoriesListPage>();
         Register<AddCategoryPage>();

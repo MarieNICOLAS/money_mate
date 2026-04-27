@@ -62,5 +62,7 @@
         public List<DashboardCategorySpending> TopCategories { get; set; } = [];
 
         public List<DashboardRecentTransaction> RecentTransactions { get; set; } = [];
+
+        public List<DashboardBudgetProgress> Budgets { get; set; } = [];
     }
 }

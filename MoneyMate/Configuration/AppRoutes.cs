@@ -12,6 +12,7 @@
         public const string QuickAddExpense = "QuickAddExpensePage";
         public const string BudgetsOverview = "BudgetsOverviewPage";
         public const string ExpensesList = "ExpensesListPage";
+        public const string ExpenseFilter = "expense-filter";
         public const string AddExpense = "AddExpensePage";
         public const string EditExpense = "EditExpensePage";
         public const string ExpenseDetails = "ExpenseDetailsPage";

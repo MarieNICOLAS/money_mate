@@ -248,7 +248,7 @@
                             SemanticProperties.Description="Supprimer la catégorie" />
 
                     <Button Text="Annuler"
-                            Style="{StaticResource OutlineButton}"
+                            Style="{StaticResource CancelButton}"
                             Command="{Binding CancelCommand}" />
 
                 </VerticalStackLayout>

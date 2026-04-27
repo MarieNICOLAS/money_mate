@@ -50,9 +50,13 @@ public class ExpenseDetailsViewModelTests
         });
 
         Assert.AreEqual(14, viewModel.ExpenseId);
+        Assert.AreEqual(18.75m, viewModel.Amount);
         Assert.AreEqual("Repas", viewModel.CategoryName);
         Assert.AreEqual("Déjeuner", viewModel.Note);
+        Assert.AreEqual("Déjeuner", viewModel.Description);
+        Assert.AreEqual(DateTime.Today, viewModel.ExpenseDate.Date);
         Assert.IsTrue(viewModel.AmountDisplay.Contains("€"));
+        Assert.IsFalse(string.IsNullOrWhiteSpace(viewModel.Devise));
         Assert.IsTrue(viewModel.HasExpense);
     }
 

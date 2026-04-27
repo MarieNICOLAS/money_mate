@@ -34,8 +34,7 @@
 
                     <Button Text="Gérer les catégories"
                             Command="{Binding ManageCategoriesCommand}"
-                            BackgroundColor="#E8EEF3"
-                            TextColor="{StaticResource TextDark}" />
+                            Style="{StaticResource NeutralButton}" />
                 </VerticalStackLayout>
 
                 <Label Grid.Row="2"

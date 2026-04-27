@@ -29,8 +29,11 @@ public sealed class StatsOverviewViewModel : AuthenticatedViewModelBase
     private string _lastUpdatedDisplay = string.Empty;
     private bool _hasCategoryChart;
     private bool _hasMonthlyBarChart;
+    private bool _hasEvolutionChart;
+    private string _selectedEvolutionPeriod = "Année";
     private Chart _categoryPieChart = CreateEmptyPieChart();
     private Chart _currentMonthBarChart = CreateEmptyBarChart();
+    private Chart _evolutionLineChart = CreateEmptyLineChart();
     private MonthlyStatsDto _monthlyStats = new();
     private bool _isPremiumUser;
 
@@ -52,6 +55,7 @@ public sealed class StatsOverviewViewModel : AuthenticatedViewModelBase
         CategoryStats = [];
 
         RefreshCommand = new Command(async () => await LoadAsync());
+        SelectEvolutionPeriodCommand = new Command<string>(async period => await SelectEvolutionPeriodAsync(period));
         DiscoverPremiumCommand = new Command(async () => await ShowPremiumTeaserAsync());
         UnlockPremiumCommand = new Command(async () => await ShowPremiumTeaserAsync());
 
@@ -63,6 +67,8 @@ public sealed class StatsOverviewViewModel : AuthenticatedViewModelBase
     public ObservableCollection<CategoryStatsDto> CategoryStats { get; }
 
     public ICommand RefreshCommand { get; }
+
+    public ICommand SelectEvolutionPeriodCommand { get; }
 
     public ICommand DiscoverPremiumCommand { get; }
 
@@ -134,6 +140,40 @@ public sealed class StatsOverviewViewModel : AuthenticatedViewModelBase
         private set => SetProperty(ref _hasMonthlyBarChart, value);
     }
 
+    public bool HasEvolutionChart
+    {
+        get => _hasEvolutionChart;
+        private set => SetProperty(ref _hasEvolutionChart, value);
+    }
+
+    public string SelectedEvolutionPeriod
+    {
+        get => _selectedEvolutionPeriod;
+        private set
+        {
+            if (SetProperty(ref _selectedEvolutionPeriod, value))
+            {
+                OnPropertyChanged(nameof(YearSegmentBackground));
+                OnPropertyChanged(nameof(MonthSegmentBackground));
+                OnPropertyChanged(nameof(YearSegmentTextColor));
+                OnPropertyChanged(nameof(MonthSegmentTextColor));
+                OnPropertyChanged(nameof(EvolutionSubtitle));
+            }
+        }
+    }
+
+    public string EvolutionSubtitle => string.Equals(SelectedEvolutionPeriod, "Mois", StringComparison.OrdinalIgnoreCase)
+        ? "Dépenses par semaine sur le mois courant"
+        : "Dépenses par mois sur l'année courante";
+
+    public string YearSegmentBackground => EvolutionSegmentBackground("Année");
+
+    public string MonthSegmentBackground => EvolutionSegmentBackground("Mois");
+
+    public string YearSegmentTextColor => EvolutionSegmentTextColor("Année");
+
+    public string MonthSegmentTextColor => EvolutionSegmentTextColor("Mois");
+
     public Chart CategoryPieChart
     {
         get => _categoryPieChart;
@@ -144,6 +184,12 @@ public sealed class StatsOverviewViewModel : AuthenticatedViewModelBase
     {
         get => _currentMonthBarChart;
         private set => SetProperty(ref _currentMonthBarChart, value);
+    }
+
+    public Chart EvolutionLineChart
+    {
+        get => _evolutionLineChart;
+        private set => SetProperty(ref _evolutionLineChart, value);
     }
 
     public Task InitializeAsync()
@@ -162,6 +208,8 @@ public sealed class StatsOverviewViewModel : AuthenticatedViewModelBase
             DateTime monthStart = GetCurrentMonthStart();
             DateTime nextMonthStart = monthStart.AddMonths(1);
             DateTime inclusiveMonthEnd = nextMonthStart.AddTicks(-1);
+            DateTime yearStart = new(monthStart.Year, 1, 1);
+            DateTime nextYearStart = yearStart.AddYears(1);
 
             PeriodDisplay = FormatMonth(monthStart);
 
@@ -177,6 +225,11 @@ public sealed class StatsOverviewViewModel : AuthenticatedViewModelBase
                 return;
             }
 
+            var yearExpensesResult = await _expenseService.GetExpensesByPeriodAsync(
+                CurrentUserId,
+                yearStart,
+                nextYearStart.AddTicks(-1));
+
             var budgetsResult = await _budgetService.GetBudgetsAsync(CurrentUserId);
             if (!budgetsResult.IsSuccess)
             {
@@ -188,6 +241,9 @@ public sealed class StatsOverviewViewModel : AuthenticatedViewModelBase
             var categoriesResult = await _categoryService.GetCategoriesAsync(CurrentUserId);
 
             List<Expense> expenses = NormalizeExpenses(expensesResult.Data);
+            List<Expense> yearExpenses = yearExpensesResult.IsSuccess
+                ? NormalizeExpenses(yearExpensesResult.Data)
+                : expenses;
             List<Budget> budgets = NormalizeBudgets(budgetsResult.Data);
             List<Category> categories = categoriesResult.IsSuccess
                 ? NormalizeCategories(categoriesResult.Data)
@@ -196,9 +252,11 @@ public sealed class StatsOverviewViewModel : AuthenticatedViewModelBase
             MonthlyStatsDto monthlyStats = BuildMonthlyStats(expenses, budgets, monthStart, nextMonthStart);
             List<CategoryStatsDto> categoryStats = BuildCategoryStats(expenses, categories, MaxVisibleCategories);
 
-            ApplyStats(monthlyStats, categoryStats, expenses, monthStart);
+            ApplyStats(monthlyStats, categoryStats, expenses, yearExpenses, monthStart, yearStart);
 
-            if (!categoriesResult.IsSuccess)
+            if (!yearExpensesResult.IsSuccess)
+                ErrorMessage = yearExpensesResult.Message;
+            else if (!categoriesResult.IsSuccess)
                 ErrorMessage = categoriesResult.Message;
         }, "Une erreur est survenue lors du chargement des statistiques.");
     }
@@ -304,7 +362,9 @@ public sealed class StatsOverviewViewModel : AuthenticatedViewModelBase
         MonthlyStatsDto monthlyStats,
         IReadOnlyList<CategoryStatsDto> categoryStats,
         IReadOnlyList<Expense> currentMonthExpenses,
-        DateTime monthStart)
+        IReadOnlyList<Expense> currentYearExpenses,
+        DateTime monthStart,
+        DateTime yearStart)
     {
         MonthlyStats = monthlyStats;
         NetBalanceDisplay = CurrencyHelper.FormatSigned(monthlyStats.NetBalance, CurrentDevise);
@@ -327,6 +387,10 @@ public sealed class StatsOverviewViewModel : AuthenticatedViewModelBase
         CurrentMonthBarChart = HasMonthlyBarChart
             ? CreateCurrentMonthBarChart(monthStart, currentMonthExpenses)
             : CreateEmptyBarChart();
+        EvolutionLineChart = BuildEvolutionLineChart(SelectedEvolutionPeriod, monthStart, yearStart, currentMonthExpenses, currentYearExpenses);
+        HasEvolutionChart = string.Equals(SelectedEvolutionPeriod, "Mois", StringComparison.OrdinalIgnoreCase)
+            ? currentMonthExpenses.Any(expense => expense.Amount > 0)
+            : currentYearExpenses.Any(expense => expense.Amount > 0);
     }
 
     private void ApplyEmptyState(DateTime monthStart)
@@ -340,8 +404,20 @@ public sealed class StatsOverviewViewModel : AuthenticatedViewModelBase
         CategoryStats.Clear();
         HasCategoryChart = false;
         HasMonthlyBarChart = false;
+        HasEvolutionChart = false;
         CategoryPieChart = CreateEmptyPieChart();
         CurrentMonthBarChart = CreateEmptyBarChart();
+        EvolutionLineChart = CreateEmptyLineChart();
+    }
+
+    private async Task SelectEvolutionPeriodAsync(string? period)
+    {
+        string normalizedPeriod = string.Equals(period, "Mois", StringComparison.OrdinalIgnoreCase) ? "Mois" : "Année";
+        if (string.Equals(SelectedEvolutionPeriod, normalizedPeriod, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        SelectedEvolutionPeriod = normalizedPeriod;
+        await LoadAsync();
     }
 
     private async Task ShowPremiumTeaserAsync()
@@ -377,6 +453,50 @@ public sealed class StatsOverviewViewModel : AuthenticatedViewModelBase
         };
     }
 
+    private static Chart BuildEvolutionLineChart(
+        string selectedPeriod,
+        DateTime monthStart,
+        DateTime yearStart,
+        IEnumerable<Expense> currentMonthExpenses,
+        IEnumerable<Expense> currentYearExpenses)
+        => string.Equals(selectedPeriod, "Mois", StringComparison.OrdinalIgnoreCase)
+            ? CreateCurrentMonthLineChart(monthStart, currentMonthExpenses)
+            : CreateCurrentYearLineChart(yearStart, currentYearExpenses);
+
+    private static Chart CreateCurrentYearLineChart(DateTime yearStart, IEnumerable<Expense> expenses)
+    {
+        decimal[] monthlyAmounts = new decimal[12];
+
+        foreach (Expense expense in NormalizeExpenses(expenses))
+        {
+            if (expense.DateOperation.Year != yearStart.Year)
+                continue;
+
+            monthlyAmounts[expense.DateOperation.Month - 1] += expense.Amount;
+        }
+
+        string[] monthLabels = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoû", "Sep", "Oct", "Nov", "Déc"];
+        return CreateLineChart(monthlyAmounts.Select((amount, index) => CreateEvolutionEntry(amount, monthLabels[index], index)));
+    }
+
+    private static Chart CreateCurrentMonthLineChart(DateTime monthStart, IEnumerable<Expense> expenses)
+        => CreateLineChart(BuildWeeklyEntries(monthStart, expenses));
+
+    private static Chart CreateLineChart(IEnumerable<ChartEntry> entries)
+        => new LineChart
+        {
+            Entries = entries.ToList(),
+            BackgroundColor = SKColors.Transparent,
+            LabelTextSize = 24,
+            ValueLabelOrientation = Orientation.Horizontal,
+            LabelOrientation = Orientation.Horizontal,
+            LineMode = LineMode.Straight,
+            LineSize = 5,
+            PointMode = PointMode.Circle,
+            PointSize = 12,
+            Margin = 18
+        };
+
     private static List<ChartEntry> BuildWeeklyEntries(DateTime monthStart, IEnumerable<Expense> expenses)
     {
         int daysInMonth = DateTime.DaysInMonth(monthStart.Year, monthStart.Month);
@@ -403,6 +523,15 @@ public sealed class StatsOverviewViewModel : AuthenticatedViewModelBase
             .ToList();
     }
 
+    private static ChartEntry CreateEvolutionEntry(decimal amount, string label, int index)
+        => new((float)amount)
+        {
+            Label = label,
+            ValueLabel = amount <= 0 ? string.Empty : amount.ToString("0.##", CultureInfo.InvariantCulture),
+            Color = SKColor.Parse(index % 2 == 0 ? PrimaryColor : SuccessColor),
+            TextColor = SKColor.Parse("#2B2B2B")
+        };
+
     private static ChartEntry CreateChartEntry(CategoryStatsDto category)
     {
         return new ChartEntry((float)category.Amount)
@@ -427,6 +556,19 @@ public sealed class StatsOverviewViewModel : AuthenticatedViewModelBase
             Entries = [],
             BackgroundColor = SKColors.Transparent
         };
+
+    private static Chart CreateEmptyLineChart()
+        => new LineChart
+        {
+            Entries = [],
+            BackgroundColor = SKColors.Transparent
+        };
+
+    private string EvolutionSegmentBackground(string segment)
+        => string.Equals(SelectedEvolutionPeriod, segment, StringComparison.OrdinalIgnoreCase) ? PrimaryColor : "#E8EEF3";
+
+    private string EvolutionSegmentTextColor(string segment)
+        => string.Equals(SelectedEvolutionPeriod, segment, StringComparison.OrdinalIgnoreCase) ? "#FFFFFF" : "#222222";
 
     private static List<Expense> NormalizeExpenses(IEnumerable<Expense>? expenses)
         => expenses?

@@ -2,102 +2,281 @@
 <views:BasePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                 xmlns:views="clr-namespace:MoneyMate.Views"
-                xmlns:components="clr-namespace:MoneyMate.Components"
                 xmlns:viewModels="clr-namespace:MoneyMate.ViewModels.Expenses"
+                xmlns:dto="clr-namespace:MoneyMate.Models.DTOs"
                 x:Class="MoneyMate.Views.Expenses.ExpensesListPage"
                 x:Name="Page"
                 x:DataType="viewModels:ExpensesListViewModel"
                 Title="Dépenses"
                 UseAuthenticatedFooter="True">
     <views:BasePage.PageContent>
-        <Grid RowDefinitions="Auto,Auto,Auto,Auto,*"
-              RowSpacing="20"
-              Padding="24">
-                <Label Text="{Binding PageTitle}"
-                       Style="{StaticResource PageTitle}" />
-
-                <Grid Grid.Row="1"
-                      ColumnDefinitions="*,Auto,Auto,Auto"
-                      ColumnSpacing="12">
-                    <VerticalStackLayout Grid.Column="0" Spacing="4">
-                        <Label Text="Consultez vos opérations récentes et vos totaux." TextColor="{StaticResource Secondary}" />
-                    </VerticalStackLayout>
-                    <Button Grid.Column="1"
-                            Text="{StaticResource IconAdd}"
-                            Command="{Binding AddExpenseCommand}"
-                            Style="{StaticResource AccentIconButton}"
-                            SemanticProperties.Description="Ajouter une dépense" />
-                    <Button Grid.Column="2"
-                            Text="{StaticResource IconQuickAdd}"
-                            Command="{Binding QuickAddExpenseCommand}"
-                            Style="{StaticResource AccentIconButton}"
-                            SemanticProperties.Description="Ajout rapide" />
-                    <Button Grid.Column="3"
-                            Text="{StaticResource IconRefresh}"
-                            Command="{Binding RefreshCommand}"
-                            Style="{StaticResource PrimaryIconButton}"
-                            SemanticProperties.Description="Actualiser les dépenses" />
-                </Grid>
-
-                <Label Text="{Binding ErrorMessage}"
-                       Grid.Row="2"
-                       IsVisible="{Binding HasError}"
-                       TextColor="#E57373"
-                       FontAttributes="Bold" />
-
-                <Grid Grid.Row="3"
-                      ColumnDefinitions="*,*"
-                      ColumnSpacing="12">
-                    <Border Grid.Column="0" Padding="16" StrokeThickness="0" BackgroundColor="#F3F8FC">
-                        <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="14" />
-                        </Border.StrokeShape>
-                        <VerticalStackLayout Spacing="4">
-                            <Label Text="Total" TextColor="{StaticResource Secondary}" />
-                            <components:AmountDisplay Amount="{Binding TotalExpenses}"
-                                                      Devise="{Binding Devise}"
-                                                      FontSize="24"
-                                                      TextColor="{StaticResource TextDark}" />
+        <Grid BackgroundColor="{StaticResource BackgroundLight}">
+            <ScrollView>
+                <VerticalStackLayout Padding="24,20,24,32" Spacing="20">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="Dépenses"
+                                   Style="{StaticResource PageTitle}"
+                                   HorizontalOptions="Start"
+                                   HorizontalTextAlignment="Start" />
+                            <Label Text="Suivez et gérez toutes vos dépenses"
+                                   TextColor="{StaticResource Secondary}" />
                         </VerticalStackLayout>
+
+                        <Button Grid.Column="1"
+                                Text="&#xE8B6;"
+                                Command="{Binding ToggleSearchCommand}"
+                                Style="{StaticResource IconButton}"
+                                SemanticProperties.Description="Afficher la recherche" />
+
+                    </Grid>
+
+                    <Border IsVisible="{Binding IsSearchVisible}"
+                            Style="{StaticResource InputContainer}">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                            <Label Text="&#xE8B6;"
+                                   FontFamily="MaterialIcons"
+                                   FontSize="20"
+                                   TextColor="{StaticResource Secondary}"
+                                   VerticalTextAlignment="Center" />
+                            <Entry Grid.Column="1"
+                                   Text="{Binding SearchText}"
+                                   Placeholder="Rechercher une opération..."
+                                   Style="{StaticResource EntryForm}"
+                                   ReturnCommand="{Binding SearchCommand}"
+                                   SemanticProperties.Description="Recherche d'opérations" />
+                        </Grid>
                     </Border>
 
-                    <Border Grid.Column="1" Padding="16" StrokeThickness="0" BackgroundColor="#EEF7EE">
+                    <Border Padding="12"
+                            BackgroundColor="#FFFFFF"
+                            StrokeThickness="0">
                         <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="14" />
+                            <RoundRectangle CornerRadius="16" />
                         </Border.StrokeShape>
-                        <VerticalStackLayout Spacing="4">
-                            <Label Text="Nombre d'opérations" TextColor="{StaticResource Secondary}" />
-                            <Label Text="{Binding ExpensesCount}" FontSize="24" FontAttributes="Bold" />
-                        </VerticalStackLayout>
+                        <Grid ColumnDefinitions="44,*,44" ColumnSpacing="8">
+                            <Button Text="&#xE5CB;"
+                                    Command="{Binding PreviousMonthCommand}"
+                                    Style="{StaticResource IconButton}"
+                                    SemanticProperties.Description="Mois précédent" />
+                            <Grid Grid.Column="1"
+                                  ColumnDefinitions="Auto,*"
+                                  ColumnSpacing="8"
+                                  HorizontalOptions="Center">
+                                <Label Text="{StaticResource IconCalendar}"
+                                       FontFamily="MaterialIcons"
+                                       FontSize="20"
+                                       TextColor="{StaticResource Secondary}"
+                                       VerticalTextAlignment="Center" />
+                                <Label Grid.Column="1"
+                                       Text="{Binding SelectedMonthLabel}"
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource TextDark}"
+                                       VerticalTextAlignment="Center" />
+                                <Grid.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding OpenFiltersCommand}" />
+                                </Grid.GestureRecognizers>
+                            </Grid>
+                            <Button Grid.Column="2"
+                                    Text="&#xE5CC;"
+                                    Command="{Binding NextMonthCommand}"
+                                    Style="{StaticResource IconButton}"
+                                    SemanticProperties.Description="Mois suivant" />
+                        </Grid>
                     </Border>
-                </Grid>
 
-                <Grid Grid.Row="4">
+                    <Border Style="{StaticResource CardFrame}">
+                        <Grid ColumnDefinitions="*,96" ColumnSpacing="14">
+                            <VerticalStackLayout Spacing="8">
+                                <Label Text="Total dépenses du mois"
+                                       FontSize="13"
+                                       TextColor="{StaticResource Secondary}" />
+                                <Label Text="{Binding TotalExpensesDisplay}"
+                                       FontSize="28"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Error}" />
+                                <HorizontalStackLayout Spacing="8">
+                                    <Label Text="vs période précédente"
+                                           FontSize="12"
+                                           TextColor="{StaticResource Secondary}" />
+                                    <Border Padding="8,2"
+                                            BackgroundColor="#F8F2EC"
+                                            StrokeThickness="0">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="10" />
+                                        </Border.StrokeShape>
+                                        <Label Text="{Binding Summary.VariationLabel}"
+                                               FontSize="12"
+                                               FontAttributes="Bold"
+                                               TextColor="{Binding Summary.VariationColor}" />
+                                    </Border>
+                                </HorizontalStackLayout>
+
+                                <VerticalStackLayout Spacing="6"
+                                                     BindableLayout.ItemsSource="{Binding TopCategories}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate x:DataType="dto:CategorySummaryDto">
+                                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                                <Ellipse WidthRequest="8" HeightRequest="8" Fill="{Binding ColorHex}" VerticalOptions="Center" />
+                                                <Label Grid.Column="1" Text="{Binding Label}" FontSize="12" TextColor="{StaticResource Secondary}" LineBreakMode="TailTruncation" />
+                                                <Label Grid.Column="2" Text="{Binding PercentageLabel}" FontSize="12" FontAttributes="Bold" TextColor="{StaticResource TextDark}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </VerticalStackLayout>
+                            </VerticalStackLayout>
+
+                            <Grid Grid.Column="1" WidthRequest="96" HeightRequest="96" VerticalOptions="Center">
+                                <Ellipse Fill="#F3F8FC" Stroke="{StaticResource Primary}" StrokeThickness="10" />
+                                <Ellipse WidthRequest="54" HeightRequest="54" Fill="#FFFFFF" HorizontalOptions="Center" VerticalOptions="Center" />
+                                <Label Text="{Binding BalanceDisplay}"
+                                       FontSize="11"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Accent}"
+                                       HorizontalTextAlignment="Center"
+                                       VerticalTextAlignment="Center" />
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <Label Text="{Binding ResultsLabel}"
+                               FontSize="15"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource TextDark}"
+                               VerticalTextAlignment="Center" />
+                        <Grid Grid.Column="1">
+                            <Button Text="{Binding FilterButtonText}"
+                                    Command="{Binding OpenFiltersCommand}"
+                                    ImageSource="{x:Null}"
+                                    Style="{StaticResource CompactNeutralButton}"
+                                    SemanticProperties.Description="Ouvrir les filtres avancés" />
+                            <Border WidthRequest="18"
+                                    HeightRequest="18"
+                                    BackgroundColor="{StaticResource Error}"
+                                    StrokeThickness="0"
+                                    HorizontalOptions="End"
+                                    VerticalOptions="Start"
+                                    IsVisible="{Binding HasActiveFilters}">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="9" />
+                                </Border.StrokeShape>
+                                <Label Text="{Binding ActiveFiltersBadgeText}"
+                                       FontSize="10"
+                                       FontAttributes="Bold"
+                                       TextColor="#FFFFFF"
+                                       HorizontalTextAlignment="Center"
+                                       VerticalTextAlignment="Center" />
+                            </Border>
+                        </Grid>
+                    </Grid>
+
+                    <Label Text="{Binding ErrorMessage}"
+                           IsVisible="{Binding HasError}"
+                           TextColor="{StaticResource Error}"
+                           FontAttributes="Bold" />
+
                     <CollectionView ItemsSource="{Binding Expenses}"
                                     IsVisible="{Binding HasExpenses}"
+                                    SelectionMode="None"
                                     ItemSizingStrategy="MeasureFirstItem">
-                    <CollectionView.ItemTemplate>
-                        <DataTemplate x:DataType="viewModels:ExpenseListItemViewModel">
-                            <components:ExpenseCard ExpenseDate="{Binding ExpenseDate}"
-                                                    Amount="{Binding Amount}"
-                                                    Devise="{Binding Devise}"
-                                                    DisplayName="{Binding DisplayName}"
-                                                    CategoryName="{Binding CategoryName}"
-                                                    CategoryIcon="{Binding CategoryIcon}"
-                                                    CategoryColor="{Binding CategoryColor}"
-                                                    Note="{Binding Note}"
-                                                    TapCommand="{Binding OpenCommand}"
-                                                    TapCommandParameter="{Binding .}" />
-                        </DataTemplate>
-                    </CollectionView.ItemTemplate>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="{x:Null}">
+                                <SwipeView>
+                                    <SwipeView.RightItems>
+                                        <SwipeItems Mode="Reveal">
+                                            <SwipeItem Text="Modifier"
+                                                       BackgroundColor="{StaticResource Primary}"
+                                                       Command="{Binding Source={x:Reference Page}, Path=BindingContext.EditExpenseCommand}"
+                                                       CommandParameter="{Binding .}" />
+                                            <SwipeItem Text="Supprimer"
+                                                       BackgroundColor="{StaticResource Error}"
+                                                       Command="{Binding Source={x:Reference Page}, Path=BindingContext.DeleteExpenseCommand}"
+                                                       CommandParameter="{Binding .}" />
+                                        </SwipeItems>
+                                    </SwipeView.RightItems>
+
+                                    <Border Padding="14"
+                                            Margin="0,0,0,10"
+                                            BackgroundColor="#FFFFFF"
+                                            Stroke="#D6E1EA"
+                                            StrokeThickness="1">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="16" />
+                                        </Border.StrokeShape>
+                                        <Grid ColumnDefinitions="44,*,Auto,24" ColumnSpacing="10">
+                                            <Border WidthRequest="38" HeightRequest="38" BackgroundColor="{Binding IconBackgroundColor}" StrokeThickness="0">
+                                                <Border.StrokeShape>
+                                                    <RoundRectangle CornerRadius="19" />
+                                                </Border.StrokeShape>
+                                                <Label Text="{Binding Icon}" FontSize="18" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" />
+                                            </Border>
+
+                                            <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                                <Label Text="{Binding Title}" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource TextDark}" LineBreakMode="TailTruncation" />
+                                                <Label Text="{Binding CategoryName}" FontSize="12" TextColor="{StaticResource Secondary}" LineBreakMode="TailTruncation" />
+                                                <Label Text="{Binding FormattedDate}" FontSize="11" TextColor="#8A8A8A" />
+                                            </VerticalStackLayout>
+
+                                            <Label Grid.Column="2"
+                                                   Text="{Binding SignedFormattedAmount}"
+                                                   FontSize="15"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{Binding AmountColor}"
+                                                   VerticalTextAlignment="Center" />
+
+                                            <Label Grid.Column="3"
+                                                   Text="&#xE5CC;"
+                                                   FontFamily="MaterialIcons"
+                                                   FontSize="22"
+                                                   TextColor="{StaticResource Secondary}"
+                                                   VerticalTextAlignment="Center" />
+                                        </Grid>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding Source={x:Reference Page}, Path=BindingContext.OpenExpenseDetailsCommand}"
+                                                                  CommandParameter="{Binding .}" />
+                                        </Border.GestureRecognizers>
+                                    </Border>
+                                </SwipeView>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
                     </CollectionView>
 
-                    <components:EmptyStateView IsVisible="{Binding HasExpenses, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"
-                                               Icon="💸"
-                                               Message="Aucune dépense enregistrée pour le moment."
-                                               ActionText="Ajouter une dépense"
-                                               ActionCommand="{Binding AddExpenseCommand}" />
-                </Grid>
+                    <Border IsVisible="{Binding IsEmptyState}"
+                            Padding="24"
+                            BackgroundColor="#F3F8FC"
+                            StrokeThickness="0">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="18" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="10" HorizontalOptions="Center">
+                            <Label Text="&#xE8E5;"
+                                   FontFamily="MaterialIcons"
+                                   FontSize="38"
+                                   TextColor="{StaticResource Primary}"
+                                   HorizontalTextAlignment="Center" />
+                            <Label Text="Aucune opération trouvée"
+                                   FontSize="18"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource TextDark}"
+                                   HorizontalTextAlignment="Center" />
+                            <Label Text="Essayez de modifier vos filtres ou ajoutez une dépense."
+                                   FontSize="13"
+                                   TextColor="{StaticResource Secondary}"
+                                   HorizontalTextAlignment="Center" />
+                            <Button Text="Ajouter une dépense"
+                                    Command="{Binding AddExpenseCommand}"
+                                    Style="{StaticResource PrimaryButton}"
+                                    MinimumHeightRequest="44" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                       IsVisible="{Binding IsBusy}"
+                                       Color="{StaticResource Primary}" />
+                </VerticalStackLayout>
+            </ScrollView>
         </Grid>
     </views:BasePage.PageContent>
 </views:BasePage>

@@ -1,6 +1,7 @@
 ﻿using MoneyMate.Data.Context;
 using MoneyMate.Helpers;
 using MoneyMate.Models;
+using MoneyMate.Models.DTOs;
 using MoneyMate.Services.Common;
 using MoneyMate.Services.Interfaces;
 using MoneyMate.Services.Models;
@@ -41,6 +42,73 @@ namespace MoneyMate.Services.Implementations
                 operationName: nameof(GetExpensesAsync),
                 fallbackErrorCode: "EXPENSE_UNEXPECTED_ERROR",
                 fallbackMessage: "Une erreur est survenue lors du chargement des dépenses.");
+        }
+
+        public Task<IReadOnlyList<ExpenseListItemDto>> GetExpensesAsync(int userId, ExpenseFilterDto filter)
+        {
+            return Task.Run<IReadOnlyList<ExpenseListItemDto>>(() =>
+            {
+                if (userId <= 0)
+                    return [];
+
+                filter ??= new ExpenseFilterDto();
+
+                Dictionary<int, Category> categoriesById = _dbContext.GetCategoriesByUserId(userId)
+                    .GroupBy(category => category.Id)
+                    .Select(group => group.First())
+                    .ToDictionary(category => category.Id, category => category);
+
+                IEnumerable<Expense> expenses = ApplyExpenseFilter(
+                    _dbContext.GetExpensesByUserId(userId),
+                    ToLegacyFilter(userId, filter));
+
+                IEnumerable<ExpenseListItemDto> items = expenses
+                    .Select(expense => MapExpenseListItem(expense, categoriesById));
+
+                items = ApplyDtoFilter(items, filter);
+                items = ApplyDtoSort(items, filter);
+
+                return items.Take(250).ToList();
+            });
+        }
+
+        public async Task<ExpenseSummaryDto> GetExpenseSummaryAsync(int userId, ExpenseFilterDto filter)
+        {
+            if (userId <= 0)
+                return new ExpenseSummaryDto();
+
+            filter ??= new ExpenseFilterDto();
+            ExpenseFilterDto periodFilter = filter.Clone();
+            periodFilter.SearchText = string.Empty;
+
+            IReadOnlyList<ExpenseListItemDto> currentItems = await GetExpensesAsync(userId, periodFilter);
+            DateTime currentStart = periodFilter.StartDate ?? new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+            DateTime currentEnd = periodFilter.EndDate ?? currentStart.AddMonths(1).AddDays(-1);
+            int daySpan = Math.Max(1, (currentEnd.Date - currentStart.Date).Days + 1);
+
+            ExpenseFilterDto previousFilter = periodFilter.Clone();
+            previousFilter.StartDate = currentStart.AddDays(-daySpan);
+            previousFilter.EndDate = currentStart.AddDays(-1);
+            IReadOnlyList<ExpenseListItemDto> previousItems = await GetExpensesAsync(userId, previousFilter);
+
+            decimal totalExpenses = currentItems.Where(item => item.IsExpense || item.IsFixedCharge).Sum(item => item.Amount);
+            decimal totalIncome = currentItems.Where(item => item.IsIncome).Sum(item => item.Amount);
+            decimal previousExpenses = previousItems.Where(item => item.IsExpense || item.IsFixedCharge).Sum(item => item.Amount);
+
+            decimal variation = previousExpenses == 0m
+                ? totalExpenses == 0m ? 0m : 100m
+                : Math.Round(((totalExpenses - previousExpenses) / previousExpenses) * 100m, 1);
+
+            return new ExpenseSummaryDto
+            {
+                TotalExpenses = totalExpenses,
+                TotalIncome = totalIncome,
+                Balance = totalIncome - totalExpenses,
+                PreviousMonthVariationPercent = variation,
+                VariationLabel = $"{(variation > 0 ? "+" : string.Empty)}{variation:0.#} %",
+                VariationColor = variation <= 0 ? "#5CB85C" : "#D9534F",
+                TopCategories = BuildTopCategories(currentItems, totalExpenses)
+            };
         }
 
         public Task<ServiceResult<List<Expense>>> SearchExpensesAsync(ExpenseFilter filter)
@@ -493,6 +561,145 @@ namespace MoneyMate.Services.Implementations
                     return targetDate >= startDate.Date && targetDate <= endDate;
                 });
         }
+
+        private static ExpenseFilter ToLegacyFilter(int userId, ExpenseFilterDto filter)
+            => new()
+            {
+                UserId = userId,
+                StartDate = filter.StartDate,
+                EndDate = filter.EndDate,
+                CategoryId = filter.CategoryIds.Count == 1 ? filter.CategoryIds[0] : null,
+                IsFixedCharge = filter.IsFixedCharge,
+                MinAmount = filter.MinAmount,
+                MaxAmount = filter.MaxAmount,
+                SearchTerm = string.Empty
+            };
+
+        private static ExpenseListItemDto MapExpenseListItem(Expense expense, IReadOnlyDictionary<int, Category> categoriesById)
+        {
+            categoriesById.TryGetValue(expense.CategoryId, out Category? category);
+
+            string type = ResolveOperationType(expense, category);
+            bool isIncome = string.Equals(type, "Revenu", StringComparison.OrdinalIgnoreCase);
+            bool isTransfer = string.Equals(type, "Transfert", StringComparison.OrdinalIgnoreCase);
+            string title = string.IsNullOrWhiteSpace(expense.Note) ? category?.Name ?? "Opération" : expense.Note.Trim();
+
+            return new ExpenseListItemDto
+            {
+                Id = expense.Id,
+                CategoryId = expense.CategoryId,
+                Title = title,
+                CategoryName = category?.Name ?? "Catégorie",
+                Note = expense.Note ?? string.Empty,
+                Amount = Math.Abs(expense.Amount),
+                FormattedAmount = CurrencyHelper.Format(Math.Abs(expense.Amount)),
+                OperationDate = expense.DateOperation.Date,
+                FormattedDate = expense.DateOperation.ToString("dd/MM/yyyy"),
+                Type = type,
+                IsIncome = isIncome,
+                IsExpense = !isIncome && !isTransfer,
+                IsTransfer = isTransfer,
+                IsFixedCharge = expense.IsFixedCharge,
+                Icon = string.IsNullOrWhiteSpace(category?.Icon) ? "💰" : category!.Icon,
+                IconBackgroundColor = LightenColor(category?.Color),
+                AmountColor = isIncome ? "#5CB85C" : isTransfer ? "#6B7A8F" : "#D9534F",
+                Devise = "EUR"
+            };
+        }
+
+        private static IEnumerable<ExpenseListItemDto> ApplyDtoFilter(IEnumerable<ExpenseListItemDto> items, ExpenseFilterDto filter)
+        {
+            if (filter.CategoryIds.Count > 1)
+                items = items.Where(item => filter.CategoryIds.Contains(item.CategoryId));
+
+            if (!string.IsNullOrWhiteSpace(filter.OperationType) && !string.Equals(filter.OperationType, "Toutes", StringComparison.OrdinalIgnoreCase))
+                items = items.Where(item => string.Equals(item.Type, SingularizeOperationType(filter.OperationType), StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrWhiteSpace(filter.SearchText))
+            {
+                string searchText = filter.SearchText.Trim();
+                items = items.Where(item =>
+                    item.Title.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                    item.Note.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                    item.CategoryName.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                    item.FormattedAmount.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return items;
+        }
+
+        private static IEnumerable<ExpenseListItemDto> ApplyDtoSort(IEnumerable<ExpenseListItemDto> items, ExpenseFilterDto filter)
+        {
+            string sortBy = string.IsNullOrWhiteSpace(filter.SortBy) ? "Date" : filter.SortBy;
+
+            return sortBy switch
+            {
+                "Montant" => filter.SortDescending
+                    ? items.OrderByDescending(item => item.Amount).ThenByDescending(item => item.OperationDate)
+                    : items.OrderBy(item => item.Amount).ThenByDescending(item => item.OperationDate),
+                "Catégorie" => filter.SortDescending
+                    ? items.OrderByDescending(item => item.CategoryName).ThenByDescending(item => item.OperationDate)
+                    : items.OrderBy(item => item.CategoryName).ThenByDescending(item => item.OperationDate),
+                _ => filter.SortDescending
+                    ? items.OrderByDescending(item => item.OperationDate).ThenByDescending(item => item.Id)
+                    : items.OrderBy(item => item.OperationDate).ThenBy(item => item.Id)
+            };
+        }
+
+        private static IReadOnlyList<CategorySummaryDto> BuildTopCategories(IReadOnlyList<ExpenseListItemDto> items, decimal totalExpenses)
+        {
+            if (totalExpenses <= 0m)
+                return [];
+
+            string[] palette = ["#6B7A8F", "#F6B092", "#5CB85C", "#D9534F", "#8CA6B8"];
+
+            return items
+                .Where(item => item.IsExpense || item.IsFixedCharge)
+                .GroupBy(item => item.CategoryName)
+                .OrderByDescending(group => group.Sum(item => item.Amount))
+                .Take(4)
+                .Select((group, index) =>
+                {
+                    ExpenseListItemDto first = group.First();
+                    decimal amount = group.Sum(item => item.Amount);
+
+                    return new CategorySummaryDto
+                    {
+                        CategoryId = first.CategoryId,
+                        Label = group.Key,
+                        Amount = amount,
+                        Percentage = (double)Math.Round(amount / totalExpenses * 100m, 1),
+                        ColorHex = palette[index % palette.Length],
+                        Icon = first.Icon
+                    };
+                })
+                .ToList();
+        }
+
+        private static string ResolveOperationType(Expense expense, Category? category)
+        {
+            string haystack = $"{category?.Name} {expense.Note}".ToLowerInvariant();
+
+            if (expense.Amount < 0 || haystack.Contains("revenu") || haystack.Contains("income") || haystack.Contains("salaire"))
+                return "Revenu";
+
+            if (haystack.Contains("transfert") || haystack.Contains("transfer") || haystack.Contains("virement interne"))
+                return "Transfert";
+
+            return "Dépense";
+        }
+
+        private static string SingularizeOperationType(string operationType)
+            => operationType switch
+            {
+                "Dépenses" => "Dépense",
+                "Revenus" => "Revenu",
+                "Transferts" => "Transfert",
+                _ => operationType
+            };
+
+        private static string LightenColor(string? color)
+            => string.IsNullOrWhiteSpace(color) ? "#EEF2F5" : "#EEF2F5";
 
         private static IEnumerable<Expense> ApplyExpenseFilter(IEnumerable<Expense> expenses, ExpenseFilter filter)
         {

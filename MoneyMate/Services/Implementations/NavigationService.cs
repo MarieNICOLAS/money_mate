@@ -1,4 +1,5 @@
 ﻿using MoneyMate.Services.Interfaces;
+using MoneyMate.Services.Interfaces;
 
 using MoneyMate.Configuration;
 
@@ -20,7 +21,7 @@ namespace MoneyMate.Services.Implementations
                 throw new ArgumentException("La route de navigation est requise.", nameof(route));
 
             string normalizedRoute = NormalizeRoute(route);
-            return ExecuteShellNavigationAsync(() => Shell.Current!.GoToAsync(normalizedRoute));
+            return ExecuteShellNavigationAsync(() => NavigateWithinShellAsync(normalizedRoute));
         }
 
         public Task NavigateToAsync(string route, Dictionary<string, object> parameters)
@@ -31,12 +32,11 @@ namespace MoneyMate.Services.Implementations
             parameters ??= [];
 
             string normalizedRoute = NormalizeRoute(route);
-
-            return ExecuteShellNavigationAsync(() => Shell.Current!.GoToAsync(normalizedRoute, parameters));
+            return ExecuteShellNavigationAsync(() => NavigateWithinShellAsync(normalizedRoute, parameters));
         }
 
         public Task GoBackAsync()
-            => ExecuteShellNavigationAsync(() => Shell.Current!.GoToAsync(".."));
+            => ExecuteShellNavigationAsync(PopBackAsync);
 
         public Task NavigateToMainAsync()
             => NavigateToAsync(_authenticationService.IsAuthenticated ? AppRoutes.Dashboard : AppRoutes.Main);
@@ -52,7 +52,7 @@ namespace MoneyMate.Services.Implementations
         }
 
         public Task DismissModalAsync()
-            => ExecuteShellNavigationAsync(() => Shell.Current!.GoToAsync(".."));
+            => ExecuteShellNavigationAsync(PopBackAsync);
 
         private async Task ExecuteShellNavigationAsync(Func<Task> navigationAction)
         {
@@ -72,6 +72,76 @@ namespace MoneyMate.Services.Implementations
             {
                 _navigationLock.Release();
             }
+        }
+
+        private static async Task PopBackAsync()
+        {
+            INavigation navigation = Shell.Current!.Navigation;
+
+            if (navigation.ModalStack.Count > 0)
+            {
+                await navigation.PopModalAsync();
+                return;
+            }
+
+            if (navigation.NavigationStack.Count > 1)
+            {
+                await navigation.PopAsync();
+                return;
+            }
+
+            await Shell.Current.GoToAsync("..");
+        }
+
+        private static async Task NavigateWithinShellAsync(string route, Dictionary<string, object>? parameters = null)
+        {
+            if (await TryReuseFooterPageAsync(route))
+                return;
+
+            if (parameters is null || parameters.Count == 0)
+                await Shell.Current!.GoToAsync(route);
+            else
+                await Shell.Current!.GoToAsync(route, parameters);
+        }
+
+        private static async Task<bool> TryReuseFooterPageAsync(string route)
+        {
+            string routeName = ExtractRouteName(route);
+            if (!IsFooterRoute(routeName))
+                return false;
+
+            INavigation navigation = Shell.Current!.Navigation;
+            Page? currentPage = navigation.NavigationStack.LastOrDefault() ?? Shell.Current.CurrentPage;
+            if (MatchesRoute(currentPage, routeName))
+                return true;
+
+            Page? existingPage = navigation.NavigationStack.LastOrDefault(page => MatchesRoute(page, routeName));
+            if (existingPage is null)
+                return false;
+
+            while (navigation.NavigationStack.LastOrDefault() != existingPage)
+                await navigation.PopAsync(false);
+
+            return true;
+        }
+
+        private static bool IsFooterRoute(string route)
+            => string.Equals(route, "DashboardPage", StringComparison.Ordinal)
+                || string.Equals(route, AppRoutes.ExpensesList, StringComparison.Ordinal)
+                || string.Equals(route, AppRoutes.Calendar, StringComparison.Ordinal)
+                || string.Equals(route, AppRoutes.BudgetsOverview, StringComparison.Ordinal)
+                || string.Equals(route, AppRoutes.StatsOverview, StringComparison.Ordinal);
+
+        private static bool MatchesRoute(Page? page, string routeName)
+            => page is not null
+                && string.Equals(page.GetType().Name, routeName, StringComparison.Ordinal);
+
+        private static string ExtractRouteName(string route)
+        {
+            string trimmedRoute = route.Trim();
+            int queryIndex = trimmedRoute.IndexOf('?');
+            string routePath = queryIndex >= 0 ? trimmedRoute[..queryIndex] : trimmedRoute;
+            return routePath.Trim('/');
         }
 
         private string NormalizeRoute(string route)
